@@ -1,0 +1,59 @@
+[
+  {
+    "name": "literal beats deep wildcard",
+    "rules": [
+      { "path": "/orders/admin/**", "methods": ["GET"], "permissions": ["ADMIN"] },
+      { "path": "/orders/**", "methods": ["GET"], "permissions": ["READ_ORDER"] }
+    ],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders/admin/7", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "/orders/admin/** is most specific and requires ADMIN"
+  },
+  {
+    "name": "deep wildcard matches when nothing more specific",
+    "rules": [
+      { "path": "/orders/admin/**", "methods": ["GET"], "permissions": ["ADMIN"] },
+      { "path": "/orders/**", "methods": ["GET"], "permissions": ["READ_ORDER"] }
+    ],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders/7/items", "authType": "USER", "role": "VIEWER" },
+    "expected": "ALLOW",
+    "reason": "only /orders/** matches -> READ_ORDER"
+  },
+  {
+    "name": "single-segment * matches one segment",
+    "rules": [{ "path": "/orders/*/audit", "methods": ["GET"], "permissions": ["READ_ORDER"], "decision": "ANY" }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders/7/audit", "authType": "USER", "role": "VIEWER" },
+    "expected": "ALLOW",
+    "reason": "* matches segment 7"
+  },
+  {
+    "name": "single-segment * does not match deep path",
+    "rules": [{ "path": "/orders/*", "methods": ["GET"], "permissions": ["READ_ORDER"] }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders/7/items", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "no rule matches /orders/7/items -> no-match DENY"
+  },
+  {
+    "name": "exact literal beats single wildcard at same depth",
+    "rules": [
+      { "path": "/orders/new", "methods": ["GET"], "permissions": ["ADMIN"] },
+      { "path": "/orders/*", "methods": ["GET"], "permissions": ["READ_ORDER"] }
+    ],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders/new", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "/orders/new (literal) wins over /orders/* and requires ADMIN"
+  },
+  {
+    "name": "method must match",
+    "rules": [{ "path": "/orders/**", "methods": ["GET"], "permissions": ["READ_ORDER"] }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "POST", "path": "/orders/7", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "rule only matches GET -> no rule for POST -> DENY"
+  }
+]

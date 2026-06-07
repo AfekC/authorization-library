@@ -1,0 +1,70 @@
+[
+  {
+    "name": "USER_AND_SERVICE with allowedServices but no permissions -> DENY",
+    "rules": [{ "path": "/orders/**", "methods": ["POST"], "allowedServices": ["scheduler"] }],
+    "roleCache": { "MANAGER": ["WRITE_ORDER"] },
+    "request": { "method": "POST", "path": "/orders/7", "authType": "USER_AND_SERVICE", "role": "MANAGER", "serviceName": "scheduler" },
+    "expected": "DENY",
+    "reason": "USER_AND_SERVICE requires both permissions and allowedServices dimensions; missing permissions -> DENY"
+  },
+  {
+    "name": "missing path -> compile error",
+    "rules": [{ "methods": ["GET"], "permissions": ["READ"] }],
+    "expectCompileError": true,
+    "reason": "path is a required field"
+  },
+  {
+    "name": "missing methods -> compile error",
+    "rules": [{ "path": "/orders", "permissions": ["READ"] }],
+    "expectCompileError": true,
+    "reason": "methods is a required field"
+  },
+  {
+    "name": "empty rules list -> no match -> DENY",
+    "rules": [],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "no rules defined -> no rule matches -> DENY"
+  },
+  {
+    "name": "invalid method value compiles but never matches",
+    "rules": [{ "path": "/orders", "methods": ["FOOBAR"], "permissions": ["READ"] }],
+    "roleCache": { "VIEWER": ["READ"] },
+    "request": { "method": "GET", "path": "/orders", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "rule method FOOBAR never matches GET -> no rule matches -> DENY"
+  },
+  {
+    "name": "trailing slash normalized to same segments",
+    "rules": [{ "path": "/orders", "methods": ["GET"], "permissions": ["READ_ORDER"] }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders/", "authType": "USER", "role": "VIEWER" },
+    "expected": "ALLOW",
+    "reason": "/orders/ normalizes to ['orders'] same as /orders -> matches"
+  },
+  {
+    "name": "double slash filters out to match wildcard",
+    "rules": [{ "path": "/orders/*", "methods": ["GET"], "permissions": ["READ_ORDER"] }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders//7", "authType": "USER", "role": "VIEWER" },
+    "expected": "ALLOW",
+    "reason": "// filters to empty -> ['orders','7'] -> matches /orders/*"
+  },
+  {
+    "name": "percent-encoded path not decoded -> no match",
+    "rules": [{ "path": "/orders/*", "methods": ["GET"], "permissions": ["READ_ORDER"] }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders%2F7", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "orders%2F7 is a single literal segment -> cannot match /orders/* (needs 2 segments)"
+  },
+  {
+    "name": "method case-insensitive: lowercase rule matches uppercase request",
+    "rules": [{ "path": "/orders", "methods": ["get"], "permissions": ["READ_ORDER"] }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders", "authType": "USER", "role": "VIEWER" },
+    "expected": "ALLOW",
+    "reason": "get uppercased to GET during compilation -> matches request GET"
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "name": "e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node run.mjs",
+    "up": "docker compose up --build -d",
+    "down": "docker compose down -v"
+  }
+}

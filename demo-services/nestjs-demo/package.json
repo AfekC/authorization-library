@@ -1,0 +1,15 @@
+{
+  "name": "nestjs-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NestJS demo service using authz-nestjs",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js"
+  },
+  "dependencies": {
+    "authz-nestjs": "*",
+    "express": "^4.19.2",
+    "js-yaml": "^4.1.0"
+  }
+}

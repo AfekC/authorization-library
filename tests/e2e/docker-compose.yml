@@ -1,0 +1,71 @@
+services:
+  redpanda:
+    image: redpandadata/redpanda:v24.1.7
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --memory=512M
+      - --overprovisioned
+      - --node-id=0
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mock:
+    build:
+      context: ../../demo-services/mock-service
+    environment:
+      PORT: "4000"
+      AUTH_ISSUER: "http://mock:4000/auth"
+      SSO_ISSUER: "http://mock:4000/sso"
+      API_AUDIENCE: "orders-api"
+      KAFKA_BROKERS: "redpanda:9092"
+      ROLE_UPDATES_TOPIC: "role-updates"
+      ROLE_DELETE_TOPIC: "role-delete"
+      PUBLISH_ROLES_TOPIC: "publish-roles"
+    ports:
+      - "4000:4000"
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  nestjs-demo:
+    build:
+      context: ../..
+      dockerfile: demo-services/nestjs-demo/Dockerfile
+    environment:
+      PORT: "5001"
+      MOCK_URL: "http://mock:4000"
+      API_AUDIENCE: "orders-api"
+      KAFKA_BROKERS: "redpanda:9092"
+      DOWNSTREAM_URL: "http://spring-demo:5002"
+      CLIENT_ID: "nestjs-demo-id"
+      CLIENT_SECRET: "nestjs-demo-secret"
+    ports:
+      - "5001:5001"
+    depends_on:
+      mock:
+        condition: service_healthy
+
+  spring-demo:
+    build:
+      context: ../../demo-services/spring-demo
+    environment:
+      MOCK_URL: "http://mock:4000"
+      API_AUDIENCE: "orders-api"
+      DOWNSTREAM_URL: "http://nestjs-demo:5001"
+    ports:
+      - "5002:5002"
+    depends_on:
+      mock:
+        condition: service_healthy

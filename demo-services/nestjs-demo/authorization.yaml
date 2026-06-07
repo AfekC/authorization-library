@@ -1,0 +1,24 @@
+rules:
+  - path: /orders/**
+    methods: [GET]
+    permissions: [READ_ORDER]
+    decision: ANY
+
+  - path: /orders
+    methods: [POST]
+    permissions: [WRITE_ORDER, ADMIN]
+    decision: ANY
+
+  - path: /orders/*/audit
+    methods: [GET]
+    permissions: [READ_ORDER, ADMIN]
+    decision: ALL
+
+  - path: /internal/reconcile
+    methods: [POST]
+    allowedServices: [scheduler, batch]
+
+  - path: /orders/**
+    methods: [POST]
+    permissions: [WRITE_ORDER]
+    allowedServices: ["*"]

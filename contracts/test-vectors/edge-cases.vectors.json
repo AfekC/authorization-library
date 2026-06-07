@@ -1,0 +1,53 @@
+[
+  {
+    "name": "no matching rule -> DENY",
+    "rules": [{ "path": "/orders/**", "methods": ["GET"], "permissions": ["READ_ORDER"] }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/customers/1", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "no rule covers /customers/1"
+  },
+  {
+    "name": "unknown role -> empty perms -> DENY",
+    "rules": [{ "path": "/orders/**", "methods": ["GET"], "permissions": ["READ_ORDER"] }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders/7", "authType": "USER", "role": "GHOST" },
+    "expected": "DENY",
+    "reason": "GHOST not in cache -> no permissions"
+  },
+  {
+    "name": "roles are case-sensitive",
+    "rules": [{ "path": "/orders/**", "methods": ["GET"], "permissions": ["READ_ORDER"] }],
+    "roleCache": { "MANAGER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders/7", "authType": "USER", "role": "manager" },
+    "expected": "DENY",
+    "reason": "manager != MANAGER"
+  },
+  {
+    "name": "ambiguous config rejected at compile",
+    "rules": [
+      { "path": "/orders/*", "methods": ["GET"], "permissions": ["READ_ORDER"] },
+      { "path": "/orders/*", "methods": ["GET"], "permissions": ["ADMIN"] }
+    ],
+    "expectCompileError": true,
+    "reason": "two rules with identical specificity for same path+method"
+  },
+  {
+    "name": "deep wildcard not final segment rejected",
+    "rules": [{ "path": "/orders/**/audit", "methods": ["GET"], "permissions": ["READ_ORDER"] }],
+    "expectCompileError": true,
+    "reason": "** only valid as final segment"
+  },
+  {
+    "name": "invalid decision value rejected",
+    "rules": [{ "path": "/orders", "methods": ["GET"], "permissions": ["READ_ORDER"], "decision": "MAYBE" }],
+    "expectCompileError": true,
+    "reason": "decision must be ANY or ALL"
+  },
+  {
+    "name": "unknown field rejected",
+    "rules": [{ "path": "/orders", "methods": ["GET"], "permissions": ["READ_ORDER"], "bogus": true }],
+    "expectCompileError": true,
+    "reason": "unknown field not allowed"
+  }
+]

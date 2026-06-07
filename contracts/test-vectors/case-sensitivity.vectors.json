@@ -1,0 +1,42 @@
+[
+  {
+    "name": "permission case-sensitive: exact case matches",
+    "rules": [{ "path": "/orders", "methods": ["GET"], "permissions": ["READ"], "decision": "ANY" }],
+    "roleCache": { "VIEWER": ["READ"] },
+    "request": { "method": "GET", "path": "/orders", "authType": "USER", "role": "VIEWER" },
+    "expected": "ALLOW",
+    "reason": "VIEWER has READ exactly"
+  },
+  {
+    "name": "permission case-sensitive: wrong case denies",
+    "rules": [{ "path": "/orders", "methods": ["GET"], "permissions": ["READ"], "decision": "ANY" }],
+    "roleCache": { "VIEWER": ["read"] },
+    "request": { "method": "GET", "path": "/orders", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "read != READ (case-sensitive)"
+  },
+  {
+    "name": "permission case-sensitive: alternate casing matches exactly",
+    "rules": [{ "path": "/orders", "methods": ["GET"], "permissions": ["Read"], "decision": "ANY" }],
+    "roleCache": { "VIEWER": ["Read"] },
+    "request": { "method": "GET", "path": "/orders", "authType": "USER", "role": "VIEWER" },
+    "expected": "ALLOW",
+    "reason": "VIEWER has Read exactly"
+  },
+  {
+    "name": "permission case-sensitive: underscore case mismatch",
+    "rules": [{ "path": "/orders", "methods": ["POST"], "permissions": ["WRITE_ORDER"], "decision": "ANY" }],
+    "roleCache": { "WRITER": ["Write_Order"] },
+    "request": { "method": "POST", "path": "/orders", "authType": "USER", "role": "WRITER" },
+    "expected": "DENY",
+    "reason": "Write_Order != WRITE_ORDER (case-sensitive)"
+  },
+  {
+    "name": "permission case-sensitive: ALL mode requires exact case for every permission",
+    "rules": [{ "path": "/orders", "methods": ["GET"], "permissions": ["READ", "WRITE"], "decision": "ALL" }],
+    "roleCache": { "VIEWER": ["READ", "write"] },
+    "request": { "method": "GET", "path": "/orders", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "VIEWER has READ but write != WRITE (case-sensitive) -> missing WRITE -> DENY"
+  }
+]

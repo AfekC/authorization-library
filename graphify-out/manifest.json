@@ -1,0 +1,587 @@
+{
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.claude\\settings.json": {
+    "mtime": 1780757080.5526161,
+    "ast_hash": "5a81f219eb243181c22d80c798ee066d",
+    "semantic_hash": "5a81f219eb243181c22d80c798ee066d"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.claude\\settings.local.json": {
+    "mtime": 1780749013.363351,
+    "ast_hash": "98d58ac9825188405ba047515af1d61a",
+    "semantic_hash": "98d58ac9825188405ba047515af1d61a"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.understand-anything\\fingerprints.json": {
+    "mtime": 1780753859.8825898,
+    "ast_hash": "473258b3d786d41396b76c8a7760f736",
+    "semantic_hash": "473258b3d786d41396b76c8a7760f736"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.understand-anything\\knowledge-graph.json": {
+    "mtime": 1780753829.9387095,
+    "ast_hash": "93b4979b6c89441e98658fae01bd898a",
+    "semantic_hash": "93b4979b6c89441e98658fae01bd898a"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.understand-anything\\meta.json": {
+    "mtime": 1780753864.4467657,
+    "ast_hash": "371ee99ce57f0b69b8ec23ad38946b55",
+    "semantic_hash": "371ee99ce57f0b69b8ec23ad38946b55"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.understand-anything\\process_batches.py": {
+    "mtime": 1780751404.756117,
+    "ast_hash": "1073e2d01a1d8f40c55a2960e162fa5c",
+    "semantic_hash": "1073e2d01a1d8f40c55a2960e162fa5c"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\contracts\\test-vectors\\decision-modes.vectors.json": {
+    "mtime": 1780591613.8052328,
+    "ast_hash": "9bec055a56d2db7f313d498cb7fab832",
+    "semantic_hash": "9bec055a56d2db7f313d498cb7fab832"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\contracts\\test-vectors\\edge-cases.vectors.json": {
+    "mtime": 1780591641.557403,
+    "ast_hash": "5019e7b4cf6b4f24bb2cc9ab150dbac8",
+    "semantic_hash": "5019e7b4cf6b4f24bb2cc9ab150dbac8"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\contracts\\test-vectors\\matrix.vectors.json": {
+    "mtime": 1780591597.540269,
+    "ast_hash": "c1b91fb3a88687e2a8dbf291d5060533",
+    "semantic_hash": "c1b91fb3a88687e2a8dbf291d5060533"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\contracts\\test-vectors\\wildcards.vectors.json": {
+    "mtime": 1780591628.5564437,
+    "ast_hash": "d121306d627154a1246f80d5ac60d0b7",
+    "semantic_hash": "d121306d627154a1246f80d5ac60d0b7"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\demo-services\\mock-service\\package.json": {
+    "mtime": 1780599412.1648872,
+    "ast_hash": "150291b692bb8609fc2b7fa9808bf4cb",
+    "semantic_hash": "150291b692bb8609fc2b7fa9808bf4cb"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\demo-services\\mock-service\\src\\index.js": {
+    "mtime": 1780749862.281612,
+    "ast_hash": "ae47773bee2a60f69b8e735135478180",
+    "semantic_hash": "ae47773bee2a60f69b8e735135478180"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\demo-services\\mock-service\\src\\keys.js": {
+    "mtime": 1780599420.4273336,
+    "ast_hash": "50bf41cc51bdb2d9c1743cbec6efe077",
+    "semantic_hash": "50bf41cc51bdb2d9c1743cbec6efe077"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\demo-services\\nestjs-demo\\package.json": {
+    "mtime": 1780599496.1205301,
+    "ast_hash": "5fa7e67823c9d426814a0e1f75a4ffbe",
+    "semantic_hash": "5fa7e67823c9d426814a0e1f75a4ffbe"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\demo-services\\nestjs-demo\\src\\main.js": {
+    "mtime": 1780636943.00511,
+    "ast_hash": "c66e01e2c9c3e225f820a88099444699",
+    "semantic_hash": "c66e01e2c9c3e225f820a88099444699"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\demo-services\\spring-demo\\src\\main\\java\\com\\example\\demo\\DemoApplication.java": {
+    "mtime": 1780599610.9426372,
+    "ast_hash": "a1d08a69f9ee3567e9eb06f3a60859d1",
+    "semantic_hash": "a1d08a69f9ee3567e9eb06f3a60859d1"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\demo-services\\spring-demo\\src\\main\\java\\com\\example\\demo\\OrdersController.java": {
+    "mtime": 1780635538.0839155,
+    "ast_hash": "d958d21dcd981bc0bfa2dbbf4dc91d70",
+    "semantic_hash": "d958d21dcd981bc0bfa2dbbf4dc91d70"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\jest.config.js": {
+    "mtime": 1780591727.7294784,
+    "ast_hash": "168eaf10cb698fd21ead402303f954e3",
+    "semantic_hash": "168eaf10cb698fd21ead402303f954e3"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\package.json": {
+    "mtime": 1780749862.2906506,
+    "ast_hash": "dca27b7834daa5f7854a9455115d1d8e",
+    "semantic_hash": "dca27b7834daa5f7854a9455115d1d8e"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\tsconfig.build.json": {
+    "mtime": 1780591722.2914128,
+    "ast_hash": "c84cf1d44c1174e36a7ad84b3b468a10",
+    "semantic_hash": "c84cf1d44c1174e36a7ad84b3b468a10"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\tsconfig.json": {
+    "mtime": 1780591717.3625524,
+    "ast_hash": "4166163ae600ec44caa7e8740e564576",
+    "semantic_hash": "4166163ae600ec44caa7e8740e564576"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\index.ts": {
+    "mtime": 1780758064.344275,
+    "ast_hash": "68ed169da3c46bc230b961e4dfefa357",
+    "semantic_hash": "68ed169da3c46bc230b961e4dfefa357"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\audit\\audit.ts": {
+    "mtime": 1780592980.6251218,
+    "ast_hash": "f9c8fee332f0115fecfa81cf918b29a6",
+    "semantic_hash": "f9c8fee332f0115fecfa81cf918b29a6"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\bootstrap\\create-authz.ts": {
+    "mtime": 1780758028.080292,
+    "ast_hash": "1bc83e04797ebc0f23cfc5fdb8e614ad",
+    "semantic_hash": "1bc83e04797ebc0f23cfc5fdb8e614ad"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\cache-sync\\bootstrap.ts": {
+    "mtime": 1780758090.632779,
+    "ast_hash": "889ddf88853ab0f1802e4f09db4ea21d",
+    "semantic_hash": "889ddf88853ab0f1802e4f09db4ea21d"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\cache-sync\\disk.ts": {
+    "mtime": 1780592998.8273065,
+    "ast_hash": "06a386e40a6c9d073ca9125dd031f7e0",
+    "semantic_hash": "06a386e40a6c9d073ca9125dd031f7e0"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\cache-sync\\events.ts": {
+    "mtime": 1780749862.2939372,
+    "ast_hash": "072fe9bbb8ce833aa000e2e7ef0ebece",
+    "semantic_hash": "072fe9bbb8ce833aa000e2e7ef0ebece"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\cache-sync\\kafka.ts": {
+    "mtime": 1780758078.961189,
+    "ast_hash": "275bbd34de28c43393c4cf6aecd096ed",
+    "semantic_hash": "275bbd34de28c43393c4cf6aecd096ed"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\decision-engine\\decision.ts": {
+    "mtime": 1780591795.5557826,
+    "ast_hash": "3e83b835a9df01a619875b5a4007845e",
+    "semantic_hash": "3e83b835a9df01a619875b5a4007845e"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\decision-engine\\engine.ts": {
+    "mtime": 1780757899.1425467,
+    "ast_hash": "84bd960014d2b33806d65cdd5f4cd570",
+    "semantic_hash": "84bd960014d2b33806d65cdd5f4cd570"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\decision-engine\\scoring.ts": {
+    "mtime": 1780591747.280635,
+    "ast_hash": "1386214854bb2267f7ef75266f9c67af",
+    "semantic_hash": "1386214854bb2267f7ef75266f9c67af"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\inbound-auth\\context.ts": {
+    "mtime": 1780592945.6846142,
+    "ast_hash": "660ad63c2bfaf5ac46d43f275f14b302",
+    "semantic_hash": "660ad63c2bfaf5ac46d43f275f14b302"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\nest\\authz.guard.ts": {
+    "mtime": 1780757928.4570508,
+    "ast_hash": "d2169c7773fbdd17b0ab10049b388c45",
+    "semantic_hash": "d2169c7773fbdd17b0ab10049b388c45"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\nest\\outbound.interceptor.ts": {
+    "mtime": 1780758038.109135,
+    "ast_hash": "2043ac0587cc83f574c5fb7b83d8c20e",
+    "semantic_hash": "2043ac0587cc83f574c5fb7b83d8c20e"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\nest\\request-context.decorator.ts": {
+    "mtime": 1780593069.4575493,
+    "ast_hash": "157ee11c4ada5ae4d16174ca8d8a7811",
+    "semantic_hash": "157ee11c4ada5ae4d16174ca8d8a7811"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\observability\\metrics.ts": {
+    "mtime": 1780749862.2960513,
+    "ast_hash": "720593538b9a1494588932d292b8bda4",
+    "semantic_hash": "720593538b9a1494588932d292b8bda4"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\outbound\\context-store.ts": {
+    "mtime": 1780757962.1996233,
+    "ast_hash": "331146242fbc56444fc36a168b64e048",
+    "semantic_hash": "331146242fbc56444fc36a168b64e048"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\outbound\\propagation.ts": {
+    "mtime": 1780757972.4241147,
+    "ast_hash": "5e396866bbb1f765da762dec183991a1",
+    "semantic_hash": "5e396866bbb1f765da762dec183991a1"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\permission-cache\\cache.ts": {
+    "mtime": 1780749862.2966185,
+    "ast_hash": "08247db5c18d7c26f8e2435c5350d1b5",
+    "semantic_hash": "08247db5c18d7c26f8e2435c5350d1b5"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\role-service-client\\client.ts": {
+    "mtime": 1780749862.2971323,
+    "ast_hash": "a41db2170744783bed7661035180c527",
+    "semantic_hash": "a41db2170744783bed7661035180c527"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\rule-config\\compile.ts": {
+    "mtime": 1780591766.2219567,
+    "ast_hash": "14047e2e061498af431876cdc7a9005e",
+    "semantic_hash": "14047e2e061498af431876cdc7a9005e"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\rule-config\\loader.ts": {
+    "mtime": 1780592970.5230217,
+    "ast_hash": "fb9180a13abbb3edb7dde3ed7aa32d23",
+    "semantic_hash": "fb9180a13abbb3edb7dde3ed7aa32d23"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\rule-config\\types.ts": {
+    "mtime": 1780591736.6024668,
+    "ast_hash": "c50c4e498f846c342324a525566b8f3d",
+    "semantic_hash": "c50c4e498f846c342324a525566b8f3d"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\service-token\\provider.ts": {
+    "mtime": 1780749862.2982063,
+    "ast_hash": "b7a6d8a1b41de6b94ca62fa874916ff4",
+    "semantic_hash": "b7a6d8a1b41de6b94ca62fa874916ff4"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\src\\spi\\index.ts": {
+    "mtime": 1780749862.2988198,
+    "ast_hash": "da6be9b1807921849bbca61544c9021d",
+    "semantic_hash": "da6be9b1807921849bbca61544c9021d"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\test\\architecture-fixes.spec.ts": {
+    "mtime": 1780758675.8277285,
+    "ast_hash": "529e29fc85b88b097e68a66de560600e",
+    "semantic_hash": "529e29fc85b88b097e68a66de560600e"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\test\\modules.spec.ts": {
+    "mtime": 1780749862.299864,
+    "ast_hash": "3b361534c66190266b4dc209409c739d",
+    "semantic_hash": "3b361534c66190266b4dc209409c739d"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\test\\outbound.spec.ts": {
+    "mtime": 1780749862.3009698,
+    "ast_hash": "7bf2ef3e35cb6676c08c34f7b618850a",
+    "semantic_hash": "7bf2ef3e35cb6676c08c34f7b618850a"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-nestjs\\test\\vectors.spec.ts": {
+    "mtime": 1780591823.1492107,
+    "ast_hash": "2515b4f6c3cc6b1a21dea480af173792",
+    "semantic_hash": "2515b4f6c3cc6b1a21dea480af173792"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\audit\\AuditEvent.java": {
+    "mtime": 1780595950.4059412,
+    "ast_hash": "4c0a60f2e374441d2ec988f0164256e9",
+    "semantic_hash": "4c0a60f2e374441d2ec988f0164256e9"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\audit\\AuditEvents.java": {
+    "mtime": 1780595958.9752028,
+    "ast_hash": "1a6977aa72372ee752b90797bd2cbae8",
+    "semantic_hash": "1a6977aa72372ee752b90797bd2cbae8"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\audit\\LoggingAuditSink.java": {
+    "mtime": 1780595968.27547,
+    "ast_hash": "32d34f4c471cc7ff9a7864675d0ad698",
+    "semantic_hash": "32d34f4c471cc7ff9a7864675d0ad698"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\boot\\AuthzAutoConfiguration.java": {
+    "mtime": 1780758328.1455033,
+    "ast_hash": "6c7c0861924f39fe827ba93093ec09fe",
+    "semantic_hash": "6c7c0861924f39fe827ba93093ec09fe"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\boot\\AuthzProperties.java": {
+    "mtime": 1780758244.5637233,
+    "ast_hash": "d6f3fc844b6ab2cf532ebc9296d1a594",
+    "semantic_hash": "d6f3fc844b6ab2cf532ebc9296d1a594"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\cache\\PermissionCache.java": {
+    "mtime": 1780749862.3047714,
+    "ast_hash": "761715f8100e97a72f6b54f93d954f15",
+    "semantic_hash": "761715f8100e97a72f6b54f93d954f15"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\CompiledRule.java": {
+    "mtime": 1780593367.1690917,
+    "ast_hash": "dc30f5f21a1055c8be73fb31f971f2f5",
+    "semantic_hash": "dc30f5f21a1055c8be73fb31f971f2f5"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\ConfigException.java": {
+    "mtime": 1780593358.1492648,
+    "ast_hash": "660e641abd83538a2fb94371620fbfa6",
+    "semantic_hash": "660e641abd83538a2fb94371620fbfa6"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\DecisionMode.java": {
+    "mtime": 1780593340.7462661,
+    "ast_hash": "8eedea257618ed249c1efb94af39748e",
+    "semantic_hash": "8eedea257618ed249c1efb94af39748e"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\RuleCompiler.java": {
+    "mtime": 1780593405.8329113,
+    "ast_hash": "9bb111790c9feee19bdb338ab8c6b10a",
+    "semantic_hash": "9bb111790c9feee19bdb338ab8c6b10a"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\Segment.java": {
+    "mtime": 1780593352.372645,
+    "ast_hash": "428fb756eaa7c0e20f5da7c039618fdd",
+    "semantic_hash": "428fb756eaa7c0e20f5da7c039618fdd"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\SegmentKind.java": {
+    "mtime": 1780593346.0397744,
+    "ast_hash": "0d41f98a41330e8f6f1ce1758da4ea68",
+    "semantic_hash": "0d41f98a41330e8f6f1ce1758da4ea68"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\YamlLoader.java": {
+    "mtime": 1780593470.4780335,
+    "ast_hash": "ca552608836138aeb3e5685a491ab45c",
+    "semantic_hash": "ca552608836138aeb3e5685a491ab45c"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\context\\HeaderSanitizer.java": {
+    "mtime": 1780595934.2851439,
+    "ast_hash": "fea47808db5c2a14d1723ef2e459d9a9",
+    "semantic_hash": "fea47808db5c2a14d1723ef2e459d9a9"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\context\\Principals.java": {
+    "mtime": 1780595918.443742,
+    "ast_hash": "6199a64c2d78d9f4ce92769e3174a69f",
+    "semantic_hash": "6199a64c2d78d9f4ce92769e3174a69f"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\context\\RequestContext.java": {
+    "mtime": 1780595913.0555973,
+    "ast_hash": "fe859519f3adc3af5b936da0be1da097",
+    "semantic_hash": "fe859519f3adc3af5b936da0be1da097"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\context\\RequestContextBuilder.java": {
+    "mtime": 1780595926.2174811,
+    "ast_hash": "2eee64f5fa80d273ff6f2a89e6bc7087",
+    "semantic_hash": "2eee64f5fa80d273ff6f2a89e6bc7087"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\AuthorizationEngine.java": {
+    "mtime": 1780757881.7341256,
+    "ast_hash": "049567027387e2c4cf4c80c97ef694c1",
+    "semantic_hash": "049567027387e2c4cf4c80c97ef694c1"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\AuthorizationRequest.java": {
+    "mtime": 1780593433.1396627,
+    "ast_hash": "d21a61e440ed4c4b00289f4a42bd61e9",
+    "semantic_hash": "d21a61e440ed4c4b00289f4a42bd61e9"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\AuthType.java": {
+    "mtime": 1780593423.654131,
+    "ast_hash": "ea0409c2bf731d3bdcf919476dc46999",
+    "semantic_hash": "ea0409c2bf731d3bdcf919476dc46999"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\Decision.java": {
+    "mtime": 1780593428.298305,
+    "ast_hash": "2b16f5318c5628eee4cf7dfad952b6e1",
+    "semantic_hash": "2b16f5318c5628eee4cf7dfad952b6e1"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\DecisionEvaluator.java": {
+    "mtime": 1780593443.51888,
+    "ast_hash": "61566d0c9c6ebc0cafaee2ca0d56c094",
+    "semantic_hash": "61566d0c9c6ebc0cafaee2ca0d56c094"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\DecisionResult.java": {
+    "mtime": 1780757872.3805408,
+    "ast_hash": "b9263ea21749088dd452fc5324c16e66",
+    "semantic_hash": "b9263ea21749088dd452fc5324c16e66"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\Scoring.java": {
+    "mtime": 1780593380.1378853,
+    "ast_hash": "f73b607dac4e3bd61851f75cb827aaba",
+    "semantic_hash": "f73b607dac4e3bd61851f75cb827aaba"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\observability\\AuthzHealth.java": {
+    "mtime": 1780637254.8426929,
+    "ast_hash": "f0cdce333095194b21a0cf55bf241d6f",
+    "semantic_hash": "f0cdce333095194b21a0cf55bf241d6f"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\observability\\Metrics.java": {
+    "mtime": 1780749862.3058667,
+    "ast_hash": "66685ab70c786dbff6ef8c9788435900",
+    "semantic_hash": "66685ab70c786dbff6ef8c9788435900"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\outbound\\ClientCredentialsServiceIdentityProvider.java": {
+    "mtime": 1780749862.3064125,
+    "ast_hash": "b31739158feab90fe80138aa5be314ba",
+    "semantic_hash": "b31739158feab90fe80138aa5be314ba"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\outbound\\OutboundHeaders.java": {
+    "mtime": 1780634711.3141365,
+    "ast_hash": "bc8fef04cec69b3036247e3f8431d3da",
+    "semantic_hash": "bc8fef04cec69b3036247e3f8431d3da"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\outbound\\OutboundPropagationInterceptor.java": {
+    "mtime": 1780758224.1303082,
+    "ast_hash": "eb979666fffe9827e36069122d1f4236",
+    "semantic_hash": "eb979666fffe9827e36069122d1f4236"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\spi\\Spi.java": {
+    "mtime": 1780749862.307473,
+    "ast_hash": "a1e21885c3a31ff1cd86389c1b5e0bd2",
+    "semantic_hash": "a1e21885c3a31ff1cd86389c1b5e0bd2"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\CacheBootstrap.java": {
+    "mtime": 1780758801.7179308,
+    "ast_hash": "890d9b2a68ad3625edf75ce6de8c283f",
+    "semantic_hash": "890d9b2a68ad3625edf75ce6de8c283f"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\CacheBootstrapException.java": {
+    "mtime": 1780749862.3091505,
+    "ast_hash": "76f46dfb8c997b51fb9a1eb4284fd1a8",
+    "semantic_hash": "76f46dfb8c997b51fb9a1eb4284fd1a8"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\DiskCache.java": {
+    "mtime": 1780595989.2734938,
+    "ast_hash": "a013dbaa685a84c1c0cca94be442393f",
+    "semantic_hash": "a013dbaa685a84c1c0cca94be442393f"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\HttpRoleServiceClient.java": {
+    "mtime": 1780749862.309721,
+    "ast_hash": "9cc44796b7b7dcfda5174ff841af6cf8",
+    "semantic_hash": "9cc44796b7b7dcfda5174ff841af6cf8"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\KafkaCacheEventHandler.java": {
+    "mtime": 1780749862.310769,
+    "ast_hash": "d686e8cb2dbb9c2c947058c27a251af3",
+    "semantic_hash": "d686e8cb2dbb9c2c947058c27a251af3"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\RoleEvents.java": {
+    "mtime": 1780749862.3112996,
+    "ast_hash": "2275053bec6f40524f6656292e8f02e0",
+    "semantic_hash": "2275053bec6f40524f6656292e8f02e0"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\web\\AuthorizationFilter.java": {
+    "mtime": 1780758189.4890666,
+    "ast_hash": "641d453dccc21f660551fd85e0dfe253",
+    "semantic_hash": "641d453dccc21f660551fd85e0dfe253"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\web\\AuthzRequestContext.java": {
+    "mtime": 1780758165.7519722,
+    "ast_hash": "66f0f4f8350b5cde67ffc734b54bb3c7",
+    "semantic_hash": "66f0f4f8350b5cde67ffc734b54bb3c7"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\web\\NimbusJwksTokenValidator.java": {
+    "mtime": 1780758271.1503656,
+    "ast_hash": "6b2cb57963301c30da4a8b2a8c0135f7",
+    "semantic_hash": "6b2cb57963301c30da4a8b2a8c0135f7"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\test\\java\\com\\example\\authz\\ArchitectureFixesTest.java": {
+    "mtime": 1780758781.6656296,
+    "ast_hash": "8d8822e82b9945ad81eb286100e6be41",
+    "semantic_hash": "8d8822e82b9945ad81eb286100e6be41"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\test\\java\\com\\example\\authz\\ModulesTest.java": {
+    "mtime": 1780749862.3123612,
+    "ast_hash": "abb81ae1269f81ece1c5797581adc13e",
+    "semantic_hash": "abb81ae1269f81ece1c5797581adc13e"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\test\\java\\com\\example\\authz\\OutboundTest.java": {
+    "mtime": 1780749862.3128915,
+    "ast_hash": "229fadeab432e8d025681f09453e40b6",
+    "semantic_hash": "229fadeab432e8d025681f09453e40b6"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\libraries\\authz-spring-boot\\src\\test\\java\\com\\example\\authz\\SharedVectorsTest.java": {
+    "mtime": 1780749862.313426,
+    "ast_hash": "11d410dcc06a1a2d5cc001984e51bec7",
+    "semantic_hash": "11d410dcc06a1a2d5cc001984e51bec7"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\scripts\\mvn.ps1": {
+    "mtime": 1780593504.0614514,
+    "ast_hash": "beea07c818d21f4ca2fc740f736300a8",
+    "semantic_hash": "beea07c818d21f4ca2fc740f736300a8"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\scripts\\mvn.sh": {
+    "mtime": 1780593495.6919806,
+    "ast_hash": "118f7dbd52ca142275bee0c0075b158f",
+    "semantic_hash": "118f7dbd52ca142275bee0c0075b158f"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\tests\\e2e\\package.json": {
+    "mtime": 1780599836.129254,
+    "ast_hash": "0752c3a9df570a46c48e45cdfd7a80e1",
+    "semantic_hash": "0752c3a9df570a46c48e45cdfd7a80e1"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\tests\\e2e\\run.mjs": {
+    "mtime": 1780749862.3150616,
+    "ast_hash": "b6643f979500785541a71ed1084516a6",
+    "semantic_hash": "b6643f979500785541a71ed1084516a6"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\authz-middleware-architecture.md": {
+    "mtime": 1780759649.2415884,
+    "ast_hash": "419ededfca1dc21846ddc197e2832bf1",
+    "semantic_hash": "419ededfca1dc21846ddc197e2832bf1"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\CLAUDE.md": {
+    "mtime": 1780759693.5637612,
+    "ast_hash": "4bdd7ee46b226a9f178b24719a9bf082",
+    "semantic_hash": "4bdd7ee46b226a9f178b24719a9bf082"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\README.md": {
+    "mtime": 1780759494.733596,
+    "ast_hash": "98abd9cbead3227abc90b708212f098f",
+    "semantic_hash": "98abd9cbead3227abc90b708212f098f"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.claude\\skills\\hooks-automation\\SKILL.md": {
+    "mtime": 1780636058.5172985,
+    "ast_hash": "7f908c48876c7dd9a13e204998b22847",
+    "semantic_hash": "7f908c48876c7dd9a13e204998b22847"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.claude\\skills\\pair-programming\\SKILL.md": {
+    "mtime": 1780636058.5251057,
+    "ast_hash": "00148e54e84258ea1e733ff5c8e132c9",
+    "semantic_hash": "00148e54e84258ea1e733ff5c8e132c9"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.claude\\skills\\skill-builder\\SKILL.md": {
+    "mtime": 1780636058.546765,
+    "ast_hash": "4a93000bee4c1ec10c371522c0b54132",
+    "semantic_hash": "4a93000bee4c1ec10c371522c0b54132"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.claude\\skills\\sparc-methodology\\SKILL.md": {
+    "mtime": 1780636058.5584438,
+    "ast_hash": "e6d221a897e3891499e57be68bdfa582",
+    "semantic_hash": "e6d221a897e3891499e57be68bdfa582"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.claude\\skills\\stream-chain\\SKILL.md": {
+    "mtime": 1780636058.5644436,
+    "ast_hash": "859ddffac832da4f24c4c59bc86359dd",
+    "semantic_hash": "859ddffac832da4f24c4c59bc86359dd"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.claude\\skills\\swarm-advanced\\SKILL.md": {
+    "mtime": 1780636058.5801213,
+    "ast_hash": "dfaca6cc9bd8b86bd99d85bc789596aa",
+    "semantic_hash": "dfaca6cc9bd8b86bd99d85bc789596aa"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.claude\\skills\\swarm-orchestration\\SKILL.md": {
+    "mtime": 1780636058.588701,
+    "ast_hash": "4913ebf6f1d5904e4612bd88222618f1",
+    "semantic_hash": "4913ebf6f1d5904e4612bd88222618f1"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.claude\\skills\\verification-quality\\SKILL.md": {
+    "mtime": 1780636058.6665668,
+    "ast_hash": "198d28f9f3fe930cc675ca57ec01cbc5",
+    "semantic_hash": "198d28f9f3fe930cc675ca57ec01cbc5"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\.understand-anything\\tmp\\changed-files.txt": {
+    "mtime": 1780759576.3960788,
+    "ast_hash": "dc73b39afd640a894499f587e66794a1",
+    "semantic_hash": "dc73b39afd640a894499f587e66794a1"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\contracts\\config-files.md": {
+    "mtime": 1780759660.810444,
+    "ast_hash": "6c9bcd284dfbc8f28242bfba0f557bce",
+    "semantic_hash": "6c9bcd284dfbc8f28242bfba0f557bce"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\contracts\\kafka-events.md": {
+    "mtime": 1780749862.2800088,
+    "ast_hash": "4f4109e6e9fdecad5bf706d431ae1b73",
+    "semantic_hash": "4f4109e6e9fdecad5bf706d431ae1b73"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\contracts\\rest-api.md": {
+    "mtime": 1780749862.2810812,
+    "ast_hash": "cc782acfeadf18d2ea6b191c9dc8f8bb",
+    "semantic_hash": "cc782acfeadf18d2ea6b191c9dc8f8bb"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\contracts\\test-vectors\\README.md": {
+    "mtime": 1780591576.713236,
+    "ast_hash": "5f8058966f5228c2823bf1aebb4f7e4f",
+    "semantic_hash": "5f8058966f5228c2823bf1aebb4f7e4f"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\demo-services\\nestjs-demo\\authorization.yaml": {
+    "mtime": 1780599523.3090065,
+    "ast_hash": "695dbe9a9e188db30cce117791754cd5",
+    "semantic_hash": "695dbe9a9e188db30cce117791754cd5"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\demo-services\\nestjs-demo\\README.md": {
+    "mtime": 1780759540.8325944,
+    "ast_hash": "3116e54013c392e4703e5f63aa8dee8c",
+    "semantic_hash": "3116e54013c392e4703e5f63aa8dee8c"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\demo-services\\spring-demo\\README.md": {
+    "mtime": 1780759524.862491,
+    "ast_hash": "bbe3e37eda930f9364d6fc6c01b3e446",
+    "semantic_hash": "bbe3e37eda930f9364d6fc6c01b3e446"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\demo-services\\spring-demo\\src\\main\\resources\\authorization.yaml": {
+    "mtime": 1780599650.010022,
+    "ast_hash": "695dbe9a9e188db30cce117791754cd5",
+    "semantic_hash": "695dbe9a9e188db30cce117791754cd5"
+  },
+  "C:\\Users\\afek8\\Downloads\\auth-library\\tests\\e2e\\docker-compose.yml": {
+    "mtime": 1780749862.3145292,
+    "ast_hash": "2b0e16a48dfed65fe639cf51d9151ada",
+    "semantic_hash": "2b0e16a48dfed65fe639cf51d9151ada"
+  }
+}

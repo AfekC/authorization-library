@@ -1,0 +1,152 @@
+{
+  "properties": [
+    {
+      "name": "authz.config-location",
+      "type": "java.lang.String",
+      "defaultValue": "classpath:authorization.yaml",
+      "description": "Location of the authorization.yaml configuration file."
+    },
+    {
+      "name": "authz.user-issuer",
+      "type": "java.lang.String",
+      "description": "Auth Service issuer URL for user JWT validation (REQUIRED)."
+    },
+    {
+      "name": "authz.user-jwks-uri",
+      "type": "java.lang.String",
+      "description": "Auth Service JWKS URI for user JWT validation (REQUIRED)."
+    },
+    {
+      "name": "authz.service-issuer",
+      "type": "java.lang.String",
+      "description": "SSO/OIDC issuer URL for service token validation (REQUIRED)."
+    },
+    {
+      "name": "authz.service-jwks-uri",
+      "type": "java.lang.String",
+      "description": "SSO/OIDC JWKS URI for service token validation (REQUIRED)."
+    },
+    {
+      "name": "authz.audience",
+      "type": "java.lang.String",
+      "defaultValue": "",
+      "description": "Expected audience for user JWTs. REQUIRED - must be a non-blank string."
+    },
+    {
+      "name": "authz.service-token-use-claim",
+      "type": "java.lang.String",
+      "defaultValue": "token_use",
+      "description": "Claim name that marks a service token."
+    },
+    {
+      "name": "authz.service-token-use-value",
+      "type": "java.lang.String",
+      "defaultValue": "service",
+      "description": "Expected value of the service-token-use claim."
+    },
+    {
+      "name": "authz.clock-skew-seconds",
+      "type": "java.lang.Long",
+      "defaultValue": 5,
+      "description": "Clock skew tolerance (seconds) for JWT exp/nbf checks."
+    },
+    {
+      "name": "authz.role-service-url",
+      "type": "java.lang.String",
+      "description": "Authoritative Role Service base URL (REQUIRED)."
+    },
+    {
+      "name": "authz.role-service-connect-timeout-ms",
+      "type": "java.lang.Integer",
+      "defaultValue": 5000,
+      "description": "Role Service HTTP connect timeout in milliseconds."
+    },
+    {
+      "name": "authz.role-service-read-timeout-ms",
+      "type": "java.lang.Integer",
+      "defaultValue": 5000,
+      "description": "Role Service HTTP read timeout in milliseconds."
+    },
+    {
+      "name": "authz.disk-cache-path",
+      "type": "java.lang.String",
+      "defaultValue": "authorization-cache.json",
+      "description": "Fallback/seed cache file path."
+    },
+    {
+      "name": "authz.kafka-brokers",
+      "type": "java.util.List<java.lang.String>",
+      "defaultValue": [],
+      "description": "Kafka brokers for incremental role events (empty list disables Kafka)."
+    },
+    {
+      "name": "authz.role-updates-topic",
+      "type": "java.lang.String",
+      "defaultValue": "role-updates",
+      "description": "Kafka topic for role UPSERT events."
+    },
+    {
+      "name": "authz.role-delete-topic",
+      "type": "java.lang.String",
+      "defaultValue": "role-delete",
+      "description": "Kafka topic for role DELETE events."
+    },
+    {
+      "name": "authz.publish-roles-topic",
+      "type": "java.lang.String",
+      "defaultValue": "publish-roles",
+      "description": "Kafka topic that triggers a forced full re-fetch."
+    },
+    {
+      "name": "authz.kafka-group-id",
+      "type": "java.lang.String",
+      "defaultValue": "authz-cache-sync",
+      "description": "Kafka consumer group prefix. A UUID is appended per instance."
+    },
+    {
+      "name": "authz.kafka-client-id",
+      "type": "java.lang.String",
+      "defaultValue": "authz-cache-sync",
+      "description": "Kafka consumer client ID."
+    },
+    {
+      "name": "authz.reconcile-interval-ms",
+      "type": "java.lang.Long",
+      "defaultValue": 5000,
+      "description": "Reconciler interval in milliseconds."
+    },
+    {
+      "name": "authz.token-url",
+      "type": "java.lang.String",
+      "description": "OAuth2 token endpoint URL for outbound service identity."
+    },
+    {
+      "name": "authz.client-id",
+      "type": "java.lang.String",
+      "description": "OAuth2 client ID for outbound service identity."
+    },
+    {
+      "name": "authz.client-secret",
+      "type": "java.lang.String",
+      "description": "OAuth2 client secret for outbound service identity."
+    },
+    {
+      "name": "authz.token-endpoint-timeout-ms",
+      "type": "java.lang.Long",
+      "defaultValue": 5000,
+      "description": "Token endpoint HTTP timeout in milliseconds."
+    },
+    {
+      "name": "authz.untrusted-header-prefixes",
+      "type": "java.util.List<java.lang.String>",
+      "defaultValue": [],
+      "description": "Additional untrusted header name prefixes (lower-cased) to strip from inbound requests."
+    },
+    {
+      "name": "authz.untrusted-header-exact",
+      "type": "java.util.List<java.lang.String>",
+      "defaultValue": [],
+      "description": "Additional untrusted exact header names (lower-cased) to strip from inbound requests."
+    }
+  ]
+}

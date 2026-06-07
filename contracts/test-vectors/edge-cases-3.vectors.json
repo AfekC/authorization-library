@@ -1,0 +1,24 @@
+[
+  {
+    "name": "no rules key in YAML -> compile error",
+    "config": {},
+    "expectCompileError": true,
+    "reason": "YAML with no 'rules' key should be rejected at compile time"
+  },
+  {
+    "name": "permissions is null -> treated as service-only rule",
+    "rules": [{ "path": "/data", "methods": ["GET"], "permissions": null, "allowedServices": ["svc"] }],
+    "roleCache": { "VIEWER": ["READ"] },
+    "request": { "method": "GET", "path": "/data", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "null permissions -> USER request has no permission dimension -> DENY"
+  },
+  {
+    "name": "allowedServices is null -> treated as user-only rule",
+    "rules": [{ "path": "/data", "methods": ["GET"], "permissions": ["READ"], "allowedServices": null }],
+    "roleCache": { "VIEWER": ["READ"] },
+    "request": { "method": "GET", "path": "/data", "authType": "SERVICE", "serviceName": "any" },
+    "expected": "DENY",
+    "reason": "null allowedServices -> SERVICE request has no service dimension -> DENY"
+  }
+]

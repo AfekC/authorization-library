@@ -1,0 +1,42 @@
+[
+  {
+    "name": "ANY passes when one of several present",
+    "rules": [{ "path": "/orders", "methods": ["POST"], "permissions": ["WRITE_ORDER", "ADMIN"], "decision": "ANY" }],
+    "roleCache": { "WRITER": ["WRITE_ORDER"] },
+    "request": { "method": "POST", "path": "/orders", "authType": "USER", "role": "WRITER" },
+    "expected": "ALLOW",
+    "reason": "WRITE_ORDER OR ADMIN -> has WRITE_ORDER"
+  },
+  {
+    "name": "ANY denies when none present",
+    "rules": [{ "path": "/orders", "methods": ["POST"], "permissions": ["WRITE_ORDER", "ADMIN"], "decision": "ANY" }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "POST", "path": "/orders", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "has neither WRITE_ORDER nor ADMIN"
+  },
+  {
+    "name": "ALL passes when every present",
+    "rules": [{ "path": "/orders/*/audit", "methods": ["GET"], "permissions": ["READ_ORDER", "ADMIN"], "decision": "ALL" }],
+    "roleCache": { "AUDITOR": ["READ_ORDER", "ADMIN"] },
+    "request": { "method": "GET", "path": "/orders/7/audit", "authType": "USER", "role": "AUDITOR" },
+    "expected": "ALLOW",
+    "reason": "has both READ_ORDER and ADMIN"
+  },
+  {
+    "name": "ALL denies when one missing",
+    "rules": [{ "path": "/orders/*/audit", "methods": ["GET"], "permissions": ["READ_ORDER", "ADMIN"], "decision": "ALL" }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders/7/audit", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "missing ADMIN"
+  },
+  {
+    "name": "default decision is ANY",
+    "rules": [{ "path": "/orders", "methods": ["POST"], "permissions": ["WRITE_ORDER", "ADMIN"] }],
+    "roleCache": { "ADM": ["ADMIN"] },
+    "request": { "method": "POST", "path": "/orders", "authType": "USER", "role": "ADM" },
+    "expected": "ALLOW",
+    "reason": "no decision field -> ANY -> has ADMIN"
+  }
+]

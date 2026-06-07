@@ -1,0 +1,6702 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "3821dd05c3466c6abcee9c3be0490dc027b1feea",
+  "generatedAt": "2026-06-06T16:43:08.140Z",
+  "files": {
+    "demo-services\\mock-service\\src\\index.js": {
+      "filePath": "demo-services\\mock-service\\src\\index.js",
+      "contentHash": "965b82960eb5e3f0a97ec6a544420269f1cf5452439c9f52e7c574474192ea35",
+      "functions": [
+        {
+          "name": "main",
+          "params": [],
+          "exported": false,
+          "lineCount": 125
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 163,
+      "hasStructuralAnalysis": true
+    },
+    "demo-services\\mock-service\\src\\keys.js": {
+      "filePath": "demo-services\\mock-service\\src\\keys.js",
+      "contentHash": "4570e600bf8de12abe2cc2a49238668385b21a8a185867186c849731a9f09630",
+      "functions": [
+        {
+          "name": "createIssuer",
+          "params": [
+            "issuer",
+            "kid"
+          ],
+          "exported": false,
+          "lineCount": 22
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 31,
+      "hasStructuralAnalysis": true
+    },
+    "demo-services\\nestjs-demo\\src\\main.js": {
+      "filePath": "demo-services\\nestjs-demo\\src\\main.js",
+      "contentHash": "5936a293b45ef67c300dd631bd2aad793251a660adcf0bd13cfa3c8993afca17",
+      "functions": [
+        {
+          "name": "main",
+          "params": [],
+          "exported": false,
+          "lineCount": 74
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 101,
+      "hasStructuralAnalysis": true
+    },
+    "demo-services\\spring-demo\\src\\main\\java\\com\\example\\demo\\DemoApplication.java": {
+      "filePath": "demo-services\\spring-demo\\src\\main\\java\\com\\example\\demo\\DemoApplication.java",
+      "contentHash": "42b5e43d03152fce517fdd252c387f128923dcfc6391a031d497eef6b8b5db07",
+      "functions": [
+        {
+          "name": "main",
+          "params": [
+            "args"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [
+        {
+          "name": "DemoApplication",
+          "methods": [
+            "main"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "imports": [
+        {
+          "source": "org.springframework.boot.SpringApplication",
+          "specifiers": [
+            "SpringApplication"
+          ]
+        },
+        {
+          "source": "org.springframework.boot.autoconfigure.SpringBootApplication",
+          "specifiers": [
+            "SpringBootApplication"
+          ]
+        }
+      ],
+      "exports": [
+        "main",
+        "DemoApplication"
+      ],
+      "totalLines": 12,
+      "hasStructuralAnalysis": true
+    },
+    "demo-services\\spring-demo\\src\\main\\java\\com\\example\\demo\\OrdersController.java": {
+      "filePath": "demo-services\\spring-demo\\src\\main\\java\\com\\example\\demo\\OrdersController.java",
+      "contentHash": "0707db6118f46a194038c1c8db83644ee36c6f89a78c83df700afb6038d7ac87",
+      "functions": [
+        {
+          "name": "getOrder",
+          "params": [
+            "id",
+            "req"
+          ],
+          "returnType": "Map<String, Object>",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "auditOrder",
+          "params": [
+            "id"
+          ],
+          "returnType": "Map<String, Object>",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "createOrder",
+          "params": [],
+          "returnType": "Map<String, Object>",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "updateOrder",
+          "params": [
+            "id",
+            "req"
+          ],
+          "returnType": "Map<String, Object>",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "reconcile",
+          "params": [
+            "req"
+          ],
+          "returnType": "Map<String, Object>",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "OrdersController",
+          "methods": [
+            "getOrder",
+            "auditOrder",
+            "createOrder",
+            "updateOrder",
+            "reconcile"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 38
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.context.RequestContext",
+          "specifiers": [
+            "RequestContext"
+          ]
+        },
+        {
+          "source": "com.example.authz.web.AuthorizationFilter",
+          "specifiers": [
+            "AuthorizationFilter"
+          ]
+        },
+        {
+          "source": "jakarta.servlet.http.HttpServletRequest",
+          "specifiers": [
+            "HttpServletRequest"
+          ]
+        },
+        {
+          "source": "org.springframework.web.bind.annotation",
+          "specifiers": [
+            "*"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        }
+      ],
+      "exports": [
+        "getOrder",
+        "auditOrder",
+        "createOrder",
+        "updateOrder",
+        "reconcile",
+        "OrdersController"
+      ],
+      "totalLines": 49,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\jest.config.js": {
+      "filePath": "libraries\\authz-nestjs\\jest.config.js",
+      "contentHash": "e944907a4982ebbd77e880629e3eb7e3745694cb8affde6db9e1c4018ea566a2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\audit\\audit.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\audit\\audit.ts",
+      "contentHash": "03cb90d991e023d66da511053082d4866667e2e127cc5b5285e387af57f2ea4b",
+      "functions": [
+        {
+          "name": "formatInfoLine",
+          "params": [
+            "e"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "buildAuditEvent",
+          "params": [
+            "params"
+          ],
+          "returnType": "AuditEvent",
+          "exported": true,
+          "lineCount": 24
+        }
+      ],
+      "classes": [
+        {
+          "name": "LoggingAuditSink",
+          "methods": [
+            "constructor",
+            "emit"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "imports": [
+        {
+          "source": "../spi",
+          "specifiers": [
+            "AuditEvent",
+            "AuditSink"
+          ]
+        },
+        {
+          "source": "../inbound-auth/context",
+          "specifiers": [
+            "RequestContext"
+          ]
+        },
+        {
+          "source": "../rule-config/types",
+          "specifiers": [
+            "Decision"
+          ]
+        }
+      ],
+      "exports": [
+        "LoggingAuditSink",
+        "formatInfoLine",
+        "buildAuditEvent"
+      ],
+      "totalLines": 55,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\bootstrap\\create-authz.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\bootstrap\\create-authz.ts",
+      "contentHash": "f1423171dfa9be5f412b73020ee07548472752022e1c5f692d81ee4b82af2934",
+      "functions": [
+        {
+          "name": "createAuthz",
+          "params": [
+            "opts"
+          ],
+          "returnType": "Promise<Authz>",
+          "exported": true,
+          "lineCount": 158
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "fs",
+          "specifiers": [
+            "* as fs"
+          ]
+        },
+        {
+          "source": "../decision-engine/engine",
+          "specifiers": [
+            "AuthorizationEngine",
+            "auditPermission"
+          ]
+        },
+        {
+          "source": "../rule-config/loader",
+          "specifiers": [
+            "loadAuthorizationConfig"
+          ]
+        },
+        {
+          "source": "../permission-cache/cache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "../inbound-auth/token-validator",
+          "specifiers": [
+            "JwksTokenValidator",
+            "servicePrincipalFromClaims",
+            "userPrincipalFromClaims"
+          ]
+        },
+        {
+          "source": "../inbound-auth/context",
+          "specifiers": [
+            "buildRequestContext",
+            "stripUntrustedHeaders",
+            "RequestContext"
+          ]
+        },
+        {
+          "source": "../role-service-client/client",
+          "specifiers": [
+            "HttpRoleServiceClient"
+          ]
+        },
+        {
+          "source": "../cache-sync/disk",
+          "specifiers": [
+            "DiskCache"
+          ]
+        },
+        {
+          "source": "../cache-sync/kafka",
+          "specifiers": [
+            "KafkaCacheEventHandler"
+          ]
+        },
+        {
+          "source": "../cache-sync/bootstrap",
+          "specifiers": [
+            "CacheBootstrap",
+            "CacheMode"
+          ]
+        },
+        {
+          "source": "../audit/audit",
+          "specifiers": [
+            "LoggingAuditSink",
+            "buildAuditEvent"
+          ]
+        },
+        {
+          "source": "../observability/metrics",
+          "specifiers": [
+            "Metrics",
+            "METRIC",
+            "buildHealth"
+          ]
+        },
+        {
+          "source": "../spi",
+          "specifiers": [
+            "AuditSink",
+            "ServiceIdentityProvider",
+            "TokenValidator"
+          ]
+        },
+        {
+          "source": "../service-token/provider",
+          "specifiers": [
+            "ClientCredentialsProvider"
+          ]
+        },
+        {
+          "source": "../outbound/context-store",
+          "specifiers": [
+            "runWithOutboundContext"
+          ]
+        },
+        {
+          "source": "../outbound/propagation",
+          "specifiers": [
+            "attachOutboundPropagation",
+            "AxiosLike"
+          ]
+        }
+      ],
+      "exports": [
+        "createAuthz"
+      ],
+      "totalLines": 266,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\cache-sync\\bootstrap.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\cache-sync\\bootstrap.ts",
+      "contentHash": "69b8e05ded4982df2d627354c6a698bff9e2c06200cbffb7167f729fef0c8de2",
+      "functions": [],
+      "classes": [
+        {
+          "name": "CacheBootstrapError",
+          "methods": [
+            "constructor"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "CacheBootstrap",
+          "methods": [
+            "constructor",
+            "mode_",
+            "roleServiceLastSync",
+            "isKafkaConnected",
+            "start",
+            "fullSync",
+            "subscribe",
+            "forcedRefresh",
+            "startReconciler",
+            "updateGauges",
+            "stop"
+          ],
+          "properties": [
+            "mode",
+            "stopped",
+            "lastSyncAt",
+            "kafkaConnected"
+          ],
+          "exported": true,
+          "lineCount": 145
+        }
+      ],
+      "imports": [
+        {
+          "source": "../permission-cache/cache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "../spi",
+          "specifiers": [
+            "CacheEventHandler",
+            "RoleServiceClient"
+          ]
+        },
+        {
+          "source": "../observability/metrics",
+          "specifiers": [
+            "Metrics",
+            "METRIC",
+            "GAUGE"
+          ]
+        },
+        {
+          "source": "./disk",
+          "specifiers": [
+            "DiskCache"
+          ]
+        },
+        {
+          "source": "./events",
+          "specifiers": [
+            "applyRoleEvent"
+          ]
+        }
+      ],
+      "exports": [
+        "CacheBootstrapError",
+        "CacheBootstrap"
+      ],
+      "totalLines": 180,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\cache-sync\\disk.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\cache-sync\\disk.ts",
+      "contentHash": "5c99eaefe056bf3787714a82cdeb39c36988f494e3018bea8162e85f991dbc46",
+      "functions": [],
+      "classes": [
+        {
+          "name": "DiskCache",
+          "methods": [
+            "constructor",
+            "write",
+            "exists",
+            "read"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 29
+        }
+      ],
+      "imports": [
+        {
+          "source": "fs",
+          "specifiers": [
+            "* as fs"
+          ]
+        },
+        {
+          "source": "../permission-cache/cache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        }
+      ],
+      "exports": [
+        "DiskCache"
+      ],
+      "totalLines": 39,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\cache-sync\\events.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\cache-sync\\events.ts",
+      "contentHash": "b2c1ad56cbadffea62e188b8f7f98acd98967f3fb2ba8c277847c81e27001e17",
+      "functions": [
+        {
+          "name": "applyRoleEvent",
+          "params": [
+            "cache",
+            "event"
+          ],
+          "returnType": "ApplyResult",
+          "exported": true,
+          "lineCount": 25
+        },
+        {
+          "name": "parseRoleEvent",
+          "params": [
+            "raw"
+          ],
+          "returnType": "unknown",
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../permission-cache/cache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "../spi",
+          "specifiers": [
+            "RoleEvent"
+          ]
+        }
+      ],
+      "exports": [
+        "applyRoleEvent",
+        "parseRoleEvent"
+      ],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\cache-sync\\kafka.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\cache-sync\\kafka.ts",
+      "contentHash": "1f6b6242f3a82492061de0f9168ed9f4ed4f382c164d989f02cd7a5fc7358aa4",
+      "functions": [],
+      "classes": [
+        {
+          "name": "KafkaCacheEventHandler",
+          "methods": [
+            "constructor",
+            "start",
+            "stop"
+          ],
+          "properties": [
+            "kafka",
+            "consumer",
+            "updatesTopic",
+            "deleteTopic",
+            "publishTopic"
+          ],
+          "exported": true,
+          "lineCount": 49
+        }
+      ],
+      "imports": [
+        {
+          "source": "crypto",
+          "specifiers": [
+            "randomUUID"
+          ]
+        },
+        {
+          "source": "kafkajs",
+          "specifiers": [
+            "Consumer",
+            "Kafka"
+          ]
+        },
+        {
+          "source": "../spi",
+          "specifiers": [
+            "CacheEventHandler",
+            "RoleEvent"
+          ]
+        },
+        {
+          "source": "./events",
+          "specifiers": [
+            "parseRoleEvent"
+          ]
+        }
+      ],
+      "exports": [
+        "KafkaCacheEventHandler"
+      ],
+      "totalLines": 73,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\decision-engine\\decision.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\decision-engine\\decision.ts",
+      "contentHash": "04230f29827515631f43efa907f7869c03a67450e75d7f391b184a6ccac673be",
+      "functions": [
+        {
+          "name": "permissionCheckPasses",
+          "params": [
+            "rule",
+            "role",
+            "cache"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "serviceCheckPasses",
+          "params": [
+            "rule",
+            "serviceName"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "decide",
+          "params": [
+            "rule",
+            "request",
+            "cache"
+          ],
+          "returnType": "Decision",
+          "exported": true,
+          "lineCount": 27
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../permission-cache/cache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "../rule-config/types",
+          "specifiers": [
+            "AuthorizationRequest",
+            "CompiledRule",
+            "Decision"
+          ]
+        }
+      ],
+      "exports": [
+        "decide"
+      ],
+      "totalLines": 64,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\decision-engine\\engine.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\decision-engine\\engine.ts",
+      "contentHash": "ad7334b745ad1e88e609248c90aeb1bd427498eb1d2a506d3703bebf3adb2a93",
+      "functions": [
+        {
+          "name": "auditPermission",
+          "params": [
+            "rule"
+          ],
+          "returnType": "string | null",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "AuthorizationEngine",
+          "methods": [
+            "constructor",
+            "compile",
+            "matchRule",
+            "authorize",
+            "evaluate"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 38
+        }
+      ],
+      "imports": [
+        {
+          "source": "../rule-config/compile",
+          "specifiers": [
+            "compileRules"
+          ]
+        },
+        {
+          "source": "../permission-cache/cache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "../rule-config/types",
+          "specifiers": [
+            "AuthorizationRequest",
+            "CompiledRule",
+            "Decision",
+            "RuleInput"
+          ]
+        },
+        {
+          "source": "./scoring",
+          "specifiers": [
+            "compareSpecificity",
+            "matchPath",
+            "splitPath"
+          ]
+        },
+        {
+          "source": "./decision",
+          "specifiers": [
+            "decide"
+          ]
+        }
+      ],
+      "exports": [
+        "auditPermission",
+        "AuthorizationEngine"
+      ],
+      "totalLines": 73,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\decision-engine\\scoring.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\decision-engine\\scoring.ts",
+      "contentHash": "f7a3d6c715feb4ae8be3490e5b1678b0b13d42b23a01c13db62d38310b36cc07",
+      "functions": [
+        {
+          "name": "splitPath",
+          "params": [
+            "path"
+          ],
+          "returnType": "string[]",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "scoreSegment",
+          "params": [
+            "seg"
+          ],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "matchPath",
+          "params": [
+            "segments",
+            "pathSegs"
+          ],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "compareSpecificity",
+          "params": [
+            "a",
+            "b"
+          ],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../rule-config/types",
+          "specifiers": [
+            "CompiledRule",
+            "Segment"
+          ]
+        }
+      ],
+      "exports": [
+        "splitPath",
+        "scoreSegment",
+        "matchPath",
+        "compareSpecificity"
+      ],
+      "totalLines": 54,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\inbound-auth\\context.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\inbound-auth\\context.ts",
+      "contentHash": "7d8179b03ef68f7fbe4a7b844ad3e493bd54a4be24841a52a467bec5c9a36f67",
+      "functions": [
+        {
+          "name": "stripUntrustedHeaders",
+          "params": [
+            "headers"
+          ],
+          "returnType": "Record<string, unknown>",
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "deriveAuthType",
+          "params": [
+            "user",
+            "service"
+          ],
+          "returnType": "AuthType",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "buildRequestContext",
+          "params": [
+            "params"
+          ],
+          "returnType": "RequestContext",
+          "exported": true,
+          "lineCount": 19
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "crypto",
+          "specifiers": [
+            "randomUUID"
+          ]
+        },
+        {
+          "source": "../rule-config/types",
+          "specifiers": [
+            "AuthType"
+          ]
+        }
+      ],
+      "exports": [
+        "stripUntrustedHeaders",
+        "buildRequestContext"
+      ],
+      "totalLines": 90,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\inbound-auth\\token-validator.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\inbound-auth\\token-validator.ts",
+      "contentHash": "272dc825563eec3557933d43057014e947c3b36beac8d55e1483e3832bcbb503",
+      "functions": [
+        {
+          "name": "userPrincipalFromClaims",
+          "params": [
+            "claims"
+          ],
+          "returnType": "UserPrincipal",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "servicePrincipalFromClaims",
+          "params": [
+            "claims"
+          ],
+          "returnType": "ServicePrincipal",
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "classes": [
+        {
+          "name": "JwksTokenValidator",
+          "methods": [
+            "constructor",
+            "validateUserToken",
+            "validateServiceToken"
+          ],
+          "properties": [
+            "userJwks",
+            "serviceJwks",
+            "algorithms"
+          ],
+          "exported": true,
+          "lineCount": 39
+        }
+      ],
+      "imports": [
+        {
+          "source": "jose",
+          "specifiers": [
+            "createRemoteJWKSet",
+            "jwtVerify",
+            "JWTVerifyGetKey",
+            "JWTPayload"
+          ]
+        },
+        {
+          "source": "../spi",
+          "specifiers": [
+            "TokenClaims",
+            "TokenValidator"
+          ]
+        },
+        {
+          "source": "./context",
+          "specifiers": [
+            "ServicePrincipal",
+            "UserPrincipal"
+          ]
+        }
+      ],
+      "exports": [
+        "JwksTokenValidator",
+        "userPrincipalFromClaims",
+        "servicePrincipalFromClaims"
+      ],
+      "totalLines": 91,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\index.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\index.ts",
+      "contentHash": "8940ba92fcbdee4ebbc956524dfdd9779fcc484264d7cc9ff7ad7a8f8c308d72",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "compileRules",
+        "loadAuthorizationConfig",
+        "loadAuthorizationFile",
+        "PermissionCache",
+        "AuthorizationEngine",
+        "auditPermission",
+        "DecisionResult",
+        "decide",
+        "compareSpecificity",
+        "matchPath",
+        "splitPath",
+        "scoreSegment",
+        "RequestContext",
+        "UserPrincipal",
+        "ServicePrincipal",
+        "buildRequestContext",
+        "stripUntrustedHeaders",
+        "JwksTokenValidator",
+        "JwksValidatorConfig",
+        "userPrincipalFromClaims",
+        "servicePrincipalFromClaims",
+        "HttpRoleServiceClient",
+        "DiskCache",
+        "DiskSnapshot",
+        "applyRoleEvent",
+        "parseRoleEvent",
+        "KafkaCacheEventHandler",
+        "CacheBootstrap",
+        "CacheBootstrapError",
+        "CacheMode",
+        "ClientCredentialsProvider",
+        "buildOutboundHeaders",
+        "attachOutboundPropagation",
+        "AxiosLike",
+        "runWithOutboundContext",
+        "currentOutboundContext",
+        "OutboundContext",
+        "LoggingAuditSink",
+        "buildAuditEvent",
+        "formatInfoLine",
+        "Metrics",
+        "METRIC",
+        "GAUGE",
+        "buildHealth",
+        "HealthReport",
+        "createAuthz",
+        "CreateAuthzOptions",
+        "Authz",
+        "AuthorizedRequest",
+        "AuthzGuard",
+        "AuthzGuardDeps",
+        "AuthzOutboundInterceptor",
+        "AuthzContext",
+        "REQUEST_CONTEXT_KEY"
+      ],
+      "totalLines": 64,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\nest\\authz.guard.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\nest\\authz.guard.ts",
+      "contentHash": "b05c6a96a86e37f12793841a0d7c0808fcecb2883b1dc281eacf6233711ab2d4",
+      "functions": [
+        {
+          "name": "extractBearer",
+          "params": [
+            "header"
+          ],
+          "returnType": "string | undefined",
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "AuthzGuard",
+          "methods": [
+            "constructor",
+            "canActivate"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 71
+        }
+      ],
+      "imports": [
+        {
+          "source": "@nestjs/common",
+          "specifiers": [
+            "CanActivate",
+            "ExecutionContext",
+            "ForbiddenException",
+            "Injectable",
+            "UnauthorizedException"
+          ]
+        },
+        {
+          "source": "../decision-engine/engine",
+          "specifiers": [
+            "AuthorizationEngine",
+            "auditPermission"
+          ]
+        },
+        {
+          "source": "../permission-cache/cache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "../inbound-auth/context",
+          "specifiers": [
+            "buildRequestContext",
+            "RequestContext",
+            "stripUntrustedHeaders"
+          ]
+        },
+        {
+          "source": "../inbound-auth/token-validator",
+          "specifiers": [
+            "servicePrincipalFromClaims",
+            "userPrincipalFromClaims"
+          ]
+        },
+        {
+          "source": "../spi",
+          "specifiers": [
+            "TokenValidator"
+          ]
+        },
+        {
+          "source": "../audit/audit",
+          "specifiers": [
+            "buildAuditEvent"
+          ]
+        },
+        {
+          "source": "../spi",
+          "specifiers": [
+            "AuditSink"
+          ]
+        },
+        {
+          "source": "../observability/metrics",
+          "specifiers": [
+            "Metrics",
+            "METRIC"
+          ]
+        },
+        {
+          "source": "./request-context.decorator",
+          "specifiers": [
+            "REQUEST_CONTEXT_KEY"
+          ]
+        }
+      ],
+      "exports": [
+        "AuthzGuard"
+      ],
+      "totalLines": 116,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\nest\\outbound.interceptor.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\nest\\outbound.interceptor.ts",
+      "contentHash": "e2087155f987f073243a4159fda9a933e46b717122c3051ce36c2f106d2de598",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AuthzOutboundInterceptor",
+          "methods": [
+            "intercept"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "imports": [
+        {
+          "source": "@nestjs/common",
+          "specifiers": [
+            "CallHandler",
+            "ExecutionContext",
+            "Injectable",
+            "NestInterceptor"
+          ]
+        },
+        {
+          "source": "rxjs",
+          "specifiers": [
+            "Observable"
+          ]
+        },
+        {
+          "source": "../outbound/context-store",
+          "specifiers": [
+            "runWithOutboundContext"
+          ]
+        },
+        {
+          "source": "./request-context.decorator",
+          "specifiers": [
+            "REQUEST_CONTEXT_KEY"
+          ]
+        }
+      ],
+      "exports": [
+        "AuthzOutboundInterceptor"
+      ],
+      "totalLines": 31,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\nest\\request-context.decorator.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\nest\\request-context.decorator.ts",
+      "contentHash": "22a9cb603162785ccbe7686598d870274e31d24214da6ff2908f20acdcd0bfe0",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@nestjs/common",
+          "specifiers": [
+            "createParamDecorator",
+            "ExecutionContext"
+          ]
+        },
+        {
+          "source": "../inbound-auth/context",
+          "specifiers": [
+            "RequestContext"
+          ]
+        }
+      ],
+      "exports": [
+        "REQUEST_CONTEXT_KEY",
+        "AuthzContext"
+      ],
+      "totalLines": 13,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\observability\\metrics.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\observability\\metrics.ts",
+      "contentHash": "c2cd74af8fb4acf4ffcecffd22e12f540effdca0e2dd23e15ff4ae133f333027",
+      "functions": [
+        {
+          "name": "buildHealth",
+          "params": [
+            "cache",
+            "mode",
+            "extra"
+          ],
+          "returnType": "HealthReport",
+          "exported": true,
+          "lineCount": 20
+        }
+      ],
+      "classes": [
+        {
+          "name": "Metrics",
+          "methods": [
+            "inc",
+            "setGauge",
+            "get",
+            "snapshot"
+          ],
+          "properties": [
+            "counters",
+            "gauges"
+          ],
+          "exported": true,
+          "lineCount": 20
+        }
+      ],
+      "imports": [
+        {
+          "source": "../permission-cache/cache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "../cache-sync/bootstrap",
+          "specifiers": [
+            "CacheMode"
+          ]
+        }
+      ],
+      "exports": [
+        "Metrics",
+        "METRIC",
+        "GAUGE",
+        "buildHealth"
+      ],
+      "totalLines": 71,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\outbound\\context-store.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\outbound\\context-store.ts",
+      "contentHash": "7ccaf20d42fc77d93367730a0c0a744556f97600e0f40312bccc371b04f56378",
+      "functions": [
+        {
+          "name": "runWithOutboundContext",
+          "params": [
+            "ctx",
+            "userJwt",
+            "fn"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "currentOutboundContext",
+          "params": [],
+          "returnType": "OutboundContext | undefined",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "async_hooks",
+          "specifiers": [
+            "AsyncLocalStorage"
+          ]
+        },
+        {
+          "source": "../inbound-auth/context",
+          "specifiers": [
+            "RequestContext"
+          ]
+        }
+      ],
+      "exports": [
+        "runWithOutboundContext",
+        "currentOutboundContext"
+      ],
+      "totalLines": 30,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\outbound\\propagation.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\outbound\\propagation.ts",
+      "contentHash": "a3d37deb7290e17432831b4403926bf0f9cd838f6dd959191c3ea397c1989d09",
+      "functions": [
+        {
+          "name": "attachOutboundPropagation",
+          "params": [
+            "axiosInstance",
+            "opts"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "buildOutboundHeaders",
+          "params": [
+            "params"
+          ],
+          "returnType": "Promise<OutboundHeaders>",
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../spi",
+          "specifiers": [
+            "ServiceIdentityProvider"
+          ]
+        },
+        {
+          "source": "../inbound-auth/context",
+          "specifiers": [
+            "RequestContext"
+          ]
+        },
+        {
+          "source": "./context-store",
+          "specifiers": [
+            "currentOutboundContext"
+          ]
+        }
+      ],
+      "exports": [
+        "attachOutboundPropagation",
+        "buildOutboundHeaders"
+      ],
+      "totalLines": 63,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\permission-cache\\cache.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\permission-cache\\cache.ts",
+      "contentHash": "7fb70ac069f1efbfd2da5f798ca6b92e8943149e4844f505d924c7a92dcfd189",
+      "functions": [],
+      "classes": [
+        {
+          "name": "PermissionCache",
+          "methods": [
+            "constructor",
+            "build",
+            "permissionsForRole",
+            "version",
+            "lastUpdatedAt",
+            "replaceAll",
+            "upsertRole",
+            "deleteRole",
+            "toSnapshot"
+          ],
+          "properties": [
+            "active",
+            "_version",
+            "_lastUpdatedAt"
+          ],
+          "exported": true,
+          "lineCount": 71
+        }
+      ],
+      "imports": [],
+      "exports": [
+        "PermissionCache"
+      ],
+      "totalLines": 77,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\role-service-client\\client.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\role-service-client\\client.ts",
+      "contentHash": "5d4d2fae753458673059fb80ee8060aa4c7c2d3ac2ff3f626f300d11f4d0416a",
+      "functions": [],
+      "classes": [
+        {
+          "name": "HttpRoleServiceClient",
+          "methods": [
+            "constructor",
+            "fetchSnapshot"
+          ],
+          "properties": [
+            "http"
+          ],
+          "exported": true,
+          "lineCount": 19
+        }
+      ],
+      "imports": [
+        {
+          "source": "axios",
+          "specifiers": [
+            "axios",
+            "AxiosInstance"
+          ]
+        },
+        {
+          "source": "../spi",
+          "specifiers": [
+            "RoleMap",
+            "RoleServiceClient"
+          ]
+        }
+      ],
+      "exports": [
+        "HttpRoleServiceClient"
+      ],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\rule-config\\compile.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\rule-config\\compile.ts",
+      "contentHash": "05bf3fca6ccec9a68e52d7dbc63f9a15250aecb3b9c63daa29a5c33fc71fdb17",
+      "functions": [
+        {
+          "name": "parseSegments",
+          "params": [
+            "path"
+          ],
+          "returnType": "Segment[]",
+          "exported": false,
+          "lineCount": 26
+        },
+        {
+          "name": "compileOne",
+          "params": [
+            "rule"
+          ],
+          "returnType": "CompiledRule",
+          "exported": false,
+          "lineCount": 39
+        },
+        {
+          "name": "patternsOverlap",
+          "params": [
+            "a",
+            "b"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 18
+        },
+        {
+          "name": "methodsIntersect",
+          "params": [
+            "a",
+            "b"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "compileRules",
+          "params": [
+            "rules"
+          ],
+          "returnType": "CompiledRule[]",
+          "exported": true,
+          "lineCount": 18
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./types",
+          "specifiers": [
+            "CompiledRule",
+            "ConfigError",
+            "DecisionMode",
+            "RuleInput",
+            "Segment"
+          ]
+        },
+        {
+          "source": "../decision-engine/scoring",
+          "specifiers": [
+            "compareSpecificity",
+            "scoreSegment"
+          ]
+        }
+      ],
+      "exports": [
+        "compileRules"
+      ],
+      "totalLines": 126,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\rule-config\\loader.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\rule-config\\loader.ts",
+      "contentHash": "0d5e13d1abfef2e60eb7275cf72f8b74df9dc7a27c0cc80e12f08f4a5365d8e6",
+      "functions": [
+        {
+          "name": "loadAuthorizationConfig",
+          "params": [
+            "yamlText"
+          ],
+          "returnType": "AuthorizationEngine",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "loadAuthorizationFile",
+          "params": [
+            "path"
+          ],
+          "returnType": "AuthorizationEngine",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "fs",
+          "specifiers": [
+            "* as fs"
+          ]
+        },
+        {
+          "source": "js-yaml",
+          "specifiers": [
+            "* as yaml"
+          ]
+        },
+        {
+          "source": "./types",
+          "specifiers": [
+            "ConfigError",
+            "RuleInput"
+          ]
+        },
+        {
+          "source": "./compile",
+          "specifiers": [
+            "compileRules"
+          ]
+        },
+        {
+          "source": "../decision-engine/engine",
+          "specifiers": [
+            "AuthorizationEngine"
+          ]
+        }
+      ],
+      "exports": [
+        "loadAuthorizationConfig",
+        "loadAuthorizationFile"
+      ],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\rule-config\\types.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\rule-config\\types.ts",
+      "contentHash": "3ddb324d6d5a88d1cbab614b5efd797e108ceb0a295554f601dcff3958417b7a",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ConfigError",
+          "methods": [
+            "constructor"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "imports": [],
+      "exports": [
+        "ConfigError"
+      ],
+      "totalLines": 51,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\service-token\\provider.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\service-token\\provider.ts",
+      "contentHash": "eb5a30fbc7987d95794ea0af1fa9994216cee947877b64446b652b2164a4c543",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ClientCredentialsProvider",
+          "methods": [
+            "constructor",
+            "getServiceToken",
+            "acquire"
+          ],
+          "properties": [
+            "client",
+            "scope",
+            "refreshBufferSeconds",
+            "maxRetries",
+            "retryMinTimeoutMs",
+            "onError",
+            "cached",
+            "inflight"
+          ],
+          "exported": true,
+          "lineCount": 46
+        }
+      ],
+      "imports": [
+        {
+          "source": "simple-oauth2",
+          "specifiers": [
+            "AccessToken",
+            "ClientCredentials"
+          ]
+        },
+        {
+          "source": "p-retry",
+          "specifiers": [
+            "pRetry"
+          ]
+        },
+        {
+          "source": "../spi",
+          "specifiers": [
+            "ServiceIdentityProvider"
+          ]
+        }
+      ],
+      "exports": [
+        "ClientCredentialsProvider"
+      ],
+      "totalLines": 76,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\src\\spi\\index.ts": {
+      "filePath": "libraries\\authz-nestjs\\src\\spi\\index.ts",
+      "contentHash": "e4b1987b99a69551eddafc5c4559be2ecee7d901848fb88a1461428d76bebecc",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../rule-config/types",
+          "specifiers": [
+            "AuthorizationRequest",
+            "Decision",
+            "RuleInput"
+          ]
+        },
+        {
+          "source": "../inbound-auth/context",
+          "specifiers": [
+            "RequestContext"
+          ]
+        }
+      ],
+      "exports": [
+        "RuleInput"
+      ],
+      "totalLines": 83,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\test\\architecture-fixes.spec.ts": {
+      "filePath": "libraries\\authz-nestjs\\test\\architecture-fixes.spec.ts",
+      "contentHash": "ff69d599700ed5eca398d8b94b877e94980522e55db000d6798ed4d498dd3ba5",
+      "functions": [
+        {
+          "name": "fakeCtx",
+          "params": [
+            "headers",
+            "method",
+            "url"
+          ],
+          "returnType": "any",
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "fs",
+          "specifiers": [
+            "* as fs"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "* as os"
+          ]
+        },
+        {
+          "source": "path",
+          "specifiers": [
+            "* as path"
+          ]
+        },
+        {
+          "source": "../src/decision-engine/engine",
+          "specifiers": [
+            "AuthorizationEngine",
+            "auditPermission"
+          ]
+        },
+        {
+          "source": "../src/rule-config/loader",
+          "specifiers": [
+            "loadAuthorizationConfig"
+          ]
+        },
+        {
+          "source": "../src/permission-cache/cache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "../src/nest/authz.guard",
+          "specifiers": [
+            "AuthzGuard"
+          ]
+        },
+        {
+          "source": "../src/observability/metrics",
+          "specifiers": [
+            "Metrics",
+            "METRIC"
+          ]
+        },
+        {
+          "source": "../src/audit/audit",
+          "specifiers": [
+            "LoggingAuditSink"
+          ]
+        },
+        {
+          "source": "../src/cache-sync/bootstrap",
+          "specifiers": [
+            "CacheBootstrap"
+          ]
+        },
+        {
+          "source": "../src/cache-sync/disk",
+          "specifiers": [
+            "DiskCache"
+          ]
+        },
+        {
+          "source": "../src/spi",
+          "specifiers": [
+            "CacheEventHandler",
+            "RoleMap",
+            "RoleServiceClient",
+            "TokenValidator"
+          ]
+        },
+        {
+          "source": "../src/outbound/context-store",
+          "specifiers": [
+            "runWithOutboundContext"
+          ]
+        },
+        {
+          "source": "../src/outbound/propagation",
+          "specifiers": [
+            "attachOutboundPropagation"
+          ]
+        },
+        {
+          "source": "../src/inbound-auth/context",
+          "specifiers": [
+            "buildRequestContext"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 168,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\test\\modules.spec.ts": {
+      "filePath": "libraries\\authz-nestjs\\test\\modules.spec.ts",
+      "contentHash": "8ef7ce99ab4a15a1c2d769b52a665949ef5eb950cfa7dddd081b294dfd40e40b",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "fs",
+          "specifiers": [
+            "* as fs"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "* as os"
+          ]
+        },
+        {
+          "source": "path",
+          "specifiers": [
+            "* as path"
+          ]
+        },
+        {
+          "source": "../src/inbound-auth/context",
+          "specifiers": [
+            "buildRequestContext",
+            "stripUntrustedHeaders"
+          ]
+        },
+        {
+          "source": "../src/permission-cache/cache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "../src/cache-sync/events",
+          "specifiers": [
+            "applyRoleEvent",
+            "parseRoleEvent"
+          ]
+        },
+        {
+          "source": "../src/cache-sync/disk",
+          "specifiers": [
+            "DiskCache"
+          ]
+        },
+        {
+          "source": "../src/cache-sync/bootstrap",
+          "specifiers": [
+            "CacheBootstrap"
+          ]
+        },
+        {
+          "source": "../src/rule-config/loader",
+          "specifiers": [
+            "loadAuthorizationConfig"
+          ]
+        },
+        {
+          "source": "../src/audit/audit",
+          "specifiers": [
+            "buildAuditEvent",
+            "formatInfoLine"
+          ]
+        },
+        {
+          "source": "../src/spi",
+          "specifiers": [
+            "RoleServiceClient",
+            "RoleMap"
+          ]
+        },
+        {
+          "source": "../src/observability/metrics",
+          "specifiers": [
+            "Metrics",
+            "METRIC"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 268,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\test\\outbound.spec.ts": {
+      "filePath": "libraries\\authz-nestjs\\test\\outbound.spec.ts",
+      "contentHash": "3d5196ddf7608f9e240b63859bf5e58d88f3a25d3ad55ebd20613dfeefe5d7a6",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "nock",
+          "specifiers": [
+            "nock"
+          ]
+        },
+        {
+          "source": "../src/service-token/provider",
+          "specifiers": [
+            "ClientCredentialsProvider"
+          ]
+        },
+        {
+          "source": "../src/outbound/propagation",
+          "specifiers": [
+            "buildOutboundHeaders"
+          ]
+        },
+        {
+          "source": "../src/inbound-auth/context",
+          "specifiers": [
+            "buildRequestContext"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 113,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-nestjs\\test\\vectors.spec.ts": {
+      "filePath": "libraries\\authz-nestjs\\test\\vectors.spec.ts",
+      "contentHash": "f5b29dfd72452c9f37bec595025ea1d6561362e5f2f4687f81db18c5b98a9f0c",
+      "functions": [
+        {
+          "name": "loadVectors",
+          "params": [],
+          "returnType": "{ file: string; vectors: DecisionVector[] }[]",
+          "exported": false,
+          "lineCount": 11
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "fs",
+          "specifiers": [
+            "* as fs"
+          ]
+        },
+        {
+          "source": "path",
+          "specifiers": [
+            "* as path"
+          ]
+        },
+        {
+          "source": "../src/decision-engine/engine",
+          "specifiers": [
+            "AuthorizationEngine"
+          ]
+        },
+        {
+          "source": "../src/permission-cache/cache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "../src/rule-config/types",
+          "specifiers": [
+            "AuthType",
+            "RuleInput"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 64,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\audit\\AuditEvent.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\audit\\AuditEvent.java",
+      "contentHash": "347185d24c5acbe2ddf27703e4b8deb768bddbe5c588c34c9a35a146d443e2c0",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "com.example.authz.engine.Decision",
+          "specifiers": [
+            "Decision"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 20,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\audit\\AuditEvents.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\audit\\AuditEvents.java",
+      "contentHash": "985efe3b3431989877132647b3632625077e5c2352b46125f03bb179bc95fe83",
+      "functions": [
+        {
+          "name": "AuditEvents",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "build",
+          "params": [
+            "ctx",
+            "method",
+            "path",
+            "permission",
+            "result",
+            "policyVersion"
+          ],
+          "returnType": "AuditEvent",
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "infoLine",
+          "params": [
+            "e"
+          ],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [
+        {
+          "name": "AuditEvents",
+          "methods": [
+            "AuditEvents",
+            "build",
+            "infoLine"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 30
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.context.RequestContext",
+          "specifiers": [
+            "RequestContext"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.Decision",
+          "specifiers": [
+            "Decision"
+          ]
+        },
+        {
+          "source": "java.time.Instant",
+          "specifiers": [
+            "Instant"
+          ]
+        }
+      ],
+      "exports": [
+        "build",
+        "infoLine",
+        "AuditEvents"
+      ],
+      "totalLines": 39,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\audit\\LoggingAuditSink.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\audit\\LoggingAuditSink.java",
+      "contentHash": "124e6433a062c924118a82084ed2f4dc572382b18e69edd7cd4bb2ec8a9c8570",
+      "functions": [
+        {
+          "name": "emit",
+          "params": [
+            "event"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "classes": [
+        {
+          "name": "LoggingAuditSink",
+          "methods": [
+            "emit"
+          ],
+          "properties": [
+            "LOG",
+            "MAPPER"
+          ],
+          "exported": true,
+          "lineCount": 16
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.databind.ObjectMapper",
+          "specifiers": [
+            "ObjectMapper"
+          ]
+        },
+        {
+          "source": "org.slf4j.Logger",
+          "specifiers": [
+            "Logger"
+          ]
+        },
+        {
+          "source": "org.slf4j.LoggerFactory",
+          "specifiers": [
+            "LoggerFactory"
+          ]
+        }
+      ],
+      "exports": [
+        "emit",
+        "LoggingAuditSink"
+      ],
+      "totalLines": 25,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\boot\\AuthzAutoConfiguration.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\boot\\AuthzAutoConfiguration.java",
+      "contentHash": "48aa8a427aaeea5c9f25875060c43b2963aee42bd90711749a01da3c94c5a0d3",
+      "functions": [
+        {
+          "name": "authzMetrics",
+          "params": [],
+          "returnType": "Metrics",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "authorizationEngine",
+          "params": [
+            "props",
+            "ctx"
+          ],
+          "returnType": "AuthorizationEngine",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "permissionCache",
+          "params": [],
+          "returnType": "PermissionCache",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "authzKafkaEventHandler",
+          "params": [
+            "props"
+          ],
+          "returnType": "Spi.CacheEventHandler",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "cacheBootstrap",
+          "params": [
+            "cache",
+            "metrics",
+            "props",
+            "events"
+          ],
+          "returnType": "CacheBootstrap",
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "authzHealth",
+          "params": [
+            "cache",
+            "bootstrap"
+          ],
+          "returnType": "AuthzHealth",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "authzTokenValidator",
+          "params": [
+            "props"
+          ],
+          "returnType": "Spi.TokenValidator",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "authzRequestContext",
+          "params": [],
+          "returnType": "AuthzRequestContext",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "authzAuditSink",
+          "params": [],
+          "returnType": "Spi.AuditSink",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "authzServiceIdentity",
+          "params": [
+            "props",
+            "metrics"
+          ],
+          "returnType": "Spi.ServiceIdentityProvider",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "authzOutboundInterceptor",
+          "params": [
+            "serviceIdentity"
+          ],
+          "returnType": "OutboundPropagationInterceptor",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "authzRestClientCustomizer",
+          "params": [
+            "interceptor"
+          ],
+          "returnType": "RestClientCustomizer",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "authzRestTemplateCustomizer",
+          "params": [
+            "interceptor"
+          ],
+          "returnType": "RestTemplateCustomizer",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "authzFilterRegistration",
+          "params": [
+            "engine",
+            "cache",
+            "validator",
+            "audit",
+            "metrics",
+            "bootstrap"
+          ],
+          "returnType": "FilterRegistrationBean<AuthorizationFilter>",
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "classes": [
+        {
+          "name": "AuthzAutoConfiguration",
+          "methods": [
+            "authzMetrics",
+            "authorizationEngine",
+            "permissionCache",
+            "authzKafkaEventHandler",
+            "cacheBootstrap",
+            "authzHealth",
+            "authzTokenValidator",
+            "authzRequestContext",
+            "authzAuditSink",
+            "authzServiceIdentity",
+            "authzOutboundInterceptor",
+            "authzRestClientCustomizer",
+            "authzRestTemplateCustomizer",
+            "authzFilterRegistration"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 132
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.audit.LoggingAuditSink",
+          "specifiers": [
+            "LoggingAuditSink"
+          ]
+        },
+        {
+          "source": "com.example.authz.cache.PermissionCache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "com.example.authz.config.YamlLoader",
+          "specifiers": [
+            "YamlLoader"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.AuthorizationEngine",
+          "specifiers": [
+            "AuthorizationEngine"
+          ]
+        },
+        {
+          "source": "com.example.authz.observability.AuthzHealth",
+          "specifiers": [
+            "AuthzHealth"
+          ]
+        },
+        {
+          "source": "com.example.authz.observability.Metrics",
+          "specifiers": [
+            "Metrics"
+          ]
+        },
+        {
+          "source": "com.example.authz.outbound.ClientCredentialsServiceIdentityProvider",
+          "specifiers": [
+            "ClientCredentialsServiceIdentityProvider"
+          ]
+        },
+        {
+          "source": "com.example.authz.outbound.OutboundPropagationInterceptor",
+          "specifiers": [
+            "OutboundPropagationInterceptor"
+          ]
+        },
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "com.example.authz.sync.CacheBootstrap",
+          "specifiers": [
+            "CacheBootstrap"
+          ]
+        },
+        {
+          "source": "com.example.authz.sync.DiskCache",
+          "specifiers": [
+            "DiskCache"
+          ]
+        },
+        {
+          "source": "com.example.authz.sync.HttpRoleServiceClient",
+          "specifiers": [
+            "HttpRoleServiceClient"
+          ]
+        },
+        {
+          "source": "com.example.authz.sync.KafkaCacheEventHandler",
+          "specifiers": [
+            "KafkaCacheEventHandler"
+          ]
+        },
+        {
+          "source": "com.example.authz.web.AuthorizationFilter",
+          "specifiers": [
+            "AuthorizationFilter"
+          ]
+        },
+        {
+          "source": "com.example.authz.web.AuthzRequestContext",
+          "specifiers": [
+            "AuthzRequestContext"
+          ]
+        },
+        {
+          "source": "com.example.authz.web.NimbusJwksTokenValidator",
+          "specifiers": [
+            "NimbusJwksTokenValidator"
+          ]
+        },
+        {
+          "source": "org.springframework.beans.factory.ObjectProvider",
+          "specifiers": [
+            "ObjectProvider"
+          ]
+        },
+        {
+          "source": "org.springframework.boot.autoconfigure.AutoConfiguration",
+          "specifiers": [
+            "AutoConfiguration"
+          ]
+        },
+        {
+          "source": "org.springframework.boot.autoconfigure.condition.ConditionalOnBean",
+          "specifiers": [
+            "ConditionalOnBean"
+          ]
+        },
+        {
+          "source": "org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean",
+          "specifiers": [
+            "ConditionalOnMissingBean"
+          ]
+        },
+        {
+          "source": "org.springframework.boot.autoconfigure.condition.ConditionalOnProperty",
+          "specifiers": [
+            "ConditionalOnProperty"
+          ]
+        },
+        {
+          "source": "org.springframework.boot.context.properties.EnableConfigurationProperties",
+          "specifiers": [
+            "EnableConfigurationProperties"
+          ]
+        },
+        {
+          "source": "org.springframework.boot.web.client.RestClientCustomizer",
+          "specifiers": [
+            "RestClientCustomizer"
+          ]
+        },
+        {
+          "source": "org.springframework.boot.web.client.RestTemplateCustomizer",
+          "specifiers": [
+            "RestTemplateCustomizer"
+          ]
+        },
+        {
+          "source": "org.springframework.boot.web.servlet.FilterRegistrationBean",
+          "specifiers": [
+            "FilterRegistrationBean"
+          ]
+        },
+        {
+          "source": "org.springframework.context.ApplicationContext",
+          "specifiers": [
+            "ApplicationContext"
+          ]
+        },
+        {
+          "source": "org.springframework.context.annotation.Bean",
+          "specifiers": [
+            "Bean"
+          ]
+        },
+        {
+          "source": "org.springframework.core.io.Resource",
+          "specifiers": [
+            "Resource"
+          ]
+        },
+        {
+          "source": "org.springframework.web.context.annotation.RequestScope",
+          "specifiers": [
+            "RequestScope"
+          ]
+        },
+        {
+          "source": "java.nio.charset.StandardCharsets",
+          "specifiers": [
+            "StandardCharsets"
+          ]
+        },
+        {
+          "source": "java.nio.file.Path",
+          "specifiers": [
+            "Path"
+          ]
+        }
+      ],
+      "exports": [
+        "authzMetrics",
+        "authorizationEngine",
+        "permissionCache",
+        "authzKafkaEventHandler",
+        "cacheBootstrap",
+        "authzHealth",
+        "authzTokenValidator",
+        "authzRequestContext",
+        "authzAuditSink",
+        "authzServiceIdentity",
+        "authzOutboundInterceptor",
+        "authzRestClientCustomizer",
+        "authzRestTemplateCustomizer",
+        "authzFilterRegistration",
+        "AuthzAutoConfiguration"
+      ],
+      "totalLines": 175,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\boot\\AuthzProperties.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\boot\\AuthzProperties.java",
+      "contentHash": "0cf5d1b707191b2bc8906f5f6860f41c87a38698bdbadcdfcd28c514880a876c",
+      "functions": [
+        {
+          "name": "getConfigLocation",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setConfigLocation",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getUserIssuer",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setUserIssuer",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getUserJwksUri",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setUserJwksUri",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getServiceIssuer",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setServiceIssuer",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getServiceJwksUri",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setServiceJwksUri",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getAudience",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setAudience",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getServiceTokenUseClaim",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setServiceTokenUseClaim",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getServiceTokenUseValue",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setServiceTokenUseValue",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getClockSkewSeconds",
+          "params": [],
+          "returnType": "long",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setClockSkewSeconds",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getRoleServiceUrl",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setRoleServiceUrl",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getDiskCachePath",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setDiskCachePath",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getKafkaBrokers",
+          "params": [],
+          "returnType": "List<String>",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setKafkaBrokers",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getRoleUpdatesTopic",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setRoleUpdatesTopic",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getRoleDeleteTopic",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setRoleDeleteTopic",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getPublishRolesTopic",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setPublishRolesTopic",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getReconcileIntervalMs",
+          "params": [],
+          "returnType": "long",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setReconcileIntervalMs",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getTokenUrl",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setTokenUrl",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getClientId",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setClientId",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "getClientSecret",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "setClientSecret",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 1
+        }
+      ],
+      "classes": [
+        {
+          "name": "AuthzProperties",
+          "methods": [
+            "getConfigLocation",
+            "setConfigLocation",
+            "getUserIssuer",
+            "setUserIssuer",
+            "getUserJwksUri",
+            "setUserJwksUri",
+            "getServiceIssuer",
+            "setServiceIssuer",
+            "getServiceJwksUri",
+            "setServiceJwksUri",
+            "getAudience",
+            "setAudience",
+            "getServiceTokenUseClaim",
+            "setServiceTokenUseClaim",
+            "getServiceTokenUseValue",
+            "setServiceTokenUseValue",
+            "getClockSkewSeconds",
+            "setClockSkewSeconds",
+            "getRoleServiceUrl",
+            "setRoleServiceUrl",
+            "getDiskCachePath",
+            "setDiskCachePath",
+            "getKafkaBrokers",
+            "setKafkaBrokers",
+            "getRoleUpdatesTopic",
+            "setRoleUpdatesTopic",
+            "getRoleDeleteTopic",
+            "setRoleDeleteTopic",
+            "getPublishRolesTopic",
+            "setPublishRolesTopic",
+            "getReconcileIntervalMs",
+            "setReconcileIntervalMs",
+            "getTokenUrl",
+            "setTokenUrl",
+            "getClientId",
+            "setClientId",
+            "getClientSecret",
+            "setClientSecret"
+          ],
+          "properties": [
+            "configLocation",
+            "userIssuer",
+            "userJwksUri",
+            "serviceIssuer",
+            "serviceJwksUri",
+            "audience",
+            "serviceTokenUseClaim",
+            "serviceTokenUseValue",
+            "clockSkewSeconds",
+            "roleServiceUrl",
+            "diskCachePath",
+            "kafkaBrokers",
+            "roleUpdatesTopic",
+            "roleDeleteTopic",
+            "publishRolesTopic",
+            "reconcileIntervalMs",
+            "tokenUrl",
+            "clientId",
+            "clientSecret"
+          ],
+          "exported": true,
+          "lineCount": 73
+        }
+      ],
+      "imports": [
+        {
+          "source": "org.springframework.boot.context.properties.ConfigurationProperties",
+          "specifiers": [
+            "ConfigurationProperties"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        }
+      ],
+      "exports": [
+        "getConfigLocation",
+        "setConfigLocation",
+        "getUserIssuer",
+        "setUserIssuer",
+        "getUserJwksUri",
+        "setUserJwksUri",
+        "getServiceIssuer",
+        "setServiceIssuer",
+        "getServiceJwksUri",
+        "setServiceJwksUri",
+        "getAudience",
+        "setAudience",
+        "getServiceTokenUseClaim",
+        "setServiceTokenUseClaim",
+        "getServiceTokenUseValue",
+        "setServiceTokenUseValue",
+        "getClockSkewSeconds",
+        "setClockSkewSeconds",
+        "getRoleServiceUrl",
+        "setRoleServiceUrl",
+        "getDiskCachePath",
+        "setDiskCachePath",
+        "getKafkaBrokers",
+        "setKafkaBrokers",
+        "getRoleUpdatesTopic",
+        "setRoleUpdatesTopic",
+        "getRoleDeleteTopic",
+        "setRoleDeleteTopic",
+        "getPublishRolesTopic",
+        "setPublishRolesTopic",
+        "getReconcileIntervalMs",
+        "setReconcileIntervalMs",
+        "getTokenUrl",
+        "setTokenUrl",
+        "getClientId",
+        "setClientId",
+        "getClientSecret",
+        "setClientSecret",
+        "AuthzProperties"
+      ],
+      "totalLines": 81,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\cache\\PermissionCache.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\cache\\PermissionCache.java",
+      "contentHash": "e1174261f142f670b936e3292a73efdd0496e0bb0a0a669e7f45a758e9207d8a",
+      "functions": [
+        {
+          "name": "PermissionCache",
+          "params": [],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "PermissionCache",
+          "params": [
+            "initial"
+          ],
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "build",
+          "params": [
+            "roles"
+          ],
+          "returnType": "Map<String, Set<String>>",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "permissionsForRole",
+          "params": [
+            "role"
+          ],
+          "returnType": "Set<String>",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "version",
+          "params": [],
+          "returnType": "long",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "lastUpdatedAt",
+          "params": [],
+          "returnType": "Instant",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "replaceAll",
+          "params": [
+            "roles"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "upsertRole",
+          "params": [
+            "role",
+            "permissions"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "deleteRole",
+          "params": [
+            "role"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "snapshot",
+          "params": [],
+          "returnType": "Map<String, Set<String>>",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [
+        {
+          "name": "PermissionCache",
+          "methods": [
+            "PermissionCache",
+            "PermissionCache",
+            "build",
+            "permissionsForRole",
+            "version",
+            "lastUpdatedAt",
+            "replaceAll",
+            "upsertRole",
+            "deleteRole",
+            "snapshot"
+          ],
+          "properties": [
+            "active",
+            "version",
+            "lastUpdatedAt"
+          ],
+          "exported": true,
+          "lineCount": 68
+        }
+      ],
+      "imports": [
+        {
+          "source": "java.time.Instant",
+          "specifiers": [
+            "Instant"
+          ]
+        },
+        {
+          "source": "java.util.HashMap",
+          "specifiers": [
+            "HashMap"
+          ]
+        },
+        {
+          "source": "java.util.HashSet",
+          "specifiers": [
+            "HashSet"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        },
+        {
+          "source": "java.util.Set",
+          "specifiers": [
+            "Set"
+          ]
+        },
+        {
+          "source": "java.util.concurrent.atomic.AtomicReference",
+          "specifiers": [
+            "AtomicReference"
+          ]
+        }
+      ],
+      "exports": [
+        "PermissionCache",
+        "PermissionCache",
+        "permissionsForRole",
+        "version",
+        "lastUpdatedAt",
+        "replaceAll",
+        "upsertRole",
+        "deleteRole",
+        "snapshot",
+        "PermissionCache"
+      ],
+      "totalLines": 82,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\CompiledRule.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\CompiledRule.java",
+      "contentHash": "d6852d2fd55a90339b7fc31080601028f568b4a8b10dd88bb68c98afeff3dfe5",
+      "functions": [
+        {
+          "name": "CompiledRule",
+          "params": [
+            "path",
+            "methods",
+            "permissions",
+            "decision",
+            "allowedServices",
+            "segments",
+            "scores",
+            "literalCount"
+          ],
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "path",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "methods",
+          "params": [],
+          "returnType": "Set<String>",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "permissions",
+          "params": [],
+          "returnType": "List<String>",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "decision",
+          "params": [],
+          "returnType": "DecisionMode",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "allowedServices",
+          "params": [],
+          "returnType": "List<String>",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "segments",
+          "params": [],
+          "returnType": "List<Segment>",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "scores",
+          "params": [],
+          "returnType": "int[]",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "literalCount",
+          "params": [],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "hasPermissions",
+          "params": [],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "hasAllowedServices",
+          "params": [],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 1
+        }
+      ],
+      "classes": [
+        {
+          "name": "CompiledRule",
+          "methods": [
+            "CompiledRule",
+            "path",
+            "methods",
+            "permissions",
+            "decision",
+            "allowedServices",
+            "segments",
+            "scores",
+            "literalCount",
+            "hasPermissions",
+            "hasAllowedServices"
+          ],
+          "properties": [
+            "path",
+            "methods",
+            "permissions",
+            "decision",
+            "allowedServices",
+            "segments",
+            "scores",
+            "literalCount"
+          ],
+          "exported": true,
+          "lineCount": 35
+        }
+      ],
+      "imports": [
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Set",
+          "specifiers": [
+            "Set"
+          ]
+        }
+      ],
+      "exports": [
+        "CompiledRule",
+        "path",
+        "methods",
+        "permissions",
+        "decision",
+        "allowedServices",
+        "segments",
+        "scores",
+        "literalCount",
+        "hasPermissions",
+        "hasAllowedServices",
+        "CompiledRule"
+      ],
+      "totalLines": 42,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\ConfigException.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\ConfigException.java",
+      "contentHash": "8756afcb6a3ff7ce39cf40dd8467ba3d3d97971ede14394cdfcb36258d966cbb",
+      "functions": [
+        {
+          "name": "ConfigException",
+          "params": [
+            "message"
+          ],
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [
+        {
+          "name": "ConfigException",
+          "methods": [
+            "ConfigException"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "imports": [],
+      "exports": [
+        "ConfigException",
+        "ConfigException"
+      ],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\DecisionMode.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\DecisionMode.java",
+      "contentHash": "72c65fc21c0ddccaec122766bd5b46e26b3364afa146bbed2ffaf79ea7047aa4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\RuleCompiler.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\RuleCompiler.java",
+      "contentHash": "43afbba502e78b7e9f9665ce53cbafae063ed8f62e9cdccb198d53dfd13cdf92",
+      "functions": [
+        {
+          "name": "RuleCompiler",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "compile",
+          "params": [
+            "rawRules"
+          ],
+          "returnType": "List<CompiledRule>",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "compileOne",
+          "params": [
+            "raw"
+          ],
+          "returnType": "CompiledRule",
+          "exported": false,
+          "lineCount": 41
+        },
+        {
+          "name": "toStringListOrNull",
+          "params": [
+            "obj"
+          ],
+          "returnType": "List<String>",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "parseSegments",
+          "params": [
+            "path"
+          ],
+          "returnType": "List<Segment>",
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "methodsIntersect",
+          "params": [
+            "a",
+            "b"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "patternsOverlap",
+          "params": [
+            "a",
+            "b"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 13
+        }
+      ],
+      "classes": [
+        {
+          "name": "RuleCompiler",
+          "methods": [
+            "RuleCompiler",
+            "compile",
+            "compileOne",
+            "toStringListOrNull",
+            "parseSegments",
+            "methodsIntersect",
+            "patternsOverlap"
+          ],
+          "properties": [
+            "ALLOWED_KEYS"
+          ],
+          "exported": true,
+          "lineCount": 116
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.engine.Scoring",
+          "specifiers": [
+            "Scoring"
+          ]
+        },
+        {
+          "source": "java.util.ArrayList",
+          "specifiers": [
+            "ArrayList"
+          ]
+        },
+        {
+          "source": "java.util.LinkedHashSet",
+          "specifiers": [
+            "LinkedHashSet"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        },
+        {
+          "source": "java.util.Set",
+          "specifiers": [
+            "Set"
+          ]
+        }
+      ],
+      "exports": [
+        "compile",
+        "RuleCompiler"
+      ],
+      "totalLines": 131,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\Segment.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\Segment.java",
+      "contentHash": "82dbc6e655e50c0f2cd0d4db78228f31ce9c61b3c373e3a9e53d45afa018a503",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 17,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\SegmentKind.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\SegmentKind.java",
+      "contentHash": "1f8d8fd1763e743920c2d8781248ea6aafcb8ea3be1be15bc394957c1daca2ad",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\YamlLoader.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\config\\YamlLoader.java",
+      "contentHash": "9ab411417445cd3cbeeb43224b85b4f0389360856d20304cead178fbd54ed420",
+      "functions": [
+        {
+          "name": "YamlLoader",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "load",
+          "params": [
+            "yamlText"
+          ],
+          "returnType": "AuthorizationEngine",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "loadFile",
+          "params": [
+            "path"
+          ],
+          "returnType": "AuthorizationEngine",
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "classes": [
+        {
+          "name": "YamlLoader",
+          "methods": [
+            "YamlLoader",
+            "load",
+            "loadFile"
+          ],
+          "properties": [
+            "YAML"
+          ],
+          "exported": true,
+          "lineCount": 27
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.engine.AuthorizationEngine",
+          "specifiers": [
+            "AuthorizationEngine"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.databind.ObjectMapper",
+          "specifiers": [
+            "ObjectMapper"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.dataformat.yaml.YAMLFactory",
+          "specifiers": [
+            "YAMLFactory"
+          ]
+        },
+        {
+          "source": "java.io.IOException",
+          "specifiers": [
+            "IOException"
+          ]
+        },
+        {
+          "source": "java.nio.file.Files",
+          "specifiers": [
+            "Files"
+          ]
+        },
+        {
+          "source": "java.nio.file.Path",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        }
+      ],
+      "exports": [
+        "load",
+        "loadFile",
+        "YamlLoader"
+      ],
+      "totalLines": 41,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\context\\HeaderSanitizer.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\context\\HeaderSanitizer.java",
+      "contentHash": "6822c1d4a9a94ffbf4a13924762a891f399d0f2da691437a667fd2d800db0774",
+      "functions": [
+        {
+          "name": "HeaderSanitizer",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "isUntrustedIdentityHeader",
+          "params": [
+            "name"
+          ],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "classes": [
+        {
+          "name": "HeaderSanitizer",
+          "methods": [
+            "HeaderSanitizer",
+            "isUntrustedIdentityHeader"
+          ],
+          "properties": [
+            "IDENTITY_PREFIXES",
+            "IDENTITY_EXACT"
+          ],
+          "exported": true,
+          "lineCount": 21
+        }
+      ],
+      "imports": [
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        }
+      ],
+      "exports": [
+        "isUntrustedIdentityHeader",
+        "HeaderSanitizer"
+      ],
+      "totalLines": 27,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\context\\Principals.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\context\\Principals.java",
+      "contentHash": "a7b59b8ce474a068bc38027aa99b25d6b7fac88a71a845a093b3df8ccda9e740",
+      "functions": [
+        {
+          "name": "Principals",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        }
+      ],
+      "classes": [
+        {
+          "name": "Principals",
+          "methods": [
+            "Principals"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "imports": [],
+      "exports": [
+        "Principals"
+      ],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\context\\RequestContext.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\context\\RequestContext.java",
+      "contentHash": "3eab1426afc19af7e366a7230d5dd4d44ba9f3f3950a3b74233b765ac4f7e438",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "com.example.authz.engine.AuthType",
+          "specifiers": [
+            "AuthType"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 17,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\context\\RequestContextBuilder.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\context\\RequestContextBuilder.java",
+      "contentHash": "9863a98d739ad654d40409e598c429bc5ac9a46a6eac156ed16eb478f0749097",
+      "functions": [
+        {
+          "name": "RequestContextBuilder",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "build",
+          "params": [
+            "user",
+            "service",
+            "correlationId",
+            "requestId"
+          ],
+          "returnType": "RequestContext",
+          "exported": true,
+          "lineCount": 18
+        }
+      ],
+      "classes": [
+        {
+          "name": "RequestContextBuilder",
+          "methods": [
+            "RequestContextBuilder",
+            "build"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 22
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.engine.AuthType",
+          "specifiers": [
+            "AuthType"
+          ]
+        },
+        {
+          "source": "java.util.UUID",
+          "specifiers": [
+            "UUID"
+          ]
+        }
+      ],
+      "exports": [
+        "build",
+        "RequestContextBuilder"
+      ],
+      "totalLines": 30,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\AuthorizationEngine.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\AuthorizationEngine.java",
+      "contentHash": "4dd7c165a2f36663175dbf11a671e4a3ee19d7de6f66f1262e9e83e4f18f6691",
+      "functions": [
+        {
+          "name": "AuthorizationEngine",
+          "params": [
+            "rules"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "compile",
+          "params": [
+            "rawRules"
+          ],
+          "returnType": "AuthorizationEngine",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "matchRule",
+          "params": [
+            "method",
+            "path"
+          ],
+          "returnType": "CompiledRule",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "authorize",
+          "params": [
+            "req",
+            "cache"
+          ],
+          "returnType": "Decision",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "evaluate",
+          "params": [
+            "req",
+            "cache"
+          ],
+          "returnType": "DecisionResult",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "AuthorizationEngine",
+          "methods": [
+            "AuthorizationEngine",
+            "compile",
+            "matchRule",
+            "authorize",
+            "evaluate"
+          ],
+          "properties": [
+            "rules"
+          ],
+          "exported": true,
+          "lineCount": 37
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.cache.PermissionCache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "com.example.authz.config.CompiledRule",
+          "specifiers": [
+            "CompiledRule"
+          ]
+        },
+        {
+          "source": "com.example.authz.config.RuleCompiler",
+          "specifiers": [
+            "RuleCompiler"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        }
+      ],
+      "exports": [
+        "compile",
+        "matchRule",
+        "authorize",
+        "evaluate",
+        "AuthorizationEngine"
+      ],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\AuthorizationRequest.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\AuthorizationRequest.java",
+      "contentHash": "92c0ab1c37cffbf72a44b77eff027149b8fcf5708b0f1279c242c4b8979e7f55",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\AuthType.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\AuthType.java",
+      "contentHash": "fc46ffc8735084cce0b3ec0e1b8a8c699869efa2b71add4acc4661ddc2e8677f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\Decision.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\Decision.java",
+      "contentHash": "b46de55735fa00a03e044cad381694805abc18a293d5b4bb39e28ad4e93b9549",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\DecisionEvaluator.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\DecisionEvaluator.java",
+      "contentHash": "226b5cbdf89db6caa2fbe1c2379fd27883ee7a322fa667ed0df93a5118e85075",
+      "functions": [
+        {
+          "name": "DecisionEvaluator",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "decide",
+          "params": [
+            "rule",
+            "req",
+            "cache"
+          ],
+          "returnType": "Decision",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "permissionCheckPasses",
+          "params": [
+            "rule",
+            "role",
+            "cache"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "serviceCheckPasses",
+          "params": [
+            "rule",
+            "serviceName"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 6
+        }
+      ],
+      "classes": [
+        {
+          "name": "DecisionEvaluator",
+          "methods": [
+            "DecisionEvaluator",
+            "decide",
+            "permissionCheckPasses",
+            "serviceCheckPasses"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 37
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.cache.PermissionCache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "com.example.authz.config.CompiledRule",
+          "specifiers": [
+            "CompiledRule"
+          ]
+        },
+        {
+          "source": "com.example.authz.config.DecisionMode",
+          "specifiers": [
+            "DecisionMode"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Set",
+          "specifiers": [
+            "Set"
+          ]
+        }
+      ],
+      "exports": [
+        "decide",
+        "DecisionEvaluator"
+      ],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\DecisionResult.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\DecisionResult.java",
+      "contentHash": "9d3f2793270bea72e3192e4b75e6921134c4f70f83f02f895903a25461845e2b",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "com.example.authz.config.CompiledRule",
+          "specifiers": [
+            "CompiledRule"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 21,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\Scoring.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\engine\\Scoring.java",
+      "contentHash": "7d5f5080754b17a78ba497864a18ac28e0f6e631c3c2760d633febcad4bdfe50",
+      "functions": [
+        {
+          "name": "Scoring",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "splitPath",
+          "params": [
+            "path"
+          ],
+          "returnType": "List<String>",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "scoreSegment",
+          "params": [
+            "seg"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "matchPath",
+          "params": [
+            "segments",
+            "pathSegs"
+          ],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "compareSpecificity",
+          "params": [
+            "a",
+            "b"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "classes": [
+        {
+          "name": "Scoring",
+          "methods": [
+            "Scoring",
+            "splitPath",
+            "scoreSegment",
+            "matchPath",
+            "compareSpecificity"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 52
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.config.CompiledRule",
+          "specifiers": [
+            "CompiledRule"
+          ]
+        },
+        {
+          "source": "com.example.authz.config.Segment",
+          "specifiers": [
+            "Segment"
+          ]
+        },
+        {
+          "source": "java.util.ArrayList",
+          "specifiers": [
+            "ArrayList"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        }
+      ],
+      "exports": [
+        "splitPath",
+        "scoreSegment",
+        "matchPath",
+        "compareSpecificity",
+        "Scoring"
+      ],
+      "totalLines": 62,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\observability\\AuthzHealth.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\observability\\AuthzHealth.java",
+      "contentHash": "6d8ac513f1d266cf5958e022a1d8eff1e816d23fb3ece827aee9b5854663d041",
+      "functions": [
+        {
+          "name": "AuthzHealth",
+          "params": [
+            "cache",
+            "bootstrap"
+          ],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "report",
+          "params": [],
+          "returnType": "Report",
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "classes": [
+        {
+          "name": "AuthzHealth",
+          "methods": [
+            "AuthzHealth",
+            "report"
+          ],
+          "properties": [
+            "cache",
+            "bootstrap"
+          ],
+          "exported": true,
+          "lineCount": 24
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.cache.PermissionCache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "com.example.authz.sync.CacheBootstrap",
+          "specifiers": [
+            "CacheBootstrap"
+          ]
+        },
+        {
+          "source": "java.time.Instant",
+          "specifiers": [
+            "Instant"
+          ]
+        }
+      ],
+      "exports": [
+        "AuthzHealth",
+        "report",
+        "AuthzHealth"
+      ],
+      "totalLines": 36,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\observability\\Metrics.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\observability\\Metrics.java",
+      "contentHash": "6ebb3d875dd02783786c786b5a6e6a003f852e08ee27aaffc2ed93761907e429",
+      "functions": [
+        {
+          "name": "inc",
+          "params": [
+            "name"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setGauge",
+          "params": [
+            "name",
+            "value"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "get",
+          "params": [
+            "name"
+          ],
+          "returnType": "long",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "snapshot",
+          "params": [],
+          "returnType": "Map<String, Long>",
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "classes": [
+        {
+          "name": "Metrics",
+          "methods": [
+            "inc",
+            "setGauge",
+            "get",
+            "snapshot"
+          ],
+          "properties": [
+            "AUTHZ_SUCCESS",
+            "AUTHZ_FAILURE",
+            "PERMISSION_DENIED",
+            "JWT_VALIDATION_FAILURES",
+            "SERVICE_TOKEN_FAILURES",
+            "ROLE_EVENT_SKIPPED",
+            "ROLE_REFRESH_FAILURES",
+            "CACHE_VERSION",
+            "CACHE_AGE_SECONDS",
+            "counters",
+            "gauges"
+          ],
+          "exported": true,
+          "lineCount": 35
+        }
+      ],
+      "imports": [
+        {
+          "source": "java.util.LinkedHashMap",
+          "specifiers": [
+            "LinkedHashMap"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        },
+        {
+          "source": "java.util.concurrent.ConcurrentHashMap",
+          "specifiers": [
+            "ConcurrentHashMap"
+          ]
+        },
+        {
+          "source": "java.util.concurrent.atomic.AtomicLong",
+          "specifiers": [
+            "AtomicLong"
+          ]
+        }
+      ],
+      "exports": [
+        "AUTHZ_SUCCESS",
+        "AUTHZ_FAILURE",
+        "PERMISSION_DENIED",
+        "JWT_VALIDATION_FAILURES",
+        "SERVICE_TOKEN_FAILURES",
+        "ROLE_EVENT_SKIPPED",
+        "ROLE_REFRESH_FAILURES",
+        "CACHE_VERSION",
+        "CACHE_AGE_SECONDS",
+        "inc",
+        "setGauge",
+        "get",
+        "snapshot",
+        "Metrics"
+      ],
+      "totalLines": 44,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\outbound\\ClientCredentialsServiceIdentityProvider.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\outbound\\ClientCredentialsServiceIdentityProvider.java",
+      "contentHash": "fdb78f13d25704e48aca67aa15a53c55f30e3f0a88ef43b6f3015cc30a14d857",
+      "functions": [
+        {
+          "name": "ClientCredentialsServiceIdentityProvider",
+          "params": [
+            "tokenUrl",
+            "clientId",
+            "clientSecret"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "ClientCredentialsServiceIdentityProvider",
+          "params": [
+            "tokenUrl",
+            "clientId",
+            "clientSecret",
+            "clockSkew",
+            "maxAttempts",
+            "baseBackoffMs"
+          ],
+          "exported": true,
+          "lineCount": 24
+        },
+        {
+          "name": "withRetry",
+          "params": [
+            "maxAttempts",
+            "baseBackoffMs"
+          ],
+          "returnType": "ClientCredentialsServiceIdentityProvider",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "onError",
+          "params": [
+            "cb"
+          ],
+          "returnType": "ClientCredentialsServiceIdentityProvider",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "getServiceToken",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "buildRetry",
+          "params": [
+            "maxAttempts",
+            "baseBackoffMs"
+          ],
+          "returnType": "Retry",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "attachListeners",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "ClientCredentialsServiceIdentityProvider",
+          "methods": [
+            "ClientCredentialsServiceIdentityProvider",
+            "ClientCredentialsServiceIdentityProvider",
+            "withRetry",
+            "onError",
+            "getServiceToken",
+            "buildRetry",
+            "attachListeners"
+          ],
+          "properties": [
+            "REGISTRATION_ID",
+            "PRINCIPAL",
+            "manager",
+            "authorizeRequest",
+            "retry",
+            "onError"
+          ],
+          "exported": true,
+          "lineCount": 77
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "io.github.resilience4j.core.IntervalFunction",
+          "specifiers": [
+            "IntervalFunction"
+          ]
+        },
+        {
+          "source": "io.github.resilience4j.retry.Retry",
+          "specifiers": [
+            "Retry"
+          ]
+        },
+        {
+          "source": "io.github.resilience4j.retry.RetryConfig",
+          "specifiers": [
+            "RetryConfig"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager",
+          "specifiers": [
+            "AuthorizedClientServiceOAuth2AuthorizedClientManager"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService",
+          "specifiers": [
+            "InMemoryOAuth2AuthorizedClientService"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.client.OAuth2AuthorizeRequest",
+          "specifiers": [
+            "OAuth2AuthorizeRequest"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.client.OAuth2AuthorizedClient",
+          "specifiers": [
+            "OAuth2AuthorizedClient"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager",
+          "specifiers": [
+            "OAuth2AuthorizedClientManager"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder",
+          "specifiers": [
+            "OAuth2AuthorizedClientProviderBuilder"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.client.registration.ClientRegistration",
+          "specifiers": [
+            "ClientRegistration"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.client.registration.ClientRegistrationRepository",
+          "specifiers": [
+            "ClientRegistrationRepository"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository",
+          "specifiers": [
+            "InMemoryClientRegistrationRepository"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.core.AuthorizationGrantType",
+          "specifiers": [
+            "AuthorizationGrantType"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.core.ClientAuthenticationMethod",
+          "specifiers": [
+            "ClientAuthenticationMethod"
+          ]
+        },
+        {
+          "source": "java.time.Duration",
+          "specifiers": [
+            "Duration"
+          ]
+        },
+        {
+          "source": "java.util.function.Consumer",
+          "specifiers": [
+            "Consumer"
+          ]
+        }
+      ],
+      "exports": [
+        "ClientCredentialsServiceIdentityProvider",
+        "ClientCredentialsServiceIdentityProvider",
+        "withRetry",
+        "onError",
+        "getServiceToken",
+        "ClientCredentialsServiceIdentityProvider"
+      ],
+      "totalLines": 107,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\outbound\\OutboundHeaders.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\outbound\\OutboundHeaders.java",
+      "contentHash": "a058d372d9b7e998778725eebb3bfaa148f66054a4f3f9af94bbb701e3f01c68",
+      "functions": [
+        {
+          "name": "OutboundHeaders",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "build",
+          "params": [
+            "ctx",
+            "userJwt",
+            "serviceIdentity"
+          ],
+          "returnType": "Map<String, String>",
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "classes": [
+        {
+          "name": "OutboundHeaders",
+          "methods": [
+            "OutboundHeaders",
+            "build"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 15
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.context.RequestContext",
+          "specifiers": [
+            "RequestContext"
+          ]
+        },
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "java.util.LinkedHashMap",
+          "specifiers": [
+            "LinkedHashMap"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        }
+      ],
+      "exports": [
+        "build",
+        "OutboundHeaders"
+      ],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\outbound\\OutboundPropagationInterceptor.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\outbound\\OutboundPropagationInterceptor.java",
+      "contentHash": "de4aadc7e1203ff0b91096848d1f94399173d9b6d7041dfe26a23639964ec3b9",
+      "functions": [
+        {
+          "name": "OutboundPropagationInterceptor",
+          "params": [
+            "serviceIdentity"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "intercept",
+          "params": [
+            "request",
+            "body",
+            "execution"
+          ],
+          "returnType": "ClientHttpResponse",
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "classes": [
+        {
+          "name": "OutboundPropagationInterceptor",
+          "methods": [
+            "OutboundPropagationInterceptor",
+            "intercept"
+          ],
+          "properties": [
+            "serviceIdentity"
+          ],
+          "exported": true,
+          "lineCount": 21
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "com.example.authz.web.AuthzRequestContext",
+          "specifiers": [
+            "AuthzRequestContext"
+          ]
+        },
+        {
+          "source": "org.springframework.http.HttpRequest",
+          "specifiers": [
+            "HttpRequest"
+          ]
+        },
+        {
+          "source": "org.springframework.http.client.ClientHttpRequestExecution",
+          "specifiers": [
+            "ClientHttpRequestExecution"
+          ]
+        },
+        {
+          "source": "org.springframework.http.client.ClientHttpRequestInterceptor",
+          "specifiers": [
+            "ClientHttpRequestInterceptor"
+          ]
+        },
+        {
+          "source": "org.springframework.http.client.ClientHttpResponse",
+          "specifiers": [
+            "ClientHttpResponse"
+          ]
+        },
+        {
+          "source": "java.io.IOException",
+          "specifiers": [
+            "IOException"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        }
+      ],
+      "exports": [
+        "OutboundPropagationInterceptor",
+        "intercept",
+        "OutboundPropagationInterceptor"
+      ],
+      "totalLines": 42,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\spi\\Spi.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\spi\\Spi.java",
+      "contentHash": "722de8ea4cd7b2b90395cda939096a277b17f45d5516d1d1e6f16a2262acb029",
+      "functions": [
+        {
+          "name": "Spi",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        }
+      ],
+      "classes": [
+        {
+          "name": "Spi",
+          "methods": [
+            "Spi"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 49
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.engine.AuthorizationRequest",
+          "specifiers": [
+            "AuthorizationRequest"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.Decision",
+          "specifiers": [
+            "Decision"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        },
+        {
+          "source": "java.util.Set",
+          "specifiers": [
+            "Set"
+          ]
+        }
+      ],
+      "exports": [
+        "Spi"
+      ],
+      "totalLines": 60,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\CacheBootstrap.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\CacheBootstrap.java",
+      "contentHash": "045730f3dc34ecc2ee861e824e21c262bf1e3ce998bca64eedbe5d48582e0136",
+      "functions": [
+        {
+          "name": "CacheBootstrap",
+          "params": [
+            "cache",
+            "roleService",
+            "disk"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "CacheBootstrap",
+          "params": [
+            "cache",
+            "roleService",
+            "disk",
+            "events",
+            "metrics"
+          ],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "mode",
+          "params": [],
+          "returnType": "Mode",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "roleServiceLastSync",
+          "params": [],
+          "returnType": "Instant",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "isKafkaConnected",
+          "params": [],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "start",
+          "params": [],
+          "returnType": "Mode",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "fullSync",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "subscribe",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 22
+        },
+        {
+          "name": "forcedRefresh",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "startReconciler",
+          "params": [
+            "intervalMs"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 25
+        },
+        {
+          "name": "updateGauges",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "stop",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "CacheBootstrap",
+          "methods": [
+            "CacheBootstrap",
+            "CacheBootstrap",
+            "mode",
+            "roleServiceLastSync",
+            "isKafkaConnected",
+            "start",
+            "fullSync",
+            "subscribe",
+            "forcedRefresh",
+            "startReconciler",
+            "updateGauges",
+            "stop"
+          ],
+          "properties": [
+            "LOG",
+            "cache",
+            "roleService",
+            "disk",
+            "events",
+            "metrics",
+            "mode",
+            "lastSyncAt",
+            "kafkaConnected",
+            "stopped",
+            "reconciler"
+          ],
+          "exported": true,
+          "lineCount": 140
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.cache.PermissionCache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "com.example.authz.observability.Metrics",
+          "specifiers": [
+            "Metrics"
+          ]
+        },
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "org.slf4j.Logger",
+          "specifiers": [
+            "Logger"
+          ]
+        },
+        {
+          "source": "org.slf4j.LoggerFactory",
+          "specifiers": [
+            "LoggerFactory"
+          ]
+        },
+        {
+          "source": "java.time.Instant",
+          "specifiers": [
+            "Instant"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        }
+      ],
+      "exports": [
+        "CacheBootstrap",
+        "CacheBootstrap",
+        "mode",
+        "roleServiceLastSync",
+        "isKafkaConnected",
+        "start",
+        "forcedRefresh",
+        "startReconciler",
+        "stop",
+        "CacheBootstrap"
+      ],
+      "totalLines": 160,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\CacheBootstrapException.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\CacheBootstrapException.java",
+      "contentHash": "89d1ada4f6771e5bb58a6934d64b287b611aff4ed86b06a941082a7ddb817696",
+      "functions": [
+        {
+          "name": "CacheBootstrapException",
+          "params": [
+            "message"
+          ],
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [
+        {
+          "name": "CacheBootstrapException",
+          "methods": [
+            "CacheBootstrapException"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "imports": [],
+      "exports": [
+        "CacheBootstrapException",
+        "CacheBootstrapException"
+      ],
+      "totalLines": 14,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\DiskCache.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\DiskCache.java",
+      "contentHash": "5aa9407a0b5f62d70274d73add1355d26c9246bec86ffb8ba6d142674d72e983",
+      "functions": [
+        {
+          "name": "DiskCache",
+          "params": [
+            "path"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "write",
+          "params": [
+            "cache"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "exists",
+          "params": [],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "read",
+          "params": [],
+          "returnType": "Snapshot",
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [
+        {
+          "name": "DiskCache",
+          "methods": [
+            "DiskCache",
+            "write",
+            "exists",
+            "read"
+          ],
+          "properties": [
+            "MAPPER",
+            "path"
+          ],
+          "exported": true,
+          "lineCount": 37
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.cache.PermissionCache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.databind.ObjectMapper",
+          "specifiers": [
+            "ObjectMapper"
+          ]
+        },
+        {
+          "source": "java.io.IOException",
+          "specifiers": [
+            "IOException"
+          ]
+        },
+        {
+          "source": "java.nio.file.Files",
+          "specifiers": [
+            "Files"
+          ]
+        },
+        {
+          "source": "java.nio.file.Path",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "java.time.Instant",
+          "specifiers": [
+            "Instant"
+          ]
+        },
+        {
+          "source": "java.util.LinkedHashMap",
+          "specifiers": [
+            "LinkedHashMap"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        },
+        {
+          "source": "java.util.Set",
+          "specifiers": [
+            "Set"
+          ]
+        }
+      ],
+      "exports": [
+        "DiskCache",
+        "write",
+        "exists",
+        "read",
+        "DiskCache"
+      ],
+      "totalLines": 53,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\HttpRoleServiceClient.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\HttpRoleServiceClient.java",
+      "contentHash": "f8e1ee6e9ec13441352e108caab2ed2e27a3016ab08f29edd2f426a7ebe38dd1",
+      "functions": [
+        {
+          "name": "HttpRoleServiceClient",
+          "params": [
+            "baseUrl"
+          ],
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "fetchSnapshot",
+          "params": [],
+          "returnType": "Map<String, List<String>>",
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "classes": [
+        {
+          "name": "HttpRoleServiceClient",
+          "methods": [
+            "HttpRoleServiceClient",
+            "fetchSnapshot"
+          ],
+          "properties": [
+            "ROLE_MAP",
+            "http"
+          ],
+          "exported": true,
+          "lineCount": 31
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "org.springframework.core.ParameterizedTypeReference",
+          "specifiers": [
+            "ParameterizedTypeReference"
+          ]
+        },
+        {
+          "source": "org.springframework.http.client.SimpleClientHttpRequestFactory",
+          "specifiers": [
+            "SimpleClientHttpRequestFactory"
+          ]
+        },
+        {
+          "source": "org.springframework.web.client.RestClient",
+          "specifiers": [
+            "RestClient"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        }
+      ],
+      "exports": [
+        "HttpRoleServiceClient",
+        "fetchSnapshot",
+        "HttpRoleServiceClient"
+      ],
+      "totalLines": 43,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\KafkaCacheEventHandler.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\KafkaCacheEventHandler.java",
+      "contentHash": "6f8c0150aca977535308944a8525be2a9008e6c676474f1150fe0e297c85222f",
+      "functions": [
+        {
+          "name": "KafkaCacheEventHandler",
+          "params": [
+            "brokers",
+            "updatesTopic",
+            "deleteTopic",
+            "publishTopic",
+            "groupId"
+          ],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "start",
+          "params": [
+            "onEvent",
+            "onRefresh"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 30
+        },
+        {
+          "name": "parse",
+          "params": [
+            "value"
+          ],
+          "returnType": "Map<String, Object>",
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "stop",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "KafkaCacheEventHandler",
+          "methods": [
+            "KafkaCacheEventHandler",
+            "start",
+            "parse",
+            "stop"
+          ],
+          "properties": [
+            "LOG",
+            "MAPPER",
+            "brokers",
+            "updatesTopic",
+            "deleteTopic",
+            "publishTopic",
+            "groupId",
+            "container"
+          ],
+          "exported": true,
+          "lineCount": 68
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.databind.ObjectMapper",
+          "specifiers": [
+            "ObjectMapper"
+          ]
+        },
+        {
+          "source": "org.apache.kafka.clients.consumer.ConsumerConfig",
+          "specifiers": [
+            "ConsumerConfig"
+          ]
+        },
+        {
+          "source": "org.apache.kafka.common.serialization.StringDeserializer",
+          "specifiers": [
+            "StringDeserializer"
+          ]
+        },
+        {
+          "source": "org.slf4j.Logger",
+          "specifiers": [
+            "Logger"
+          ]
+        },
+        {
+          "source": "org.slf4j.LoggerFactory",
+          "specifiers": [
+            "LoggerFactory"
+          ]
+        },
+        {
+          "source": "org.springframework.kafka.core.DefaultKafkaConsumerFactory",
+          "specifiers": [
+            "DefaultKafkaConsumerFactory"
+          ]
+        },
+        {
+          "source": "org.springframework.kafka.listener.ContainerProperties",
+          "specifiers": [
+            "ContainerProperties"
+          ]
+        },
+        {
+          "source": "org.springframework.kafka.listener.KafkaMessageListenerContainer",
+          "specifiers": [
+            "KafkaMessageListenerContainer"
+          ]
+        },
+        {
+          "source": "org.springframework.kafka.listener.MessageListener",
+          "specifiers": [
+            "MessageListener"
+          ]
+        },
+        {
+          "source": "java.util.HashMap",
+          "specifiers": [
+            "HashMap"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        },
+        {
+          "source": "java.util.UUID",
+          "specifiers": [
+            "UUID"
+          ]
+        },
+        {
+          "source": "java.util.function.Consumer",
+          "specifiers": [
+            "Consumer"
+          ]
+        }
+      ],
+      "exports": [
+        "KafkaCacheEventHandler",
+        "start",
+        "stop",
+        "KafkaCacheEventHandler"
+      ],
+      "totalLines": 96,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\RoleEvents.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\sync\\RoleEvents.java",
+      "contentHash": "a977dc07d1e890eeb8d565fdcb5e0474cee07a0ecddf96079920e590cec134cb",
+      "functions": [
+        {
+          "name": "RoleEvents",
+          "params": [],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "apply",
+          "params": [
+            "cache",
+            "event"
+          ],
+          "returnType": "ApplyResult",
+          "exported": true,
+          "lineCount": 26
+        }
+      ],
+      "classes": [
+        {
+          "name": "RoleEvents",
+          "methods": [
+            "RoleEvents",
+            "apply"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 35
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.cache.PermissionCache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        }
+      ],
+      "exports": [
+        "apply",
+        "RoleEvents"
+      ],
+      "totalLines": 44,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\web\\AuthorizationFilter.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\web\\AuthorizationFilter.java",
+      "contentHash": "e5616db7e7a536d117a6019fdd504e6b732d0abb47e991aa009296b3e3c0dbc0",
+      "functions": [
+        {
+          "name": "AuthorizationFilter",
+          "params": [
+            "engine",
+            "cache",
+            "validator",
+            "audit"
+          ],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "AuthorizationFilter",
+          "params": [
+            "engine",
+            "cache",
+            "validator",
+            "audit",
+            "metrics"
+          ],
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "doFilterInternal",
+          "params": [
+            "request",
+            "response",
+            "chain"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 63
+        },
+        {
+          "name": "extractBearer",
+          "params": [
+            "header"
+          ],
+          "returnType": "String",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "str",
+          "params": [
+            "o"
+          ],
+          "returnType": "String",
+          "exported": false,
+          "lineCount": 3
+        }
+      ],
+      "classes": [
+        {
+          "name": "AuthorizationFilter",
+          "methods": [
+            "AuthorizationFilter",
+            "AuthorizationFilter",
+            "doFilterInternal",
+            "extractBearer",
+            "str"
+          ],
+          "properties": [
+            "CONTEXT_ATTR",
+            "engine",
+            "cache",
+            "validator",
+            "audit",
+            "metrics"
+          ],
+          "exported": true,
+          "lineCount": 100
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.audit.AuditEvents",
+          "specifiers": [
+            "AuditEvents"
+          ]
+        },
+        {
+          "source": "com.example.authz.cache.PermissionCache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "com.example.authz.context.Principals",
+          "specifiers": [
+            "Principals"
+          ]
+        },
+        {
+          "source": "com.example.authz.context.RequestContext",
+          "specifiers": [
+            "RequestContext"
+          ]
+        },
+        {
+          "source": "com.example.authz.context.RequestContextBuilder",
+          "specifiers": [
+            "RequestContextBuilder"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.AuthType",
+          "specifiers": [
+            "AuthType"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.AuthorizationEngine",
+          "specifiers": [
+            "AuthorizationEngine"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.AuthorizationRequest",
+          "specifiers": [
+            "AuthorizationRequest"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.Decision",
+          "specifiers": [
+            "Decision"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.DecisionResult",
+          "specifiers": [
+            "DecisionResult"
+          ]
+        },
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "jakarta.servlet.FilterChain",
+          "specifiers": [
+            "FilterChain"
+          ]
+        },
+        {
+          "source": "jakarta.servlet.ServletException",
+          "specifiers": [
+            "ServletException"
+          ]
+        },
+        {
+          "source": "jakarta.servlet.http.HttpServletRequest",
+          "specifiers": [
+            "HttpServletRequest"
+          ]
+        },
+        {
+          "source": "jakarta.servlet.http.HttpServletResponse",
+          "specifiers": [
+            "HttpServletResponse"
+          ]
+        },
+        {
+          "source": "org.springframework.web.filter.OncePerRequestFilter",
+          "specifiers": [
+            "OncePerRequestFilter"
+          ]
+        },
+        {
+          "source": "java.io.IOException",
+          "specifiers": [
+            "IOException"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        }
+      ],
+      "exports": [
+        "CONTEXT_ATTR",
+        "AuthorizationFilter",
+        "AuthorizationFilter",
+        "AuthorizationFilter"
+      ],
+      "totalLines": 128,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\web\\AuthzRequestContext.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\web\\AuthzRequestContext.java",
+      "contentHash": "60b85be23f2df7c55d499cb322c54e01df04e27256e5ad4ef84030b6ee6827a1",
+      "functions": [
+        {
+          "name": "AuthzRequestContext",
+          "params": [
+            "context",
+            "userJwt"
+          ],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "context",
+          "params": [],
+          "returnType": "RequestContext",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "userJwt",
+          "params": [],
+          "returnType": "String",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "current",
+          "params": [],
+          "returnType": "AuthzRequestContext",
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [
+        {
+          "name": "AuthzRequestContext",
+          "methods": [
+            "AuthzRequestContext",
+            "context",
+            "userJwt",
+            "current"
+          ],
+          "properties": [
+            "CONTEXT_ATTR",
+            "USER_JWT_ATTR",
+            "context",
+            "userJwt"
+          ],
+          "exported": true,
+          "lineCount": 29
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.context.RequestContext",
+          "specifiers": [
+            "RequestContext"
+          ]
+        },
+        {
+          "source": "org.springframework.web.context.request.RequestAttributes",
+          "specifiers": [
+            "RequestAttributes"
+          ]
+        },
+        {
+          "source": "org.springframework.web.context.request.RequestContextHolder",
+          "specifiers": [
+            "RequestContextHolder"
+          ]
+        }
+      ],
+      "exports": [
+        "CONTEXT_ATTR",
+        "USER_JWT_ATTR",
+        "AuthzRequestContext",
+        "context",
+        "userJwt",
+        "current",
+        "AuthzRequestContext"
+      ],
+      "totalLines": 43,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\web\\NimbusJwksTokenValidator.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\main\\java\\com\\example\\authz\\web\\NimbusJwksTokenValidator.java",
+      "contentHash": "c4f3bb8249425d888518b70df2dbcd3ff0d4d3fac4b6e89b742c038e4c95a2ae",
+      "functions": [
+        {
+          "name": "NimbusJwksTokenValidator",
+          "params": [
+            "userIssuer",
+            "userJwksUri",
+            "serviceIssuer",
+            "serviceJwksUri"
+          ],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "NimbusJwksTokenValidator",
+          "params": [
+            "userIssuer",
+            "userJwksUri",
+            "serviceIssuer",
+            "serviceJwksUri",
+            "audience",
+            "serviceTokenUseClaim",
+            "serviceTokenUseValue"
+          ],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "NimbusJwksTokenValidator",
+          "params": [
+            "userIssuer",
+            "userJwksUri",
+            "serviceIssuer",
+            "serviceJwksUri",
+            "audience",
+            "serviceTokenUseClaim",
+            "serviceTokenUseValue",
+            "clockSkewSeconds"
+          ],
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "decoder",
+          "params": [
+            "jwksUri",
+            "issuer",
+            "skew"
+          ],
+          "returnType": "NimbusJwtDecoder",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "userDecoder",
+          "params": [
+            "jwksUri",
+            "issuer",
+            "audience",
+            "skew"
+          ],
+          "returnType": "NimbusJwtDecoder",
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "validateUserToken",
+          "params": [
+            "jwt"
+          ],
+          "returnType": "Map<String, Object>",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "validateServiceToken",
+          "params": [
+            "jwt"
+          ],
+          "returnType": "Map<String, Object>",
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "classes": [
+        {
+          "name": "NimbusJwksTokenValidator",
+          "methods": [
+            "NimbusJwksTokenValidator",
+            "NimbusJwksTokenValidator",
+            "NimbusJwksTokenValidator",
+            "decoder",
+            "userDecoder",
+            "validateUserToken",
+            "validateServiceToken"
+          ],
+          "properties": [
+            "userDecoder",
+            "serviceDecoder",
+            "serviceTokenUseClaim",
+            "serviceTokenUseValue"
+          ],
+          "exported": true,
+          "lineCount": 75
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator",
+          "specifiers": [
+            "DelegatingOAuth2TokenValidator"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.core.OAuth2TokenValidator",
+          "specifiers": [
+            "OAuth2TokenValidator"
+          ]
+        },
+        {
+          "source": "org.springframework.security.oauth2.jwt",
+          "specifiers": [
+            "*"
+          ]
+        },
+        {
+          "source": "java.time.Duration",
+          "specifiers": [
+            "Duration"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        }
+      ],
+      "exports": [
+        "NimbusJwksTokenValidator",
+        "NimbusJwksTokenValidator",
+        "NimbusJwksTokenValidator",
+        "validateUserToken",
+        "validateServiceToken",
+        "NimbusJwksTokenValidator"
+      ],
+      "totalLines": 92,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\test\\java\\com\\example\\authz\\ArchitectureFixesTest.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\test\\java\\com\\example\\authz\\ArchitectureFixesTest.java",
+      "contentHash": "98d2fa9fb1ebeaf6463c582d1813bde857f0070583d13e284e22d51904a4a21f",
+      "functions": [
+        {
+          "name": "resetContext",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "engine",
+          "params": [
+            "yaml"
+          ],
+          "returnType": "AuthorizationEngine",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "evaluateReportsMatchedRulePermissions",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 26
+        },
+        {
+          "name": "userTokenFailureIncrementsJwtMetricOnly",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "serviceTokenFailureIncrementsServiceMetricOnly",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "allowStoresUserJwtAndAuditsPermission",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "outboundInterceptorAttachesHeadersFromCurrentRequest",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "outboundInterceptorIsNoOpOutsideARequest",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "kafkaUnreachableAtStartupIsFailOpen",
+          "params": [
+            "tmp"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 17
+        }
+      ],
+      "classes": [
+        {
+          "name": "ArchitectureFixesTest",
+          "methods": [
+            "resetContext",
+            "engine",
+            "evaluateReportsMatchedRulePermissions",
+            "userTokenFailureIncrementsJwtMetricOnly",
+            "serviceTokenFailureIncrementsServiceMetricOnly",
+            "allowStoresUserJwtAndAuditsPermission",
+            "outboundInterceptorAttachesHeadersFromCurrentRequest",
+            "outboundInterceptorIsNoOpOutsideARequest",
+            "kafkaUnreachableAtStartupIsFailOpen"
+          ],
+          "properties": [
+            "THROWING"
+          ],
+          "exported": false,
+          "lineCount": 167
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.audit.AuditEvent",
+          "specifiers": [
+            "AuditEvent"
+          ]
+        },
+        {
+          "source": "com.example.authz.cache.PermissionCache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "com.example.authz.config.YamlLoader",
+          "specifiers": [
+            "YamlLoader"
+          ]
+        },
+        {
+          "source": "com.example.authz.context.Principals",
+          "specifiers": [
+            "Principals"
+          ]
+        },
+        {
+          "source": "com.example.authz.context.RequestContext",
+          "specifiers": [
+            "RequestContext"
+          ]
+        },
+        {
+          "source": "com.example.authz.context.RequestContextBuilder",
+          "specifiers": [
+            "RequestContextBuilder"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.AuthType",
+          "specifiers": [
+            "AuthType"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.AuthorizationEngine",
+          "specifiers": [
+            "AuthorizationEngine"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.AuthorizationRequest",
+          "specifiers": [
+            "AuthorizationRequest"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.DecisionResult",
+          "specifiers": [
+            "DecisionResult"
+          ]
+        },
+        {
+          "source": "com.example.authz.observability.Metrics",
+          "specifiers": [
+            "Metrics"
+          ]
+        },
+        {
+          "source": "com.example.authz.outbound.OutboundPropagationInterceptor",
+          "specifiers": [
+            "OutboundPropagationInterceptor"
+          ]
+        },
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "com.example.authz.sync.CacheBootstrap",
+          "specifiers": [
+            "CacheBootstrap"
+          ]
+        },
+        {
+          "source": "com.example.authz.sync.DiskCache",
+          "specifiers": [
+            "DiskCache"
+          ]
+        },
+        {
+          "source": "com.example.authz.web.AuthorizationFilter",
+          "specifiers": [
+            "AuthorizationFilter"
+          ]
+        },
+        {
+          "source": "com.example.authz.web.AuthzRequestContext",
+          "specifiers": [
+            "AuthzRequestContext"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.AfterEach",
+          "specifiers": [
+            "AfterEach"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Test",
+          "specifiers": [
+            "Test"
+          ]
+        },
+        {
+          "source": "org.springframework.http.HttpStatus",
+          "specifiers": [
+            "HttpStatus"
+          ]
+        },
+        {
+          "source": "org.springframework.http.client.ClientHttpResponse",
+          "specifiers": [
+            "ClientHttpResponse"
+          ]
+        },
+        {
+          "source": "org.springframework.mock.http.client.MockClientHttpRequest",
+          "specifiers": [
+            "MockClientHttpRequest"
+          ]
+        },
+        {
+          "source": "org.springframework.mock.http.client.MockClientHttpResponse",
+          "specifiers": [
+            "MockClientHttpResponse"
+          ]
+        },
+        {
+          "source": "org.springframework.mock.web.MockFilterChain",
+          "specifiers": [
+            "MockFilterChain"
+          ]
+        },
+        {
+          "source": "org.springframework.mock.web.MockHttpServletRequest",
+          "specifiers": [
+            "MockHttpServletRequest"
+          ]
+        },
+        {
+          "source": "org.springframework.mock.web.MockHttpServletResponse",
+          "specifiers": [
+            "MockHttpServletResponse"
+          ]
+        },
+        {
+          "source": "org.springframework.web.context.request.RequestContextHolder",
+          "specifiers": [
+            "RequestContextHolder"
+          ]
+        },
+        {
+          "source": "org.springframework.web.context.request.ServletRequestAttributes",
+          "specifiers": [
+            "ServletRequestAttributes"
+          ]
+        },
+        {
+          "source": "java.nio.file.Path",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Assertions",
+          "specifiers": [
+            "*"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 205,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\test\\java\\com\\example\\authz\\ModulesTest.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\test\\java\\com\\example\\authz\\ModulesTest.java",
+      "contentHash": "3b8a31f3311cb9add2e10c2d1fd7bf1d811857de88d2327b458be70af0a5c758",
+      "functions": [
+        {
+          "name": "sanitizerDropsIdentityHeadersKeepsTokens",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "contextBuilderDerivesAuthType",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "roleEventsApplyUpsertDeleteSkipUnknown",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "bootstrapNormalAndSeedModes",
+          "params": [
+            "tmp"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 17
+        },
+        {
+          "name": "bootstrapFailsFastWhenRoleServiceDownAndDiskMissing",
+          "params": [
+            "tmp"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "bootstrapFailsFastWhenRoleServiceDownAndDiskEmpty",
+          "params": [
+            "tmp"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "reconcilerPromotesSeedToNormal",
+          "params": [
+            "tmp"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 19
+        },
+        {
+          "name": "forcedRefreshReFetchesAndReplacesCache",
+          "params": [
+            "tmp"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "forcedRefreshIsFailOpenAndCountsFailure",
+          "params": [
+            "tmp"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "diskCacheRoundTrip",
+          "params": [
+            "tmp"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 9
+        }
+      ],
+      "classes": [
+        {
+          "name": "ModulesTest",
+          "methods": [
+            "sanitizerDropsIdentityHeadersKeepsTokens",
+            "contextBuilderDerivesAuthType",
+            "roleEventsApplyUpsertDeleteSkipUnknown",
+            "bootstrapNormalAndSeedModes",
+            "bootstrapFailsFastWhenRoleServiceDownAndDiskMissing",
+            "bootstrapFailsFastWhenRoleServiceDownAndDiskEmpty",
+            "reconcilerPromotesSeedToNormal",
+            "forcedRefreshReFetchesAndReplacesCache",
+            "forcedRefreshIsFailOpenAndCountsFailure",
+            "diskCacheRoundTrip"
+          ],
+          "properties": [],
+          "exported": false,
+          "lineCount": 138
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.cache.PermissionCache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "com.example.authz.context.HeaderSanitizer",
+          "specifiers": [
+            "HeaderSanitizer"
+          ]
+        },
+        {
+          "source": "com.example.authz.context.Principals",
+          "specifiers": [
+            "Principals"
+          ]
+        },
+        {
+          "source": "com.example.authz.context.RequestContext",
+          "specifiers": [
+            "RequestContext"
+          ]
+        },
+        {
+          "source": "com.example.authz.context.RequestContextBuilder",
+          "specifiers": [
+            "RequestContextBuilder"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.AuthType",
+          "specifiers": [
+            "AuthType"
+          ]
+        },
+        {
+          "source": "com.example.authz.observability.Metrics",
+          "specifiers": [
+            "Metrics"
+          ]
+        },
+        {
+          "source": "com.example.authz.sync.CacheBootstrap",
+          "specifiers": [
+            "CacheBootstrap"
+          ]
+        },
+        {
+          "source": "com.example.authz.sync.CacheBootstrapException",
+          "specifiers": [
+            "CacheBootstrapException"
+          ]
+        },
+        {
+          "source": "com.example.authz.sync.DiskCache",
+          "specifiers": [
+            "DiskCache"
+          ]
+        },
+        {
+          "source": "com.example.authz.sync.RoleEvents",
+          "specifiers": [
+            "RoleEvents"
+          ]
+        },
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Test",
+          "specifiers": [
+            "Test"
+          ]
+        },
+        {
+          "source": "java.nio.file.Files",
+          "specifiers": [
+            "Files"
+          ]
+        },
+        {
+          "source": "java.nio.file.Path",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Assertions",
+          "specifiers": [
+            "*"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 162,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\test\\java\\com\\example\\authz\\OutboundTest.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\test\\java\\com\\example\\authz\\OutboundTest.java",
+      "contentHash": "930ab4fd18dd74d53986cef4bc541e419797c315e999e4abb2a4606b6ffc155a",
+      "functions": [
+        {
+          "name": "startTokenServer",
+          "params": [
+            "responses"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "tearDown",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "tokenUrl",
+          "params": [],
+          "returnType": "String",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "tokenJson",
+          "params": [
+            "token"
+          ],
+          "returnType": "String",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "serviceTokenIsCachedAcrossCalls",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "serviceTokenRefreshesWhenNearExpiry",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "serviceTokenRetriesWithBackoffThenSucceeds",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "serviceTokenThrowsAfterExhaustingRetries",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "outboundHeadersPropagateJwtServiceTokenAndTraceIds",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 17
+        }
+      ],
+      "classes": [
+        {
+          "name": "OutboundTest",
+          "methods": [
+            "startTokenServer",
+            "tearDown",
+            "tokenUrl",
+            "tokenJson",
+            "serviceTokenIsCachedAcrossCalls",
+            "serviceTokenRefreshesWhenNearExpiry",
+            "serviceTokenRetriesWithBackoffThenSucceeds",
+            "serviceTokenThrowsAfterExhaustingRetries",
+            "outboundHeadersPropagateJwtServiceTokenAndTraceIds"
+          ],
+          "properties": [
+            "server",
+            "port",
+            "hits"
+          ],
+          "exported": false,
+          "lineCount": 102
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.context.Principals",
+          "specifiers": [
+            "Principals"
+          ]
+        },
+        {
+          "source": "com.example.authz.context.RequestContext",
+          "specifiers": [
+            "RequestContext"
+          ]
+        },
+        {
+          "source": "com.example.authz.context.RequestContextBuilder",
+          "specifiers": [
+            "RequestContextBuilder"
+          ]
+        },
+        {
+          "source": "com.example.authz.outbound.ClientCredentialsServiceIdentityProvider",
+          "specifiers": [
+            "ClientCredentialsServiceIdentityProvider"
+          ]
+        },
+        {
+          "source": "com.example.authz.outbound.OutboundHeaders",
+          "specifiers": [
+            "OutboundHeaders"
+          ]
+        },
+        {
+          "source": "com.example.authz.spi.Spi",
+          "specifiers": [
+            "Spi"
+          ]
+        },
+        {
+          "source": "com.sun.net.httpserver.HttpServer",
+          "specifiers": [
+            "HttpServer"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.AfterEach",
+          "specifiers": [
+            "AfterEach"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Test",
+          "specifiers": [
+            "Test"
+          ]
+        },
+        {
+          "source": "java.io.IOException",
+          "specifiers": [
+            "IOException"
+          ]
+        },
+        {
+          "source": "java.io.OutputStream",
+          "specifiers": [
+            "OutputStream"
+          ]
+        },
+        {
+          "source": "java.net.InetSocketAddress",
+          "specifiers": [
+            "InetSocketAddress"
+          ]
+        },
+        {
+          "source": "java.nio.charset.StandardCharsets",
+          "specifiers": [
+            "StandardCharsets"
+          ]
+        },
+        {
+          "source": "java.time.Duration",
+          "specifiers": [
+            "Duration"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        },
+        {
+          "source": "java.util.concurrent.atomic.AtomicInteger",
+          "specifiers": [
+            "AtomicInteger"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Assertions",
+          "specifiers": [
+            "*"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 126,
+      "hasStructuralAnalysis": true
+    },
+    "libraries\\authz-spring-boot\\src\\test\\java\\com\\example\\authz\\SharedVectorsTest.java": {
+      "filePath": "libraries\\authz-spring-boot\\src\\test\\java\\com\\example\\authz\\SharedVectorsTest.java",
+      "contentHash": "4f2c3081085d3a2283c3ebed0402385cd4137b2fd9c6f89cbae3c59d29398a04",
+      "functions": [
+        {
+          "name": "vectorDir",
+          "params": [],
+          "returnType": "Path",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "sharedVectors",
+          "params": [],
+          "returnType": "Stream<DynamicTest>",
+          "exported": false,
+          "lineCount": 19
+        },
+        {
+          "name": "runVector",
+          "params": [
+            "v"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 30
+        }
+      ],
+      "classes": [
+        {
+          "name": "SharedVectorsTest",
+          "methods": [
+            "vectorDir",
+            "sharedVectors",
+            "runVector"
+          ],
+          "properties": [
+            "MAPPER"
+          ],
+          "exported": false,
+          "lineCount": 63
+        }
+      ],
+      "imports": [
+        {
+          "source": "com.example.authz.cache.PermissionCache",
+          "specifiers": [
+            "PermissionCache"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.AuthType",
+          "specifiers": [
+            "AuthType"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.AuthorizationEngine",
+          "specifiers": [
+            "AuthorizationEngine"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.AuthorizationRequest",
+          "specifiers": [
+            "AuthorizationRequest"
+          ]
+        },
+        {
+          "source": "com.example.authz.engine.Decision",
+          "specifiers": [
+            "Decision"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.databind.JsonNode",
+          "specifiers": [
+            "JsonNode"
+          ]
+        },
+        {
+          "source": "com.fasterxml.jackson.databind.ObjectMapper",
+          "specifiers": [
+            "ObjectMapper"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.DynamicTest",
+          "specifiers": [
+            "DynamicTest"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.TestFactory",
+          "specifiers": [
+            "TestFactory"
+          ]
+        },
+        {
+          "source": "java.io.IOException",
+          "specifiers": [
+            "IOException"
+          ]
+        },
+        {
+          "source": "java.nio.file.Files",
+          "specifiers": [
+            "Files"
+          ]
+        },
+        {
+          "source": "java.nio.file.Path",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "java.util.ArrayList",
+          "specifiers": [
+            "ArrayList"
+          ]
+        },
+        {
+          "source": "java.util.HashMap",
+          "specifiers": [
+            "HashMap"
+          ]
+        },
+        {
+          "source": "java.util.List",
+          "specifiers": [
+            "List"
+          ]
+        },
+        {
+          "source": "java.util.Map",
+          "specifiers": [
+            "Map"
+          ]
+        },
+        {
+          "source": "java.util.stream.Stream",
+          "specifiers": [
+            "Stream"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Assertions.assertEquals",
+          "specifiers": [
+            "assertEquals"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.Assertions.assertThrows",
+          "specifiers": [
+            "assertThrows"
+          ]
+        },
+        {
+          "source": "org.junit.jupiter.api.DynamicTest.dynamicTest",
+          "specifiers": [
+            "dynamicTest"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 93,
+      "hasStructuralAnalysis": true
+    },
+    "tests\\e2e\\run.mjs": {
+      "filePath": "tests\\e2e\\run.mjs",
+      "contentHash": "2f004752ab07e8e988572ed51838e12cf4b26e6619e3c06d2078b6a43b06c3e2",
+      "functions": [
+        {
+          "name": "login",
+          "params": [
+            "role",
+            "aud"
+          ],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "serviceToken",
+          "params": [
+            "clientId",
+            "clientSecret"
+          ],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "call",
+          "params": [
+            "base"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "waitFor",
+          "params": [
+            "url"
+          ],
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "main",
+          "params": [],
+          "exported": false,
+          "lineCount": 171
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 226,
+      "hasStructuralAnalysis": true
+    }
+  }
+}

@@ -1,0 +1,90 @@
+[
+  {
+    "name": "USER allow via ANY (single perm present)",
+    "rules": [{ "path": "/orders/**", "methods": ["GET"], "permissions": ["READ_ORDER"], "decision": "ANY" }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders/7", "authType": "USER", "role": "VIEWER" },
+    "expected": "ALLOW",
+    "reason": "role holds READ_ORDER"
+  },
+  {
+    "name": "USER deny missing perm",
+    "rules": [{ "path": "/orders", "methods": ["POST"], "permissions": ["WRITE_ORDER"], "decision": "ANY" }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "POST", "path": "/orders", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "role lacks WRITE_ORDER"
+  },
+  {
+    "name": "USER against service-only rule -> DENY",
+    "rules": [{ "path": "/internal/reconcile", "methods": ["POST"], "allowedServices": ["scheduler"] }],
+    "roleCache": { "MANAGER": ["READ_ORDER", "WRITE_ORDER"] },
+    "request": { "method": "POST", "path": "/internal/reconcile", "authType": "USER", "role": "MANAGER" },
+    "expected": "DENY",
+    "reason": "rule has no permissions, not user-accessible"
+  },
+  {
+    "name": "SERVICE allow via allow-list",
+    "rules": [{ "path": "/internal/reconcile", "methods": ["POST"], "allowedServices": ["scheduler", "batch"] }],
+    "roleCache": {},
+    "request": { "method": "POST", "path": "/internal/reconcile", "authType": "SERVICE", "serviceName": "scheduler" },
+    "expected": "ALLOW",
+    "reason": "scheduler is allow-listed"
+  },
+  {
+    "name": "SERVICE deny not allow-listed",
+    "rules": [{ "path": "/internal/reconcile", "methods": ["POST"], "allowedServices": ["scheduler"] }],
+    "roleCache": {},
+    "request": { "method": "POST", "path": "/internal/reconcile", "authType": "SERVICE", "serviceName": "batch" },
+    "expected": "DENY",
+    "reason": "batch not in allow-list"
+  },
+  {
+    "name": "SERVICE against rule with no allowedServices -> DENY",
+    "rules": [{ "path": "/orders/**", "methods": ["GET"], "permissions": ["READ_ORDER"] }],
+    "roleCache": {},
+    "request": { "method": "GET", "path": "/orders/7", "authType": "SERVICE", "serviceName": "scheduler" },
+    "expected": "DENY",
+    "reason": "rule has no allowedServices"
+  },
+  {
+    "name": "SERVICE allow via wildcard *",
+    "rules": [{ "path": "/orders/**", "methods": ["POST"], "permissions": ["WRITE_ORDER"], "allowedServices": ["*"] }],
+    "roleCache": {},
+    "request": { "method": "POST", "path": "/orders/7", "authType": "SERVICE", "serviceName": "anything" },
+    "expected": "ALLOW",
+    "reason": "* allows any authenticated service"
+  },
+  {
+    "name": "USER_AND_SERVICE both pass",
+    "rules": [{ "path": "/orders/**", "methods": ["POST"], "permissions": ["WRITE_ORDER"], "allowedServices": ["scheduler"] }],
+    "roleCache": { "MANAGER": ["WRITE_ORDER"] },
+    "request": { "method": "POST", "path": "/orders/7", "authType": "USER_AND_SERVICE", "role": "MANAGER", "serviceName": "scheduler" },
+    "expected": "ALLOW",
+    "reason": "perm ANY passes AND service allow-listed"
+  },
+  {
+    "name": "USER_AND_SERVICE user fails -> DENY",
+    "rules": [{ "path": "/orders/**", "methods": ["POST"], "permissions": ["WRITE_ORDER"], "allowedServices": ["scheduler"] }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "POST", "path": "/orders/7", "authType": "USER_AND_SERVICE", "role": "VIEWER", "serviceName": "scheduler" },
+    "expected": "DENY",
+    "reason": "user lacks WRITE_ORDER even though service allow-listed"
+  },
+  {
+    "name": "USER_AND_SERVICE service fails -> DENY",
+    "rules": [{ "path": "/orders/**", "methods": ["POST"], "permissions": ["WRITE_ORDER"], "allowedServices": ["scheduler"] }],
+    "roleCache": { "MANAGER": ["WRITE_ORDER"] },
+    "request": { "method": "POST", "path": "/orders/7", "authType": "USER_AND_SERVICE", "role": "MANAGER", "serviceName": "batch" },
+    "expected": "DENY",
+    "reason": "service not allow-listed even though user passes"
+  },
+  {
+    "name": "USER_AND_SERVICE missing allowedServices dimension -> DENY",
+    "rules": [{ "path": "/orders/**", "methods": ["POST"], "permissions": ["WRITE_ORDER"] }],
+    "roleCache": { "MANAGER": ["WRITE_ORDER"] },
+    "request": { "method": "POST", "path": "/orders/7", "authType": "USER_AND_SERVICE", "role": "MANAGER", "serviceName": "scheduler" },
+    "expected": "DENY",
+    "reason": "rule missing allowedServices dimension"
+  }
+]
