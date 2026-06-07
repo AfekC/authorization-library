@@ -59,6 +59,8 @@ export interface CreateAuthzOptions {
   diskCachePath?: string;
   /** Claim that marks a service token (default "token_use"). */
   serviceTokenUseClaim?: string;
+  /** Expected value of the service-token-use claim (default "service"). */
+  serviceTokenUseValue?: string;
   /** Periodic reconciler interval (ms). Default 5000. */
   reconcileIntervalMs?: number;
   /** Role Service HTTP connect timeout (ms). Default 5000. */
@@ -121,6 +123,23 @@ export interface Authz {
   stop: () => Promise<void>;
 }
 
+/** Validate that a string is a well-formed http/https URL. Throws ConfigError on failure. */
+function requireHttpUrl(value: string, fieldName: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new ConfigError(
+      `Invalid ${fieldName}: "${value}" is not a valid URL`,
+    );
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new ConfigError(
+      `Invalid ${fieldName}: "${value}" must use http or https (got "${parsed.protocol.replace(":", "")}")`,
+    );
+  }
+}
+
 /**
  * Compile config, wire JWKS validation, run the startup state machine (Role
  * Service snapshot -> disk seed fallback -> Kafka subscribe), and return a
@@ -133,10 +152,24 @@ export interface Authz {
  * ```
  */
 export async function createAuthz(opts: CreateAuthzOptions): Promise<Authz> {
-  if (!opts.audience) throw new ConfigError("Missing required option: audience");
+  // P4: validation order matches Java's ConfigValidator order
+  // userIssuer → userJwksUri → serviceIssuer → serviceJwksUri → roleServiceUrl → audience
   if (!opts.userIssuer) throw new ConfigError("Missing required option: userIssuer");
   if (!opts.userJwksUri) throw new ConfigError("Missing required option: userJwksUri");
+  if (!opts.serviceIssuer) throw new ConfigError("Missing required option: serviceIssuer");
+  if (!opts.serviceJwksUri) throw new ConfigError("Missing required option: serviceJwksUri");
   if (!opts.roleServiceUrl) throw new ConfigError("Missing required option: roleServiceUrl");
+  if (!opts.audience) throw new ConfigError("Missing required option: audience");
+
+  // Q4: URL well-formedness validation (http/https required)
+  requireHttpUrl(opts.userIssuer, "userIssuer");
+  requireHttpUrl(opts.userJwksUri, "userJwksUri");
+  requireHttpUrl(opts.serviceIssuer, "serviceIssuer");
+  requireHttpUrl(opts.serviceJwksUri, "serviceJwksUri");
+  requireHttpUrl(opts.roleServiceUrl, "roleServiceUrl");
+  if (opts.serviceToken?.tokenUrl) {
+    requireHttpUrl(opts.serviceToken.tokenUrl, "serviceToken.tokenUrl");
+  }
 
   const yamlText =
     opts.authorizationYaml ??
@@ -161,6 +194,7 @@ export async function createAuthz(opts: CreateAuthzOptions): Promise<Authz> {
       serviceIssuer: opts.serviceIssuer,
       serviceJwksUri: opts.serviceJwksUri,
       serviceTokenUseClaim: opts.serviceTokenUseClaim,
+      serviceTokenUseValue: opts.serviceTokenUseValue,
       audience: opts.audience,
       clockSkewSeconds: opts.clockSkewSeconds ?? 5,
     });

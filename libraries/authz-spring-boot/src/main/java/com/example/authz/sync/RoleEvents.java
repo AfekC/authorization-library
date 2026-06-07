@@ -55,12 +55,27 @@ public final class RoleEvents {
                 if (!(roleId instanceof String r) || !(perms instanceof List<?> p)) {
                     return ApplyResult.skip("malformed UPSERT_ROLE");
                 }
-                cache.upsertRole(r, ((List<Object>) p).stream().map(String::valueOf).toList());
+                // Q5: reject blank roleId — a phantom "" role must not enter the cache
+                if (r.isBlank()) {
+                    return ApplyResult.skip("UPSERT_ROLE roleId must not be blank");
+                }
+                // Q5: reject any blank/whitespace permission string
+                List<String> resolved = ((List<Object>) p).stream().map(String::valueOf).toList();
+                for (String perm : resolved) {
+                    if (perm.isBlank()) {
+                        return ApplyResult.skip("UPSERT_ROLE contains a blank permission entry");
+                    }
+                }
+                cache.upsertRole(r, resolved);
                 return ApplyResult.ok();
             }
             case "DELETE_ROLE" -> {
                 Object roleId = event.get("roleId");
                 if (!(roleId instanceof String r)) return ApplyResult.skip("malformed DELETE_ROLE");
+                // Q5: reject blank roleId
+                if (r.isBlank()) {
+                    return ApplyResult.skip("DELETE_ROLE roleId must not be blank");
+                }
                 cache.deleteRole(r);
                 return ApplyResult.ok();
             }

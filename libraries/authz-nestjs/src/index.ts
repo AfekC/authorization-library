@@ -19,7 +19,10 @@ export {
   ServicePrincipal,
   buildRequestContext,
   stripUntrustedHeaders,
+  sanitizeHeadersInPlace,
+  StripHeadersOptions,
 } from "./inbound-auth/context";
+export { extractBearer } from "./inbound-auth/bearer";
 export {
   JwksTokenValidator,
   JwksValidatorConfig,

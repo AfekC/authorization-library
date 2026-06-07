@@ -15,6 +15,13 @@ function withCause(message: string, cause: unknown): Error {
   return err;
 }
 
+/**
+ * Default timeout for JWKS HTTP fetches (ms). Matches Java Nimbus's 5-second
+ * default and is passed as `timeoutDuration` to createRemoteJWKSet so that a
+ * slow/hung JWKS endpoint does not block jwtVerify indefinitely.
+ */
+export const DEFAULT_JWKS_TIMEOUT_MS = 5000;
+
 export interface JwksValidatorConfig {
   /** Auth Service issuer + JWKS for user JWTs. */
   userIssuer: string;
@@ -29,6 +36,11 @@ export interface JwksValidatorConfig {
   /** Claim that marks a service token. */
   serviceTokenUseClaim?: string;
   serviceTokenUseValue?: string;
+  /**
+   * Timeout (ms) for JWKS HTTP fetches. Defaults to {@link DEFAULT_JWKS_TIMEOUT_MS}
+   * (5000 ms). Passed as `timeoutDuration` to createRemoteJWKSet.
+   */
+  jwksTimeoutMs?: number;
 }
 
 /** Validates JWTs against remote JWKS for the Auth Service and SSO provider. */
@@ -38,8 +50,9 @@ export class JwksTokenValidator implements TokenValidator {
   private readonly algorithms: string[];
 
   constructor(private readonly cfg: JwksValidatorConfig) {
-    this.userJwks = createRemoteJWKSet(new URL(cfg.userJwksUri));
-    this.serviceJwks = createRemoteJWKSet(new URL(cfg.serviceJwksUri));
+    const timeoutDuration = cfg.jwksTimeoutMs ?? DEFAULT_JWKS_TIMEOUT_MS;
+    this.userJwks = createRemoteJWKSet(new URL(cfg.userJwksUri), { timeoutDuration });
+    this.serviceJwks = createRemoteJWKSet(new URL(cfg.serviceJwksUri), { timeoutDuration });
     this.algorithms = cfg.algorithms ?? ["RS256", "ES256"];
   }
 

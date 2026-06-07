@@ -4,6 +4,15 @@ import { Metrics, METRIC, GAUGE } from "../observability/metrics";
 import { DiskCache } from "./disk";
 import { applyRoleEvent } from "./events";
 
+/** Log and metric a disk write failure; must not throw. */
+function handleDiskWriteError(
+  err: Error,
+  deps: { metrics?: Metrics; logger?: { warn: (msg: string) => void } },
+): void {
+  deps.metrics?.inc(METRIC.diskCacheWriteFailures);
+  deps.logger?.warn(`disk cache write failed: ${err.message}`);
+}
+
 /** Thrown at startup when there is no usable role state to serve. */
 export class CacheBootstrapError extends Error {
   constructor(message: string) {
@@ -96,7 +105,8 @@ export class CacheBootstrap {
   private async fullSync(): Promise<void> {
     const roles = await this.roleService.fetchSnapshot();
     await this.cache.replaceAll(roles);
-    this.disk.write(this.cache);
+    const writeErr = this.disk.write(this.cache);
+    if (writeErr) handleDiskWriteError(writeErr, this.deps);
     this.lastSyncAt = new Date();
   }
 
@@ -115,7 +125,8 @@ export class CacheBootstrap {
           this.applyChain = this.applyChain.then(async () => {
             const result = await applyRoleEvent(this.cache, event);
             if (result.applied) {
-              this.disk.write(this.cache);
+              const writeErr = this.disk.write(this.cache);
+              if (writeErr) handleDiskWriteError(writeErr, this.deps);
               this.updateGauges();
             } else {
               this.deps.metrics?.inc(METRIC.roleEventSkipped);

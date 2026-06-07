@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Startup state machine for the permission cache (architecture §8):
@@ -33,6 +34,8 @@ public class CacheBootstrap {
     private volatile boolean kafkaConnected;
     private volatile boolean stopped;
     private Thread reconciler;
+    /** Q6: guard that prevents a second concurrent startReconciler() from spawning a second thread. */
+    private final AtomicBoolean reconcilerStarted = new AtomicBoolean(false);
 
     public CacheBootstrap(PermissionCache cache, Spi.RoleServiceClient roleService, DiskCache disk) {
         this(cache, roleService, disk, null, null);
@@ -119,6 +122,11 @@ public class CacheBootstrap {
 
     /** Periodic reconciler (§8.3): seed-retry + unconditional full re-fetch. */
     public void startReconciler(long intervalMs) {
+        // Q6: guard against double-start — a second call without an intervening stop() is a no-op.
+        if (!reconcilerStarted.compareAndSet(false, true)) {
+            LOG.debug("authz reconciler already running — ignoring duplicate startReconciler() call");
+            return;
+        }
         reconciler = new Thread(() -> {
             while (!stopped) {
                 try {
@@ -154,6 +162,7 @@ public class CacheBootstrap {
 
     public void stop() {
         stopped = true;
+        reconcilerStarted.set(false); // allow restart on a fresh instance after stop()
         if (reconciler != null) reconciler.interrupt();
         if (events != null) events.stop();
     }

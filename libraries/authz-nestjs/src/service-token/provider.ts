@@ -2,6 +2,9 @@ import { AccessToken, ClientCredentials } from "simple-oauth2";
 import pRetry from "p-retry";
 import { ServiceIdentityProvider } from "../spi";
 
+/** Mirrors Java's PROACTIVE_REFRESH_FRACTION = 0.70 (§A1). */
+const DEFAULT_PROACTIVE_REFRESH_FRACTION = 0.7;
+
 export interface ClientCredentialsConfig {
   tokenUrl: string;
   clientId: string;
@@ -89,7 +92,7 @@ export class ClientCredentialsProvider implements ServiceIdentityProvider {
     // G10: explicit HTTP timeout (default 5s)
     this.tokenEndpointTimeoutMs = cfg.tokenEndpointTimeoutMs ?? 5000;
     // A1: proactive refresh at 70% of token lifetime by default
-    this.proactiveRefreshFraction = cfg.proactiveRefreshFraction ?? 0.7;
+    this.proactiveRefreshFraction = cfg.proactiveRefreshFraction ?? DEFAULT_PROACTIVE_REFRESH_FRACTION;
     this.onError = cfg.onError;
     this.logger = cfg.logger ?? { warn: (m) => console.warn(m) };
   }

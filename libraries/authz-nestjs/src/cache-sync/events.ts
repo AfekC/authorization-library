@@ -47,17 +47,32 @@ export async function applyRoleEvent(
       if (typeof e.roleId !== "string" || !Array.isArray(rawPerms)) {
         return { applied: false, reason: "malformed UPSERT_ROLE" };
       }
+      // Q5: reject empty-string roleId — a blank role ID is invalid and must not
+      // enter the cache (Java RoleEvents.java alignment: empty roleId is invalid).
+      if (e.roleId.trim().length === 0) {
+        return { applied: false, reason: "empty roleId in UPSERT_ROLE" };
+      }
       // B4/C5: Coerce every element to string so numeric/boolean permissions
       // (e.g. 123, true) stored by Java (which uses String::valueOf) are stored
       // identically here. Ensures Set.has("123") matches a numeric permission 123
       // from a Kafka event — preventing silent decision mismatches.
       const permissions: string[] = rawPerms.map((p: unknown) => String(p));
+      // Q5: after stringification, reject any permission that is blank (empty or
+      // whitespace-only). A phantom "" permission must never enter the cache.
+      const hasEmptyPerm = permissions.some((p) => p.trim().length === 0);
+      if (hasEmptyPerm) {
+        return { applied: false, reason: "empty permission string in UPSERT_ROLE" };
+      }
       await cache.upsertRole(e.roleId, permissions);
       return { applied: true };
     }
     case "DELETE_ROLE":
       if (typeof e.roleId !== "string") {
         return { applied: false, reason: "malformed DELETE_ROLE" };
+      }
+      // Q5: reject empty-string roleId for DELETE_ROLE as well.
+      if (e.roleId.trim().length === 0) {
+        return { applied: false, reason: "empty roleId in DELETE_ROLE" };
       }
       await cache.deleteRole(e.roleId);
       return { applied: true };

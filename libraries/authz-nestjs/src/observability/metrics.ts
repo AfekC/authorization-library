@@ -46,6 +46,7 @@ export const METRIC = {
   serviceTokenFailures: "service_token_failures_total",
   roleEventSkipped: "role_event_skipped_total",
   roleRefreshFailures: "role_refresh_failures_total",
+  diskCacheWriteFailures: "disk_cache_write_failures_total",
 } as const;
 
 export const GAUGE = {

@@ -197,7 +197,7 @@ async function main() {
   }
 
   const app = express();
-  app.use(express.json());
+  app.use(express.json({ limit: "256kb" }));
   app.use(express.urlencoded({ extended: true }));
 
   // ── JWKS endpoints (with G15 fault injection) ──────────────────────────────

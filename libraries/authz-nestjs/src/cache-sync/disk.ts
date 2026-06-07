@@ -10,12 +10,22 @@ export interface DiskSnapshot {
 export class DiskCache {
   constructor(private readonly path: string) {}
 
-  write(cache: PermissionCache): void {
+  /**
+   * Persist the cache snapshot to disk. Returns null on success, or the Error
+   * on failure (EACCES, ENOSPC, missing directory, etc.). Never throws — callers
+   * must log + metric on a non-null return and keep serving from the in-memory cache.
+   */
+  write(cache: PermissionCache): Error | null {
     const snapshot: DiskSnapshot = {
       timestamp: new Date().toISOString(),
       roles: cache.toSnapshot(),
     };
-    fs.writeFileSync(this.path, JSON.stringify(snapshot, null, 2), "utf8");
+    try {
+      fs.writeFileSync(this.path, JSON.stringify(snapshot, null, 2), "utf8");
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e : new Error(String(e));
+    }
   }
 
   exists(): boolean {

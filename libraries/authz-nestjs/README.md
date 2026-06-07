@@ -58,6 +58,25 @@ and behavior:
 | `kafkaBrokers` | no | Enable Kafka-based incremental cache sync |
 | `serviceToken` | no | Outbound identity (client-credentials) |
 
+### Optional configuration
+
+These fields all have sensible defaults and only need to be set when the defaults do not fit.
+
+| Field | Type | Default | Purpose |
+|---|---|---|---|
+| `clockSkewSeconds` | `number` | `5` | Allowed clock-skew tolerance (seconds) applied to JWT `exp`/`nbf` validation for both user and service tokens |
+| `reconcileIntervalMs` | `number` | `5000` | How often (ms) the background reconciler unconditionally re-fetches the full role map from the Role Service |
+| `roleServiceConnectTimeout` | `number` | `5000` | Role Service HTTP connect timeout (ms) |
+| `roleServiceReadTimeout` | `number` | `5000` | Role Service HTTP read timeout (ms) |
+| `diskCachePath` | `string` | `"authorization-cache.json"` | Path to the on-disk role cache file used as a seed fallback when the Role Service is unreachable at startup |
+| `serviceTokenUseClaim` | `string` | `"token_use"` | JWT claim name inspected to identify a service token |
+| `serviceTokenUseValue` | `string` | `"service"` | Expected value of `serviceTokenUseClaim` for a token to be accepted as a service token |
+| `roleUpdatesTopic` | `string` | `"role-updates"` | Kafka topic carrying role UPSERT events |
+| `roleDeleteTopic` | `string` | `"role-delete"` | Kafka topic carrying role DELETE events |
+| `publishRolesTopic` | `string` | `"publish-roles"` | Kafka topic that triggers a forced full re-fetch of the role map |
+| `kafkaGroupId` | `string` | `"authz-cache-sync"` | Kafka consumer group prefix (a UUID is appended per instance to avoid group conflicts) |
+| `kafkaClientId` | `string` | `"authz-cache-sync"` | Kafka consumer client ID |
+
 ## SPI extension points
 
 - `TokenValidator` — swap JWT validation logic

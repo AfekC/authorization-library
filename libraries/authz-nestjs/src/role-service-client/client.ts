@@ -41,6 +41,21 @@ export class HttpRoleServiceClient implements RoleServiceClient {
     if (typeof data !== "object" || data === null || Array.isArray(data)) {
       throw new Error("Role Service returned a malformed snapshot");
     }
+    // Q2: validate every value is an array of strings — e.g. {"ADMIN": null} is rejected.
+    for (const [roleId, permissions] of Object.entries(data)) {
+      if (!Array.isArray(permissions)) {
+        throw new Error(
+          `Role Service returned a malformed snapshot: role "${roleId}" permissions is not an array`,
+        );
+      }
+      for (const perm of permissions) {
+        if (typeof perm !== "string") {
+          throw new Error(
+            `Role Service returned a malformed snapshot: role "${roleId}" contains a non-string permission`,
+          );
+        }
+      }
+    }
     return data;
   }
 }

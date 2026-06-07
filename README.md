@@ -30,7 +30,7 @@ request → expected decision, or `expectCompileError`). Both libraries load the
 - **NestJS:** `libraries/authz-nestjs/test/vectors.spec.ts`
 - **Spring:** `libraries/authz-spring-boot/src/test/java/com/example/authz/SharedVectorsTest.java`
 
-29 vectors cover wildcard precedence, ANY/ALL, every decision-matrix cell, and edge cases.
+46 vectors cover wildcard precedence, ANY/ALL, every decision-matrix cell, and edge cases.
 
 ## Adopting the library (kept deliberately simple)
 
@@ -60,14 +60,14 @@ In both, business routes contain **no** authorization code; rules live entirely 
 NestJS library (Node 22):
 ```
 npm install
-npm test --workspace=authz-nestjs        # 58 tests (29 shared vectors + module/outbound/arch-fix tests)
+npm test --workspace=authz-nestjs        # 379 tests (46 shared vectors + module/outbound/arch-fix tests)
 ```
 
 Spring library (no host JDK required — uses Docker):
 ```
 scripts/mvn.sh libraries/authz-spring-boot test      # bash
 scripts\mvn.ps1 -ModuleDir libraries/authz-spring-boot test   # PowerShell
-# -> 51 tests (29 shared vectors + module/outbound/arch-fix tests)
+# -> 254 tests (46 shared vectors + module/outbound/arch-fix tests)
 ```
 
 ## End-to-end (both demos + mock + Kafka)

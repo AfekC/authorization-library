@@ -72,17 +72,19 @@ describe("K4a — required options validation", () => {
         audience: "my-app",
         userIssuer: "https://issuer",
         userJwksUri: "https://jwks",
+        serviceIssuer: "https://sso",
+        serviceJwksUri: "https://sso/jwks",
         authorizationYaml: VALID_YAML,
       } as any),
     ).rejects.toThrow(/roleServiceUrl/i);
   });
 
-  it("throws on multiple missing fields — first missing wins", async () => {
+  it("throws on multiple missing fields — first missing wins (Java order: userIssuer first)", async () => {
     await expect(
       createAuthz({
         authorizationYaml: VALID_YAML,
       } as any),
-    ).rejects.toThrow(/audience/i);
+    ).rejects.toThrow(/userIssuer/i);
   });
 });
 
@@ -97,6 +99,8 @@ describe("K4b — YAML source validation", () => {
         audience: "my-app",
         userIssuer: "https://issuer",
         userJwksUri: "https://jwks",
+        serviceIssuer: "https://sso",
+        serviceJwksUri: "https://sso/jwks",
         roleServiceUrl: ROLE_SERVICE_URL,
       } as any),
     ).rejects.toThrow(/authorizationYaml/i);

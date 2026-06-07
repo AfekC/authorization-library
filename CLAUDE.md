@@ -81,7 +81,7 @@ authorization.yaml (fail-fast on config error)
 
 ## Cross-Language Correctness
 
-Both implementations (Spring Boot Java + NestJS TypeScript) must pass the same **language-neutral test vectors** (`contracts/test-vectors/*.vectors.json`, 29 vectors) in CI before release. Each vector = `authorization.yaml` fragment + role cache + request params + expected decision (or `expectCompileError`). Covers: wildcard precedence, decision modes, every cell of the decision matrix above, edge cases (no match, unknown role, `*` service, missing dimensions).
+Both implementations (Spring Boot Java + NestJS TypeScript) must pass the same **language-neutral test vectors** (`contracts/test-vectors/*.vectors.json`, 46 vectors) in CI before release. Each vector = `authorization.yaml` fragment + role cache + request params + expected decision (or `expectCompileError`). Covers: wildcard precedence, decision modes, every cell of the decision matrix above, edge cases (no match, unknown role, `*` service, missing dimensions).
 
 Beyond the vectors, `tests/e2e/run.mjs` drives the **same HTTP requests against both demo services** and asserts identical outcomes (decision matrix, live Kafka propagation, outbound propagation, audience rejection) — runtime cross-language parity.
 
@@ -110,8 +110,8 @@ Beyond the vectors, `tests/e2e/run.mjs` drives the **same HTTP requests against 
 Java builds run in Docker (no host JDK): `scripts/mvn.sh <module-dir> <args>` (bash) or
 `scripts\mvn.ps1 -ModuleDir <module-dir> <args>` (PowerShell).
 
-- `npm test --workspace=authz-nestjs` — NestJS library unit tests (58)
-- `scripts/mvn.sh libraries/authz-spring-boot test` — Spring library unit tests (51)
+- `npm test --workspace=authz-nestjs` — NestJS library unit tests (379)
+- `scripts/mvn.sh libraries/authz-spring-boot test` — Spring library unit tests (254)
 - `node demo-services/mock-service/src/index.js` — start mock (:4000)
 - `node demo-services/nestjs-demo/src/main.js` — start NestJS demo (:5001; env `MOCK_URL`, `KAFKA_BROKERS`)
 - `scripts/mvn.sh demo-services/spring-demo spring-boot:run` — start Spring demo (:5002)

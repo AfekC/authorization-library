@@ -357,3 +357,33 @@ Java defines `PROACTIVE_REFRESH_FRACTION = 0.70` (`ClientCredentialsServiceIdent
 
 **Files:**
 - `demo-services/mock-service/src/index.js`
+
+---
+
+## Resolution Status (fourth pass, 2026-06-07) — O / P / Q fixed
+
+> Fixed via parallel sub-agents (best-of-both parity, test-first, disjoint file ownership).
+> Final suites green: **NestJS 379** tests (18 suites), **Java 254** tests (BUILD SUCCESS, incl. 46 shared vectors). No vector edits — parity spine unchanged.
+
+**O — Test & Documentation**
+- **O1 — RESOLVED.** Stale counts corrected: `README.md` and `CLAUDE.md` now read **379** (NestJS) / **254** (Java) tests and **46** shared vectors (7 vector files). `contracts/test-vectors/README.md` carries no numeric count, so nothing to change there.
+- **O2 — RESOLVED.** NestJS `README.md` gained an "Optional configuration" table documenting all 12 optional `CreateAuthzOptions` fields (incl. `serviceTokenUseValue`, added in P1).
+- **O3 — RESOLVED.** `clockSkewSeconds` (default 5, semantics) documented in that same table.
+- **O4 — RESOLVED.** New `test/strip-headers-options.spec.ts` exercises `StripHeadersOptions` (`additionalPrefixes`/`additionalExactNames`, case-folding, deny-list overlap).
+- **O5 — CLOSED (by design).** Shared vectors are decision-only by design. The outbound user-JWT + service-token re-propagation is already exercised at runtime by `tests/e2e/run.mjs` (outbound-propagation scenario); no vector added.
+
+**P — Cross-Language Consistency & Standards**
+- **P1 — RESOLVED.** `createAuthz` now plumbs `serviceTokenUseValue` into the validator (`CreateAuthzOptions.serviceTokenUseValue`, default `"service"`), matching Java.
+- **P2 — RESOLVED.** Startup now presence-checks all six required URLs, incl. `serviceIssuer`/`serviceJwksUri`.
+- **P3 — RESOLVED.** `extractBearer`, `sanitizeHeadersInPlace`, and `StripHeadersOptions` re-exported from `src/index.ts`.
+- **P4 — RESOLVED (aligned to Java).** NestJS required-property validation reordered to match Java's order (issuers/JWKS/roleService first, `audience` last) → identical first-missing error across languages.
+- **P5 — RESOLVED.** NestJS introduced `DEFAULT_PROACTIVE_REFRESH_FRACTION = 0.7` (named constant), mirroring Java's `PROACTIVE_REFRESH_FRACTION`.
+
+**Q — Error-Handling, Edge-Case, Security & Resilience**
+- **Q1 — RESOLVED.** `DiskCache.write()` now try/catches and returns the error; bootstrap logs + increments a new metric `disk_cache_write_failures_total` (`METRIC.diskCacheWriteFailures`) instead of silently swallowing.
+- **Q2 — RESOLVED.** `fetchSnapshot()` now value-validates every map entry is a `string[]` (rejects `{"ADMIN": null}`, `{"ADMIN": {…}}`, non-string elements).
+- **Q3 — RESOLVED.** JWKS fetch now uses jose `timeoutDuration` (default `DEFAULT_JWKS_TIMEOUT_MS = 5000`, matching Java Nimbus 5s).
+- **Q4 — RESOLVED (both libs).** Config URLs parsed/validated for well-formedness (http/https) at startup in both NestJS (`requireHttpUrl`) and Java (`AuthzAutoConfiguration.requireHttpUrl`).
+- **Q5 — RESOLVED (both libs).** Empty/blank `roleId` and blank permission entries now rejected/skipped in NestJS `events.ts` and Java `RoleEvents.java`.
+- **Q6 — RESOLVED.** `CacheBootstrap.startReconciler()` guarded with an `AtomicBoolean` CAS; a second start without `stop()` is a no-op; `stop()` resets it for restart.
+- **Q7 — RESOLVED.** mock-service `express.json({ limit: "256kb" })`.

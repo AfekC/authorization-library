@@ -35,6 +35,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.Resource;
 import org.springframework.web.context.annotation.RequestScope;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
@@ -57,18 +58,54 @@ public class AuthzAutoConfiguration {
 
     static class ConfigValidator {
         ConfigValidator(AuthzProperties props) {
+            // Each property: presence check first (existing style), then Q4 URL well-formedness.
+            // Pairing them keeps the error message consistent with the property that failed.
             if (props.getUserIssuer() == null || props.getUserIssuer().isBlank())
                 throw new com.example.authz.config.ConfigException("authz.user-issuer must be configured");
+            requireHttpUrl(props.getUserIssuer(), "authz.user-issuer");
+
             if (props.getUserJwksUri() == null || props.getUserJwksUri().isBlank())
                 throw new com.example.authz.config.ConfigException("authz.user-jwks-uri must be configured");
+            requireHttpUrl(props.getUserJwksUri(), "authz.user-jwks-uri");
+
             if (props.getServiceIssuer() == null || props.getServiceIssuer().isBlank())
                 throw new com.example.authz.config.ConfigException("authz.service-issuer must be configured");
+            requireHttpUrl(props.getServiceIssuer(), "authz.service-issuer");
+
             if (props.getServiceJwksUri() == null || props.getServiceJwksUri().isBlank())
                 throw new com.example.authz.config.ConfigException("authz.service-jwks-uri must be configured");
+            requireHttpUrl(props.getServiceJwksUri(), "authz.service-jwks-uri");
+
             if (props.getRoleServiceUrl() == null || props.getRoleServiceUrl().isBlank())
                 throw new com.example.authz.config.ConfigException("authz.role-service-url must be configured");
+            requireHttpUrl(props.getRoleServiceUrl(), "authz.role-service-url");
+
             if (props.getAudience() == null || props.getAudience().isBlank())
                 throw new com.example.authz.config.ConfigException("authz.audience must be configured");
+
+            // tokenUrl is optional — validate only when present (Q4)
+            if (props.getTokenUrl() != null && !props.getTokenUrl().isBlank()) {
+                requireHttpUrl(props.getTokenUrl(), "authz.token-url");
+            }
+        }
+
+        /**
+         * Parses the value as a URI and asserts it has an http or https scheme.
+         * Throws {@link com.example.authz.config.ConfigException} on any parse
+         * error or non-http/https scheme — consistent with fail-fast startup style.
+         */
+        private static void requireHttpUrl(String value, String propertyName) {
+            try {
+                URI uri = URI.create(value);
+                String scheme = uri.getScheme();
+                if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+                    throw new com.example.authz.config.ConfigException(
+                            propertyName + " must be a valid http/https URL, got: " + value);
+                }
+            } catch (IllegalArgumentException e) {
+                throw new com.example.authz.config.ConfigException(
+                        propertyName + " must be a valid http/https URL, got: " + value);
+            }
         }
     }
 
