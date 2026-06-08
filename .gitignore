@@ -4,4 +4,4 @@ target/
 *.log
 authorization-cache.json
 .understand-anything/venv/
-/grafiphy-out/cache/
+graphify-out/cache
