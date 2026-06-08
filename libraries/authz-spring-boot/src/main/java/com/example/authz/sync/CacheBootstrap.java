@@ -84,6 +84,7 @@ public class CacheBootstrap {
         cache.replaceAll(roles);
         writeDiskQuietly();
         lastSyncAt = Instant.now();
+        if (metrics != null) metrics.inc(Metrics.ROLE_REFRESH_SUCCESS);
     }
 
     /**
@@ -109,10 +110,14 @@ public class CacheBootstrap {
         // reconciler heals any events missed while Kafka is down (§8.4).
         try {
             events.start(event -> {
+                // time processing of the individual role event
+                java.lang.Runnable stop = metrics != null ? metrics.startTimer(Metrics.ROLE_EVENT_PROCESSING_DURATION) : null;
                 RoleEvents.ApplyResult result = RoleEvents.apply(cache, event);
+                if (stop != null) stop.run();
                 if (result.applied()) {
                     writeDiskQuietly();
                     updateGauges();
+                    if (metrics != null) metrics.inc(Metrics.ROLE_EVENTS_PROCESSED);
                 } else {
                     if (metrics != null) metrics.inc(Metrics.ROLE_EVENT_SKIPPED);
                     LOG.warn("role event skipped: {}", result.reason());
@@ -135,6 +140,7 @@ public class CacheBootstrap {
         try {
             fullSync();
             updateGauges();
+            if (metrics != null) metrics.inc(Metrics.ROLE_REFRESH_SUCCESS);
         } catch (RuntimeException e) {
             if (metrics != null) metrics.inc(Metrics.ROLE_REFRESH_FAILURES);
             LOG.warn("forced refresh failed; keeping current cache", e);
@@ -172,6 +178,7 @@ public class CacheBootstrap {
                     fullSync();
                     mode = Mode.NORMAL;
                     updateGauges();
+                        if (metrics != null) metrics.inc(Metrics.ROLE_REFRESH_SUCCESS);
                     LOG.info("authz seed retry succeeded — cache promoted to NORMAL mode");
                     return; // job done; periodic reconciler takes over
                 } catch (RuntimeException e) {
@@ -212,6 +219,7 @@ public class CacheBootstrap {
                     fullSync();
                     if (mode == Mode.SEED) mode = Mode.NORMAL;
                     updateGauges();
+                    if (metrics != null) metrics.inc(Metrics.ROLE_REFRESH_SUCCESS);
                 } catch (RuntimeException e) {
                     if (metrics != null) metrics.inc(Metrics.ROLE_REFRESH_FAILURES);
                     LOG.warn("authz reconciler snapshot fetch failed; keeping current cache", e);

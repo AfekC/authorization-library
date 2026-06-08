@@ -243,6 +243,7 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
         clientId: opts.serviceToken.clientId,
         clientSecret: opts.serviceToken.clientSecret,
         onError: () => metrics.inc(METRIC.serviceTokenFailures),
+        metrics,
       })
     : undefined;
 
@@ -377,14 +378,26 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
   // the middleware is exactly the bare decision path (no behavioral change).
   const middleware = tracer
     ? (req: any, res: any, next: () => void): Promise<void> =>
-        tracer!.startActiveSpan("authz.decision", async (span: AuthzSpan) => {
+        tracer!.startActiveSpan("authz.request", async (requestSpan: AuthzSpan) => {
+          const stopTimer = metrics.startTimer(METRIC.authzRequestDuration);
           try {
-            await runAuthz(req, res, next, span);
-          } catch (err) {
-            span.recordException(err);
-            throw err;
+            return tracer!.startActiveSpan("authz.decision", async (span: AuthzSpan) => {
+              try {
+                await runAuthz(req, res, next, span);
+              } catch (err) {
+                span.recordException(err);
+                throw err;
+              } finally {
+                span.end();
+              }
+            });
           } finally {
-            span.end();
+            try {
+              stopTimer();
+            } catch (e) {
+              /* ignore timer errors */
+            }
+            requestSpan.end();
           }
         })
     : runAuthz;

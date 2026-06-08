@@ -1,6 +1,7 @@
 import { AccessToken, ClientCredentials } from "simple-oauth2";
 import pRetry from "p-retry";
 import { ServiceIdentityProvider } from "../spi";
+import { Metrics, METRIC } from "../observability/metrics";
 
 /** Mirrors Java's PROACTIVE_REFRESH_FRACTION = 0.70 (§A1). */
 const DEFAULT_PROACTIVE_REFRESH_FRACTION = 0.7;
@@ -37,6 +38,8 @@ export interface ClientCredentialsConfig {
   onError?: (err: unknown) => void;
   /** Logger used for warnings (defaults to console.warn). */
   logger?: { warn: (msg: string) => void };
+  /** Optional metrics sink for recording token fetch metrics. */
+  metrics?: Metrics;
 }
 
 /**
@@ -68,6 +71,7 @@ export class ClientCredentialsProvider implements ServiceIdentityProvider {
   private readonly proactiveRefreshFraction: number;
   private readonly onError?: (err: unknown) => void;
   private readonly logger: { warn: (msg: string) => void };
+  private readonly metrics?: Metrics;
   private cached?: AccessToken;
   private inflight?: Promise<string>;
   /** Handle returned by setTimeout for the proactive refresh, or null when idle. */
@@ -95,6 +99,7 @@ export class ClientCredentialsProvider implements ServiceIdentityProvider {
     this.proactiveRefreshFraction = cfg.proactiveRefreshFraction ?? DEFAULT_PROACTIVE_REFRESH_FRACTION;
     this.onError = cfg.onError;
     this.logger = cfg.logger ?? { warn: (m) => console.warn(m) };
+    this.metrics = cfg.metrics;
   }
 
   async getServiceToken(): Promise<string> {
@@ -133,25 +138,34 @@ export class ClientCredentialsProvider implements ServiceIdentityProvider {
   }
 
   private async acquire(): Promise<string> {
-    const token = await pRetry(
-      () => this.client.getToken(this.scope ? { scope: this.scope } : {}),
-      {
-        retries: Math.max(0, this.maxRetries - 1),
-        minTimeout: this.retryMinTimeoutMs,
-        onFailedAttempt: (err) => {
-          // Guard the user-supplied callback: a throwing onError must not
-          // disrupt p-retry's retry loop or surface as the acquisition error.
-          try {
-            this.onError?.(err);
-          } catch (cbErr) {
-            this.logger.warn(`[authz] onError callback threw: ${String(cbErr)}`);
-          }
+    const stop = this.metrics?.startTimer(METRIC.serviceTokenFetchDuration);
+    try {
+      const token = await pRetry(
+        () => this.client.getToken(this.scope ? { scope: this.scope } : {}),
+        {
+          retries: Math.max(0, this.maxRetries - 1),
+          minTimeout: this.retryMinTimeoutMs,
+          onFailedAttempt: (err) => {
+            // Guard the user-supplied callback: a throwing onError must not
+            // disrupt p-retry's retry loop or surface as the acquisition error.
+            try {
+              this.onError?.(err);
+            } catch (cbErr) {
+              this.logger.warn(`[authz] onError callback threw: ${String(cbErr)}`);
+            }
+          },
         },
-      },
-    );
-    this.cached = token;
-    this.armProactiveRefresh(token);
-    return String(token.token.access_token);
+      );
+      this.cached = token;
+      this.armProactiveRefresh(token);
+      this.metrics?.inc(METRIC.serviceTokenFetchSuccess);
+      if (stop) stop();
+      return String(token.token.access_token);
+    } catch (err) {
+      if (stop) stop();
+      this.metrics?.inc(METRIC.serviceTokenFailures);
+      throw err;
+    }
   }
 
   /**

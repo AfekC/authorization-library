@@ -278,9 +278,10 @@ public class AuthzAutoConfiguration {
     @ConditionalOnMissingBean(Spi.ServiceIdentityProvider.class)
     public Spi.ServiceIdentityProvider authzServiceIdentity(AuthzProperties props, Metrics metrics) {
         var provider = new ClientCredentialsServiceIdentityProvider(
-                props.getTokenUrl(), props.getClientId(), props.getClientSecret(),
-                (int) props.getTokenEndpointTimeoutMs())
-                .onError(e -> metrics.inc(Metrics.SERVICE_TOKEN_FAILURES));
+            props.getTokenUrl(), props.getClientId(), props.getClientSecret(),
+            (int) props.getTokenEndpointTimeoutMs())
+            .onError(e -> metrics.inc(Metrics.SERVICE_TOKEN_FAILURES))
+            .withMetrics(metrics);
         provider.probeTokenEndpoint();
         // Start the background proactive-refresh scheduler so the token is
         // refreshed at ~70% of its lifetime (parity with NestJS, which arms a

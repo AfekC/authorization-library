@@ -113,6 +113,8 @@ export class CacheBootstrap {
     const writeErr = this.disk.write(this.cache);
     if (writeErr) handleDiskWriteError(writeErr, this.deps);
     this.lastSyncAt = new Date();
+    // record a successful refresh
+    this.deps.metrics?.inc(METRIC.roleRefreshSuccess);
   }
 
   private async subscribe(): Promise<void> {
@@ -128,11 +130,15 @@ export class CacheBootstrap {
           // never interleave. An upsert that arrives while a refresh is in
           // flight will wait for the refresh to complete before being applied.
           this.applyChain = this.applyChain.then(async () => {
+            // time processing of the individual role event
+            const stop = this.deps.metrics?.startTimer(METRIC.roleEventProcessingDuration);
             const result = await applyRoleEvent(this.cache, event);
+            if (stop) stop();
             if (result.applied) {
               const writeErr = this.disk.write(this.cache);
               if (writeErr) handleDiskWriteError(writeErr, this.deps);
               this.updateGauges();
+              this.deps.metrics?.inc(METRIC.roleEventsProcessed);
             } else {
               this.deps.metrics?.inc(METRIC.roleEventSkipped);
               this.deps.logger?.warn(`role event skipped: ${result.reason}`);
@@ -173,6 +179,7 @@ export class CacheBootstrap {
     try {
       await this.fullSync();
       this.updateGauges();
+      this.deps.metrics?.inc(METRIC.roleRefreshSuccess);
     } catch (e) {
       this.deps.metrics?.inc(METRIC.roleRefreshFailures);
       this.deps.logger?.warn(
@@ -210,6 +217,7 @@ export class CacheBootstrap {
           await this.fullSync();
           this.mode = "normal";
           this.updateGauges();
+          this.deps.metrics?.inc(METRIC.roleRefreshSuccess);
           this.deps.logger?.warn("authz seed retry succeeded — cache promoted to normal mode");
           break; // job done; periodic reconciler takes over
         } catch {
@@ -244,6 +252,7 @@ export class CacheBootstrap {
           await this.fullSync();
           if (this.mode === "seed") this.mode = "normal";
           this.updateGauges();
+          this.deps.metrics?.inc(METRIC.roleRefreshSuccess);
         } catch {
           this.deps.metrics?.inc(METRIC.roleRefreshFailures);
           this.deps.logger?.warn('authz reconciler snapshot fetch failed; keeping current cache');

@@ -90,6 +90,7 @@ public class ClientCredentialsServiceIdentityProvider implements Spi.ServiceIden
 
     /** Single-thread daemon executor for proactive refresh (A1). Null when disabled. */
     private ScheduledExecutorService proactiveScheduler;
+    private com.example.authz.observability.Metrics metrics; // nullable
 
     /** Production constructor: defaults (clock-skew 60s, 3 attempts, 200ms base backoff, 5000ms timeout). */
     public ClientCredentialsServiceIdentityProvider(String tokenUrl, String clientId, String clientSecret) {
@@ -150,6 +151,11 @@ public class ClientCredentialsServiceIdentityProvider implements Spi.ServiceIden
     public ClientCredentialsServiceIdentityProvider withRetry(int maxAttempts, long baseBackoffMs) {
         this.retry = buildRetry(maxAttempts, baseBackoffMs);
         attachListeners();
+        return this;
+    }
+
+    public ClientCredentialsServiceIdentityProvider withMetrics(com.example.authz.observability.Metrics metrics) {
+        this.metrics = metrics;
         return this;
     }
 
@@ -216,7 +222,9 @@ public class ClientCredentialsServiceIdentityProvider implements Spi.ServiceIden
      * Uses the retry policy.
      */
     private void fetchAndUpdateExpiry() {
-        String token = retry.executeSupplier(() -> {
+        java.lang.Runnable stop = metrics != null ? metrics.startTimer(com.example.authz.observability.Metrics.SERVICE_TOKEN_FETCH_DURATION) : null;
+        try {
+            String token = retry.executeSupplier(() -> {
             OAuth2AuthorizedClient client = manager.authorize(authorizeRequest);
             if (client == null || client.getAccessToken() == null) {
                 throw new IllegalStateException("service token authorization returned no client");
@@ -227,8 +235,15 @@ public class ClientCredentialsServiceIdentityProvider implements Spi.ServiceIden
             if (expiry   != null) cachedExpiry.set(expiry);
             return client.getAccessToken().getTokenValue();
         });
+        if (metrics != null) metrics.inc(com.example.authz.observability.Metrics.SERVICE_TOKEN_FETCH_SUCCESS);
+        if (stop != null) stop.run();
         log.debug("authz: proactive token refresh succeeded, token={}...",
                 token != null && token.length() > 8 ? token.substring(0, 8) : "?");
+        } catch (RuntimeException e) {
+            if (stop != null) stop.run();
+            if (metrics != null) metrics.inc(com.example.authz.observability.Metrics.SERVICE_TOKEN_FAILURES);
+            throw e;
+        }
     }
 
     /** Stops the proactive refresh scheduler cleanly (A1). */
@@ -266,18 +281,28 @@ public class ClientCredentialsServiceIdentityProvider implements Spi.ServiceIden
 
     @Override
     public String getServiceToken() {
-        return retry.executeSupplier(() -> {
-            OAuth2AuthorizedClient client = manager.authorize(authorizeRequest);
-            if (client == null || client.getAccessToken() == null) {
-                throw new IllegalStateException("service token authorization returned no client");
-            }
-            // Keep issuedAt/expiry in sync for the proactive scheduler (A1).
-            Instant issuedAt = client.getAccessToken().getIssuedAt();
-            Instant expiry   = client.getAccessToken().getExpiresAt();
-            if (issuedAt != null) cachedIssuedAt.set(issuedAt);
-            if (expiry   != null) cachedExpiry.set(expiry);
-            return client.getAccessToken().getTokenValue();
-        });
+        java.lang.Runnable stop = metrics != null ? metrics.startTimer(com.example.authz.observability.Metrics.SERVICE_TOKEN_FETCH_DURATION) : null;
+        try {
+            String token = retry.executeSupplier(() -> {
+                OAuth2AuthorizedClient client = manager.authorize(authorizeRequest);
+                if (client == null || client.getAccessToken() == null) {
+                    throw new IllegalStateException("service token authorization returned no client");
+                }
+                // Keep issuedAt/expiry in sync for the proactive scheduler (A1).
+                Instant issuedAt = client.getAccessToken().getIssuedAt();
+                Instant expiry   = client.getAccessToken().getExpiresAt();
+                if (issuedAt != null) cachedIssuedAt.set(issuedAt);
+                if (expiry   != null) cachedExpiry.set(expiry);
+                return client.getAccessToken().getTokenValue();
+            });
+            if (metrics != null) metrics.inc(com.example.authz.observability.Metrics.SERVICE_TOKEN_FETCH_SUCCESS);
+            if (stop != null) stop.run();
+            return token;
+        } catch (RuntimeException e) {
+            if (stop != null) stop.run();
+            if (metrics != null) metrics.inc(com.example.authz.observability.Metrics.SERVICE_TOKEN_FAILURES);
+            throw e;
+        }
     }
 
     /**

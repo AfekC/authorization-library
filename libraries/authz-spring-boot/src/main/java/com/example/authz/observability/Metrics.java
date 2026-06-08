@@ -29,7 +29,13 @@ public class Metrics {
     public static final String SERVICE_TOKEN_FAILURES = "service_token_failures_total";
     public static final String ROLE_EVENT_SKIPPED = "role_event_skipped_total";
     public static final String ROLE_REFRESH_FAILURES = "role_refresh_failures_total";
+    public static final String ROLE_REFRESH_SUCCESS = "role_refresh_success_total";
+    public static final String ROLE_EVENTS_PROCESSED = "role_events_processed_total";
+    public static final String ROLE_EVENT_PROCESSING_DURATION = "role_event_processing_duration_seconds";
     public static final String DISK_CACHE_WRITE_FAILURES = "disk_cache_write_failures_total";
+    public static final String SERVICE_TOKEN_FETCH_SUCCESS = "service_token_fetch_success_total";
+    public static final String SERVICE_TOKEN_FETCH_DURATION = "service_token_fetch_duration_seconds";
+    public static final String AUTHZ_REQUEST_DURATION = "authz_request_duration_seconds";
     public static final String CACHE_VERSION = "permission_cache_version";
     public static final String CACHE_AGE_SECONDS = "permission_cache_age_seconds";
 
@@ -97,6 +103,9 @@ public class Metrics {
 
     private final Map<String, AtomicLong> counters = new ConcurrentHashMap<>();
     private final Map<String, Long> gauges = new ConcurrentHashMap<>();
+    // duration aggregates stored as counts and total milliseconds
+    private final Map<String, java.util.concurrent.atomic.LongAdder> durationCounts = new ConcurrentHashMap<>();
+    private final Map<String, java.util.concurrent.atomic.LongAdder> durationSumMillis = new ConcurrentHashMap<>();
 
     private final CopyOnWriteArrayList<Sink> sinks = new CopyOnWriteArrayList<>();
 
@@ -124,6 +133,20 @@ public class Metrics {
                 // Metrics export is best-effort.
             }
         }
+    }
+
+    /** Start a simple timer that records duration (seconds) into internal aggregates. */
+    public Runnable startTimer(String baseName) {
+        final long start = System.currentTimeMillis();
+        return () -> {
+            long elapsedMs = System.currentTimeMillis() - start;
+            // update aggregates
+            durationCounts.computeIfAbsent(baseName, k -> new java.util.concurrent.atomic.LongAdder()).increment();
+            durationSumMillis.computeIfAbsent(baseName, k -> new java.util.concurrent.atomic.LongAdder()).add(elapsedMs);
+            // expose count as a counter and sum as a gauge (milliseconds)
+            inc(baseName + "_count");
+            setGauge(baseName + "_sum_ms", durationSumMillis.get(baseName).sum());
+        };
     }
 
     public void setGauge(String name, long value) {

@@ -123,6 +123,8 @@ public class AuthorizationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
 
+        java.lang.Runnable stopTimer = metrics != null ? metrics.startTimer(Metrics.AUTHZ_REQUEST_DURATION) : null;
+
         // B10 — Consume the token headers before stripping so they are still readable here.
         String bearer = extractBearer(request.getHeader("Authorization"));
         String serviceToken = request.getHeader("X-Service-Token");
@@ -211,12 +213,16 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         audit.emit(AuditEvents.build(ctx, request.getMethod(), matchPath,
                 auditPermission, decision, cache.version()));
 
-        if (decision == Decision.ALLOW) {
-            metrics.inc(Metrics.AUTHZ_SUCCESS);
-            chain.doFilter(sanitizedRequest, response);
-        } else {
-            metrics.inc(Metrics.PERMISSION_DENIED);
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization denied");
+        try {
+            if (decision == Decision.ALLOW) {
+                metrics.inc(Metrics.AUTHZ_SUCCESS);
+                chain.doFilter(sanitizedRequest, response);
+            } else {
+                metrics.inc(Metrics.PERMISSION_DENIED);
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization denied");
+            }
+        } finally {
+            if (stopTimer != null) stopTimer.run();
         }
     }
 
