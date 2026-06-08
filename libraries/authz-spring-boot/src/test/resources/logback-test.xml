@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Test-only logging: route everything through BufferingLogbackAppender so the
+  console stays silent on success. LogFlushExtension replays a test's buffered
+  logs to stdout only when that test fails.
+-->
+<configuration>
+  <appender name="BUFFER" class="com.example.authz.testsupport.BufferingLogbackAppender"/>
+
+  <root level="INFO">
+    <appender-ref ref="BUFFER"/>
+  </root>
+</configuration>

@@ -64,8 +64,14 @@ services:
       MOCK_URL: "http://mock:4000"
       API_AUDIENCE: "orders-api"
       DOWNSTREAM_URL: "http://nestjs-demo:5001"
+      # Without this the Spring demo's Kafka consumer is disabled
+      # (authz.kafka-brokers defaults to empty) and it never sees
+      # role-updates / publish-roles events — the NestJS demo has it.
+      KAFKA_BROKERS: "redpanda:9092"
     ports:
       - "5002:5002"
     depends_on:
       mock:
+        condition: service_healthy
+      redpanda:
         condition: service_healthy
