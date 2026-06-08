@@ -6,19 +6,26 @@ import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
+import org.springframework.security.oauth2.client.endpoint.DefaultClientCredentialsTokenResponseClient;
+import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -41,10 +48,12 @@ import java.util.function.Consumer;
  * <p>Base retry backoff is 200ms with factor 2.0 (canonical value; NestJS is aligned
  * to match — see architecture-gaps.md B6/G9).
  *
- * <p>An explicit connect+read timeout of {@value #TOKEN_ENDPOINT_TIMEOUT_MS}ms is
- * applied to the startup reachability probe (G10). The Spring Security HTTP client
- * used for actual token acquisition inherits the JVM default. The token endpoint timeout
- * is configured via authz.token-endpoint-timeout-ms in AuthzProperties.
+ * <p>An explicit connect+read timeout ({@code tokenEndpointTimeoutMs}, default
+ * 5000ms) is applied to <em>all</em> token-endpoint calls — both the startup
+ * reachability probe and actual token acquisition — via the client-credentials
+ * token-response client's timeout-bounded {@code RestTemplate} (G10). A hung SSO
+ * token endpoint therefore cannot block outbound calls indefinitely. The timeout
+ * is configured via {@code authz.token-endpoint-timeout-ms} in AuthzProperties.
  *
  * <p>Mirrors the NestJS ClientCredentialsProvider (simple-oauth2 + p-retry).
  */
@@ -117,8 +126,18 @@ public class ClientCredentialsServiceIdentityProvider implements Spi.ServiceIden
                 new InMemoryOAuth2AuthorizedClientService(registrations);
         AuthorizedClientServiceOAuth2AuthorizedClientManager mgr =
                 new AuthorizedClientServiceOAuth2AuthorizedClientManager(registrations, clientService);
+        // G10: apply the configured connect+read timeout to the actual token
+        // acquisition (not just the startup probe) by giving the client-credentials
+        // token-response client a timeout-bounded RestTemplate. A hung SSO token
+        // endpoint must not block outbound calls indefinitely.
+        DefaultClientCredentialsTokenResponseClient tokenResponseClient =
+                new DefaultClientCredentialsTokenResponseClient();
+        tokenResponseClient.setRestOperations(tokenEndpointRestTemplate(tokenEndpointTimeoutMs));
         mgr.setAuthorizedClientProvider(OAuth2AuthorizedClientProviderBuilder.builder()
-                .clientCredentials(c -> c.clockSkew(clockSkew))
+                .clientCredentials(c -> {
+                    c.clockSkew(clockSkew);
+                    c.accessTokenResponseClient(tokenResponseClient);
+                })
                 .build());
         this.manager = mgr;
         this.authorizeRequest = OAuth2AuthorizeRequest.withClientRegistrationId(REGISTRATION_ID)
@@ -259,6 +278,24 @@ public class ClientCredentialsServiceIdentityProvider implements Spi.ServiceIden
             if (expiry   != null) cachedExpiry.set(expiry);
             return client.getAccessToken().getTokenValue();
         });
+    }
+
+    /**
+     * RestTemplate for the OAuth2 token endpoint with an explicit connect+read
+     * timeout (G10) and the converters the client-credentials flow requires
+     * (form request body + token-response JSON), plus the OAuth2 error handler.
+     */
+    private static RestTemplate tokenEndpointRestTemplate(int timeoutMs) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        int t = Math.max(1, timeoutMs);
+        factory.setConnectTimeout(t);
+        factory.setReadTimeout(t);
+        RestTemplate restTemplate = new RestTemplate(Arrays.asList(
+                new FormHttpMessageConverter(),
+                new OAuth2AccessTokenResponseHttpMessageConverter()));
+        restTemplate.setRequestFactory(factory);
+        restTemplate.setErrorHandler(new OAuth2ErrorResponseErrorHandler());
+        return restTemplate;
     }
 
     private Retry buildRetry(int maxAttempts, long baseBackoffMs) {

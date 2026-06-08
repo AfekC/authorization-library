@@ -6,8 +6,11 @@ import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
+import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -26,6 +29,13 @@ import java.util.Map;
  * <p>Service tokens: algorithm + signature (against SSO JWKS) + issuer +
  * expiration + not-before + configurable {@code token_use} claim (§2.3, always
  * enforced — a blank {@code serviceTokenUseClaim} defaults to {@code "token_use"}).
+ *
+ * <p>JWKS fetches (initial load and unknown-{@code kid} refresh) use an HTTP
+ * client with an explicit connect+read timeout ({@code jwksTimeoutMs}, default
+ * 5000ms) so a slow/hung JWKS endpoint cannot block token validation on the
+ * request path indefinitely — a JWKS that does not respond within the timeout
+ * fails validation closed (the request is denied), with no silent per-request
+ * retry on the hot path. Matches the NestJS validator's configurable timeout.
  */
 public class NimbusJwksTokenValidator implements Spi.TokenValidator {
 
@@ -39,6 +49,9 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
     private final String serviceTokenUseClaim;
     private final String serviceTokenUseValue;
 
+    /** Default JWKS fetch timeout (ms) when not specified. */
+    private static final long DEFAULT_JWKS_TIMEOUT_MS = 5000;
+
     public NimbusJwksTokenValidator(String userIssuer, String userJwksUri,
                                     String serviceIssuer, String serviceJwksUri,
                                     String audience, String serviceTokenUseClaim,
@@ -51,6 +64,16 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
                                     String serviceIssuer, String serviceJwksUri,
                                     String audience, String serviceTokenUseClaim,
                                     String serviceTokenUseValue, long clockSkewSeconds) {
+        this(userIssuer, userJwksUri, serviceIssuer, serviceJwksUri,
+                audience, serviceTokenUseClaim, serviceTokenUseValue, clockSkewSeconds,
+                DEFAULT_JWKS_TIMEOUT_MS);
+    }
+
+    public NimbusJwksTokenValidator(String userIssuer, String userJwksUri,
+                                    String serviceIssuer, String serviceJwksUri,
+                                    String audience, String serviceTokenUseClaim,
+                                    String serviceTokenUseValue, long clockSkewSeconds,
+                                    long jwksTimeoutMs) {
         // A4/G1: audience is required — fail fast at construction time
         if (audience == null || audience.isBlank()) {
             throw new ConfigException(
@@ -63,21 +86,36 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
                 : serviceTokenUseClaim;
 
         Duration skew = Duration.ofSeconds(clockSkewSeconds);
-        this.userDecoder = userDecoder(userJwksUri, userIssuer, audience, skew);
-        this.serviceDecoder = serviceDecoder(serviceJwksUri, serviceIssuer, skew);
+        RestOperations jwksHttp = jwksRestOperations(jwksTimeoutMs);
+        this.userDecoder = userDecoder(userJwksUri, userIssuer, audience, skew, jwksHttp);
+        this.serviceDecoder = serviceDecoder(serviceJwksUri, serviceIssuer, skew, jwksHttp);
         this.serviceTokenUseClaim = effectiveClaim;
         this.serviceTokenUseValue = serviceTokenUseValue;
+    }
+
+    /**
+     * HTTP client used to fetch JWKS, with an explicit connect+read timeout so a
+     * slow/hung JWKS endpoint cannot hang token validation on the request path.
+     */
+    private static RestOperations jwksRestOperations(long timeoutMs) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        int t = (int) Math.max(1, timeoutMs);
+        factory.setConnectTimeout(t);
+        factory.setReadTimeout(t);
+        return new RestTemplate(factory);
     }
 
     /**
      * Build a decoder pinned to RS256/ES256, with issuer + audience + exp + nbf validators.
      */
     private static NimbusJwtDecoder userDecoder(String jwksUri, String issuer,
-                                                String audience, Duration skew) {
+                                                String audience, Duration skew,
+                                                RestOperations jwksHttp) {
         // B2/G2: pin to the safe allow-list; NimbusJwtDecoder rejects any other alg header
         NimbusJwtDecoder d = NimbusJwtDecoder.withJwkSetUri(jwksUri)
                 .jwsAlgorithm(ALLOWED_ALGORITHMS[0])
                 .jwsAlgorithm(ALLOWED_ALGORITHMS[1])
+                .restOperations(jwksHttp)
                 .build();
 
         OAuth2TokenValidator<Jwt> timestamps = new JwtTimestampValidator(skew);
@@ -95,10 +133,12 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
      * Build a decoder pinned to RS256/ES256, with issuer + exp + nbf validators.
      * No audience check for service tokens (§2.3).
      */
-    private static NimbusJwtDecoder serviceDecoder(String jwksUri, String issuer, Duration skew) {
+    private static NimbusJwtDecoder serviceDecoder(String jwksUri, String issuer, Duration skew,
+                                                   RestOperations jwksHttp) {
         NimbusJwtDecoder d = NimbusJwtDecoder.withJwkSetUri(jwksUri)
                 .jwsAlgorithm(ALLOWED_ALGORITHMS[0])
                 .jwsAlgorithm(ALLOWED_ALGORITHMS[1])
+                .restOperations(jwksHttp)
                 .build();
         d.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
                 new JwtTimestampValidator(skew), new NbfValidator(skew), new JwtIssuerValidator(issuer)));

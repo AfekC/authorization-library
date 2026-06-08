@@ -43,6 +43,13 @@ export class HttpRoleServiceClient implements RoleServiceClient {
     }
     // Q2: validate every value is an array of strings — e.g. {"ADMIN": null} is rejected.
     for (const [roleId, permissions] of Object.entries(data)) {
+      // Reject blank role ids: an empty-string key would create a phantom role
+      // that silently never matches (parity with the Java client's validation).
+      if (typeof roleId !== "string" || roleId.trim().length === 0) {
+        throw new Error(
+          "Role Service returned a malformed snapshot: role id must be a non-empty string",
+        );
+      }
       if (!Array.isArray(permissions)) {
         throw new Error(
           `Role Service returned a malformed snapshot: role "${roleId}" permissions is not an array`,

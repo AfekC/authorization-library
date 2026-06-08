@@ -120,6 +120,7 @@ Java builds run in Docker (no host JDK): `scripts/mvn.sh <module-dir> <args>` (b
 
 ## Coding Conventions
 
+- **Standards & best practices** — see [`docs/standards/spring-java-standards.md`](docs/standards/spring-java-standards.md) (Java/Spring Boot) and [`docs/standards/nestjs-standards.md`](docs/standards/nestjs-standards.md) (TypeScript/NestJS). General, code-agnostic language/framework standards (style, types, DI, config, error handling, security, observability, testing).
 - Follow existing patterns in each library — don't refactor adjacent code
 - Write tests first for bug fixes (reproduce → fix → pass)
 - Audit events emitted on every decision — always include relevant context

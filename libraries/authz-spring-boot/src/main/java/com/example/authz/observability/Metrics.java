@@ -23,6 +23,7 @@ public class Metrics {
     public static final String SERVICE_TOKEN_FAILURES = "service_token_failures_total";
     public static final String ROLE_EVENT_SKIPPED = "role_event_skipped_total";
     public static final String ROLE_REFRESH_FAILURES = "role_refresh_failures_total";
+    public static final String DISK_CACHE_WRITE_FAILURES = "disk_cache_write_failures_total";
     public static final String CACHE_VERSION = "permission_cache_version";
     public static final String CACHE_AGE_SECONDS = "permission_cache_age_seconds";
 

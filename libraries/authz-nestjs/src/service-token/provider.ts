@@ -138,7 +138,15 @@ export class ClientCredentialsProvider implements ServiceIdentityProvider {
       {
         retries: Math.max(0, this.maxRetries - 1),
         minTimeout: this.retryMinTimeoutMs,
-        onFailedAttempt: (err) => this.onError?.(err),
+        onFailedAttempt: (err) => {
+          // Guard the user-supplied callback: a throwing onError must not
+          // disrupt p-retry's retry loop or surface as the acquisition error.
+          try {
+            this.onError?.(err);
+          } catch (cbErr) {
+            this.logger.warn(`[authz] onError callback threw: ${String(cbErr)}`);
+          }
+        },
       },
     );
     this.cached = token;

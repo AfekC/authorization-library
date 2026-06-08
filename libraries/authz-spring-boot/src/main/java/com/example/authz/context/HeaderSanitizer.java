@@ -6,10 +6,24 @@ import java.util.List;
  * Decides whether an inbound header asserts identity and must be ignored
  * (architecture §12.1 / B10 / E4).
  *
- * <p>The default untrusted set covers {@code x-user-*}, {@code x-role},
- * {@code x-service-*}, and {@code x-tenant}. The set is injectable via the
- * constructor overloads so that adopters with custom identity-header schemes
- * can extend it without forking the library.
+ * <p>This is a deny-by-default + explicit-allow boundary against context
+ * tampering:
+ * <ul>
+ *   <li><b>Trusted (never stripped):</b> {@code Authorization} and
+ *       {@code X-Service-Token} are consumed by the token validator and pass
+ *       through untouched — their authenticity is established by signature
+ *       validation, not by trusting the header.</li>
+ *   <li><b>Untrusted (stripped/ignored):</b> any identity/context header
+ *       matching the configured prefixes/exact names — by default
+ *       {@code x-user-*}, {@code x-role}, {@code x-service-*}, {@code x-tenant}
+ *       (and exact {@code x-user}, {@code x-role}, {@code x-tenant},
+ *       {@code x-userid}). These are never trusted as authorization input,
+ *       since a client could forge them.</li>
+ * </ul>
+ *
+ * <p>The untrusted set is injectable via the constructor overloads so that
+ * adopters with custom identity-header schemes can extend it without forking
+ * the library.
  */
 public final class HeaderSanitizer {
 

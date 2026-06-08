@@ -159,7 +159,8 @@ export async function createAuthz(opts: CreateAuthzOptions): Promise<Authz> {
   if (!opts.serviceIssuer) throw new ConfigError("Missing required option: serviceIssuer");
   if (!opts.serviceJwksUri) throw new ConfigError("Missing required option: serviceJwksUri");
   if (!opts.roleServiceUrl) throw new ConfigError("Missing required option: roleServiceUrl");
-  if (!opts.audience) throw new ConfigError("Missing required option: audience");
+  if (!opts.audience || opts.audience.trim().length === 0)
+    throw new ConfigError("Missing required option: audience");
 
   // Q4: URL well-formedness validation (http/https required)
   requireHttpUrl(opts.userIssuer, "userIssuer");
@@ -207,6 +208,8 @@ export async function createAuthz(opts: CreateAuthzOptions): Promise<Authz> {
         publishTopic: opts.publishRolesTopic,
         groupId: opts.kafkaGroupId,
         clientId: opts.kafkaClientId,
+        logger: { warn: (m) => console.warn(m) },
+        onSkippedEvent: () => metrics.inc(METRIC.roleEventSkipped),
       })
     : undefined;
 
@@ -366,6 +369,11 @@ export async function createAuthz(opts: CreateAuthzOptions): Promise<Authz> {
     stop: async () => {
       boot.stop();
       if (events) await events.stop();
+      // Cancel the outbound provider's proactive-refresh timer so the process
+      // can exit cleanly (graceful shutdown — clear timers/intervals).
+      if (serviceIdentity && typeof (serviceIdentity as { close?: () => void }).close === "function") {
+        (serviceIdentity as { close: () => void }).close();
+      }
     },
   };
 }

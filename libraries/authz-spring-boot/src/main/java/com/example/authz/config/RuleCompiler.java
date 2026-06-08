@@ -66,8 +66,8 @@ public final class RuleCompiler {
             decision = DecisionMode.valueOf(d);
         }
 
-        List<String> permissions = toStringListOrNull(raw.get("permissions"));
-        List<String> allowedServices = toStringListOrNull(raw.get("allowedServices"));
+        List<String> permissions = toStringListOrNull(raw.get("permissions"), path, "permissions");
+        List<String> allowedServices = toStringListOrNull(raw.get("allowedServices"), path, "allowedServices");
 
         List<Segment> segments = parseSegments(path);
         int[] scores = new int[segments.size()];
@@ -80,10 +80,19 @@ public final class RuleCompiler {
                 segments, scores, literalCount);
     }
 
-    private static List<String> toStringListOrNull(Object obj) {
+    private static List<String> toStringListOrNull(Object obj, String path, String field) {
         if (!(obj instanceof List<?> list) || list.isEmpty()) return null;
         List<String> out = new ArrayList<>();
-        for (Object o : list) out.add(String.valueOf(o));
+        for (Object o : list) {
+            // Fail fast on blank entries: a blank permission/service name would
+            // silently become an unreachable rule (it can never match a real
+            // role permission or service name).
+            if (o == null || String.valueOf(o).isBlank()) {
+                throw new ConfigException(
+                        "rule \"" + path + "\" has a blank entry in \"" + field + "\"");
+            }
+            out.add(String.valueOf(o));
+        }
         return out;
     }
 

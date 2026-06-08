@@ -143,7 +143,7 @@ public class AuthzAutoConfiguration {
     }
 
     /** Startup state machine: snapshot -> seed fallback -> subscribe -> reconcile. */
-    @Bean
+    @Bean(destroyMethod = "stop")
     @ConditionalOnMissingBean
     public CacheBootstrap cacheBootstrap(PermissionCache cache, Metrics metrics, AuthzProperties props,
                                          ObjectProvider<Spi.CacheEventHandler> events) {
@@ -176,7 +176,7 @@ public class AuthzAutoConfiguration {
                 props.getUserIssuer(), props.getUserJwksUri(),
                 props.getServiceIssuer(), props.getServiceJwksUri(),
                 props.getAudience(), props.getServiceTokenUseClaim(), props.getServiceTokenUseValue(),
-                props.getClockSkewSeconds());
+                props.getClockSkewSeconds(), props.getJwksTimeoutMs());
     }
 
     /** Request-scoped view of the authenticated context (architecture §12.1). */
@@ -208,7 +208,7 @@ public class AuthzAutoConfiguration {
     }
 
     /** Outbound identity (only when client credentials are configured). */
-    @Bean
+    @Bean(destroyMethod = "stop")
     @ConditionalOnProperty(name = "authz.client-id")
     @ConditionalOnMissingBean(Spi.ServiceIdentityProvider.class)
     public Spi.ServiceIdentityProvider authzServiceIdentity(AuthzProperties props, Metrics metrics) {
@@ -217,6 +217,11 @@ public class AuthzAutoConfiguration {
                 (int) props.getTokenEndpointTimeoutMs())
                 .onError(e -> metrics.inc(Metrics.SERVICE_TOKEN_FAILURES));
         provider.probeTokenEndpoint();
+        // Start the background proactive-refresh scheduler so the token is
+        // refreshed at ~70% of its lifetime (parity with NestJS, which arms a
+        // proactive timer on every acquisition). destroyMethod="stop" shuts the
+        // scheduler down cleanly on context close.
+        provider.startProactiveRefresh(props.getTokenRefreshCheckIntervalMs());
         return provider;
     }
 

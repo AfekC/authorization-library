@@ -13,6 +13,10 @@ export interface KafkaSyncConfig {
   publishTopic?: string;
   groupId?: string;
   clientId?: string;
+  /** Logger for skipped/unparseable events (defaults to console.warn). */
+  logger?: { warn: (msg: string) => void };
+  /** Called when an unparseable event is dropped (e.g. to increment a metric). */
+  onSkippedEvent?: () => void;
 }
 
 /**
@@ -59,7 +63,13 @@ export class KafkaCacheEventHandler implements CacheEventHandler {
         }
         const parsed = parseRoleEvent(message.value);
         if (!parsed || typeof parsed !== "object") {
-          console.warn("skipping unparseable role event");
+          // Unparseable events are dropped here before reaching the bootstrap's
+          // apply path, so count + log them through the injected hooks rather
+          // than a bare console.warn (fail-open: never throw on a bad event).
+          this.cfg.onSkippedEvent?.();
+          (this.cfg.logger ?? { warn: (m: string) => console.warn(m) }).warn(
+            "skipping unparseable role event",
+          );
           return;
         }
         const operation =
@@ -81,7 +91,14 @@ export class KafkaCacheEventHandler implements CacheEventHandler {
     });
   }
 
+  /**
+   * Disconnect the consumer. Idempotent: the consumer reference is cleared
+   * first, so a second call (e.g. CacheBootstrap.stop() fire-and-forget plus an
+   * explicit await by the host) is a safe no-op rather than a double-disconnect.
+   */
   async stop(): Promise<void> {
-    await this.consumer?.disconnect();
+    const consumer = this.consumer;
+    this.consumer = undefined;
+    if (consumer) await consumer.disconnect();
   }
 }

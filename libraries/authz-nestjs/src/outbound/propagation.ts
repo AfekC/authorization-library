@@ -76,8 +76,10 @@ export async function buildOutboundHeaders(params: {
   if (params.serviceIdentity) {
     try {
       const svcToken = await params.serviceIdentity.getServiceToken();
-      // Only attach when a token was actually returned (conditional attachment).
-      if (svcToken) {
+      // Only attach when a non-blank token was actually returned (conditional
+      // attachment). A blank/whitespace token is treated as absent so we never
+      // emit an empty X-Service-Token header.
+      if (typeof svcToken === "string" && svcToken.trim().length > 0) {
         headers["X-Service-Token"] = svcToken;
       }
     } catch (err) {

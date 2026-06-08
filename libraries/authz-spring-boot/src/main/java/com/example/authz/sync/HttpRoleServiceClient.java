@@ -60,6 +60,36 @@ public class HttpRoleServiceClient implements Spi.RoleServiceClient {
         if (roles == null) {
             throw new RuntimeException("Role Service returned a malformed snapshot");
         }
+        validateSnapshot(roles);
         return roles;
+    }
+
+    /**
+     * Reject a malformed snapshot so {@link CacheBootstrap} treats it as a fetch
+     * failure (seed/retry) rather than letting bad data corrupt the cache:
+     * blank role ids, null permission lists, and blank permission entries are
+     * all rejected. Mirrors the NestJS client's snapshot validation.
+     */
+    private static void validateSnapshot(Map<String, List<String>> roles) {
+        for (Map.Entry<String, List<String>> e : roles.entrySet()) {
+            String roleId = e.getKey();
+            if (roleId == null || roleId.isBlank()) {
+                throw new RuntimeException(
+                        "Role Service returned a malformed snapshot: role id must be a non-blank string");
+            }
+            List<String> permissions = e.getValue();
+            if (permissions == null) {
+                throw new RuntimeException(
+                        "Role Service returned a malformed snapshot: role \"" + roleId
+                                + "\" permissions is null");
+            }
+            for (String perm : permissions) {
+                if (perm == null || perm.isBlank()) {
+                    throw new RuntimeException(
+                            "Role Service returned a malformed snapshot: role \"" + roleId
+                                    + "\" has a blank permission");
+                }
+            }
+        }
     }
 }

@@ -77,8 +77,24 @@ public class CacheBootstrap {
     private void fullSync() {
         Map<String, List<String>> roles = roleService.fetchSnapshot();
         cache.replaceAll(roles);
-        disk.write(cache);
+        writeDiskQuietly();
         lastSyncAt = Instant.now();
+    }
+
+    /**
+     * Persist the disk cache, treating any failure as non-fatal: a write error
+     * after a successful Role Service fetch must not abort the sync or drop the
+     * service into seed mode — the in-memory cache is already authoritative. The
+     * failure is logged and counted (disk_cache_write_failures_total). Mirrors
+     * the NestJS bootstrap, which surfaces the write error and keeps serving.
+     */
+    private void writeDiskQuietly() {
+        try {
+            disk.write(cache);
+        } catch (RuntimeException e) {
+            if (metrics != null) metrics.inc(Metrics.DISK_CACHE_WRITE_FAILURES);
+            LOG.warn("disk cache write failed; continuing to serve from in-memory cache", e);
+        }
     }
 
     private void subscribe() {
@@ -90,7 +106,7 @@ public class CacheBootstrap {
             events.start(event -> {
                 RoleEvents.ApplyResult result = RoleEvents.apply(cache, event);
                 if (result.applied()) {
-                    disk.write(cache);
+                    writeDiskQuietly();
                     updateGauges();
                 } else {
                     if (metrics != null) metrics.inc(Metrics.ROLE_EVENT_SKIPPED);

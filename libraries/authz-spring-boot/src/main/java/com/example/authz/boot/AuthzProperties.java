@@ -27,6 +27,12 @@ public class AuthzProperties {
     private String serviceTokenUseValue = "service";
     /** Clock-skew tolerance (seconds) for JWT exp/nbf checks (§2.2). */
     private long clockSkewSeconds = 5;
+    /**
+     * JWKS fetch HTTP timeout in ms (connect + read) for user/service token
+     * validation (default 5000). A slow/hung JWKS endpoint must not block token
+     * validation on the request path indefinitely. Matches the NestJS default.
+     */
+    private long jwksTimeoutMs = 5000;
     /** Authoritative Role Service base URL. */
     private String roleServiceUrl;
     /** Role Service HTTP connect timeout in ms (default 5000). */
@@ -53,6 +59,13 @@ public class AuthzProperties {
     private String clientSecret;
     /** Token endpoint HTTP timeout in ms (default 5000). */
     private long tokenEndpointTimeoutMs = 5000;
+    /**
+     * How often (ms) the proactive token-refresh scheduler checks whether the
+     * cached service token has passed ~70% of its lifetime (default 30000).
+     * Mirrors the NestJS provider, which refreshes proactively in the background
+     * so outbound calls near expiry never block on token issuance.
+     */
+    private long tokenRefreshCheckIntervalMs = 30000;
 
     /** Additional untrusted header name prefixes (lower-cased). */
     private List<String> untrustedHeaderPrefixes = List.of();
@@ -78,6 +91,8 @@ public class AuthzProperties {
     public void setServiceTokenUseValue(String v) { this.serviceTokenUseValue = v; }
     public long getClockSkewSeconds() { return clockSkewSeconds; }
     public void setClockSkewSeconds(long v) { this.clockSkewSeconds = v; }
+    public long getJwksTimeoutMs() { return jwksTimeoutMs; }
+    public void setJwksTimeoutMs(long v) { this.jwksTimeoutMs = v; }
     public String getRoleServiceUrl() { return roleServiceUrl; }
     public void setRoleServiceUrl(String v) { this.roleServiceUrl = v; }
     public int getRoleServiceConnectTimeout() { return roleServiceConnectTimeout; }
@@ -108,6 +123,8 @@ public class AuthzProperties {
     public void setClientSecret(String v) { this.clientSecret = v; }
     public long getTokenEndpointTimeoutMs() { return tokenEndpointTimeoutMs; }
     public void setTokenEndpointTimeoutMs(long v) { this.tokenEndpointTimeoutMs = v; }
+    public long getTokenRefreshCheckIntervalMs() { return tokenRefreshCheckIntervalMs; }
+    public void setTokenRefreshCheckIntervalMs(long v) { this.tokenRefreshCheckIntervalMs = v; }
 
     public List<String> getUntrustedHeaderPrefixes() { return untrustedHeaderPrefixes; }
     public void setUntrustedHeaderPrefixes(List<String> v) { this.untrustedHeaderPrefixes = v; }

@@ -20,10 +20,22 @@ export class DiskCache {
       timestamp: new Date().toISOString(),
       roles: cache.toSnapshot(),
     };
+    // Atomic write: serialize to a sibling temp file, then rename onto the
+    // target. rename(2) is atomic on the same filesystem, so a crash mid-write
+    // can never leave a half-written authorization-cache.json — the old file
+    // stays intact until the complete new one replaces it in one step.
+    const tmpPath = `${this.path}.${process.pid}.${Date.now()}.tmp`;
     try {
-      fs.writeFileSync(this.path, JSON.stringify(snapshot, null, 2), "utf8");
+      fs.writeFileSync(tmpPath, JSON.stringify(snapshot, null, 2), "utf8");
+      fs.renameSync(tmpPath, this.path);
       return null;
     } catch (e) {
+      // Best-effort cleanup of the temp file; never let cleanup mask the error.
+      try {
+        fs.rmSync(tmpPath, { force: true });
+      } catch {
+        /* ignore cleanup failure */
+      }
       return e instanceof Error ? e : new Error(String(e));
     }
   }

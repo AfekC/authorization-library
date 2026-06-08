@@ -84,8 +84,8 @@ export class CacheBootstrap {
       this.deps.logger?.warn(
         `authz startup snapshot fetch failed: ${roleServiceErr instanceof Error ? roleServiceErr.message : String(roleServiceErr)}`,
       );
-      if (roleServiceErr instanceof Error) {
-        console.warn(roleServiceErr.stack);
+      if (roleServiceErr instanceof Error && roleServiceErr.stack) {
+        this.deps.logger?.warn(roleServiceErr.stack);
       }
       const seed = this.disk.read();
       if (!seed || Object.keys(seed.roles).length === 0) {
@@ -216,7 +216,7 @@ export class CacheBootstrap {
     );
   }
 
-  /** Stop the reconciler loop (e.g. on shutdown). */
+  /** Stop the reconciler loop and disconnect the Kafka consumer (e.g. on shutdown). */
   stop(): void {
     this.stopped = true;
     // B11: Clear the pending timer so the loop wakes immediately and exits,
@@ -225,6 +225,17 @@ export class CacheBootstrap {
     if (this.reconcilerTimer !== null) {
       clearTimeout(this.reconcilerTimer);
       this.reconcilerTimer = null;
+    }
+    // Disconnect the Kafka consumer so it does not leak on shutdown, matching
+    // the Java CacheBootstrap.stop() which calls events.stop(). Fire-and-forget
+    // (stop() is sync); KafkaCacheEventHandler.stop() is idempotent, so a later
+    // await events.stop() by the caller is a safe no-op. Failures are logged.
+    if (this.events) {
+      void this.events.stop().catch((err) => {
+        this.deps.logger?.warn(
+          `Kafka consumer disconnect failed on stop: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
     }
   }
 }
