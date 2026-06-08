@@ -7,10 +7,11 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
+$NormalizedModuleDir = $ModuleDir -replace '\\', '/'
 
 docker run --rm `
   -v "${RepoRoot}:/work" `
   -v authz-m2:/root/.m2 `
-  -w "/work/$ModuleDir" `
+  -w "/work/$NormalizedModuleDir" `
   maven:3-eclipse-temurin-21 `
   mvn -B -ntp @MvnArgs

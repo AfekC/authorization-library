@@ -2,6 +2,7 @@ package com.example.authz.web;
 
 import com.example.authz.config.ConfigException;
 import com.example.authz.spi.Spi;
+import idf.hatraa.annotation.Span;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
@@ -146,6 +147,7 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
     }
 
     @Override
+    @Span(name = "authz.validate_user_token")
     public Map<String, Object> validateUserToken(String jwt) {
         try {
             return userDecoder.decode(jwt).getClaims();
@@ -156,6 +158,7 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
     }
 
     @Override
+    @Span(name = "authz.validate_service_token")
     public Map<String, Object> validateServiceToken(String jwt) {
         try {
             Map<String, Object> claims = serviceDecoder.decode(jwt).getClaims();

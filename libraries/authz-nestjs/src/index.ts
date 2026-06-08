@@ -54,6 +54,18 @@ export {
 export { LoggingAuditSink, buildAuditEvent, formatInfoLine } from "./audit/audit";
 export { Metrics, METRIC, GAUGE, buildHealth, HealthReport } from "./observability/metrics";
 
+// OpenTelemetry integration (@hatraa/otel-ts) — opt-in
+export {
+  initObservability,
+  isObservabilityEnabled,
+  createAuthzTracer,
+  ObservabilityConfig,
+  AuthzTracer,
+  AuthzSpan,
+} from "./observability/otel";
+export { bridgeMetricsToOtel } from "./observability/otel-bridge";
+export { OtelAuditSink } from "./observability/otel-audit-sink";
+
 // One-call bootstrap (simplest adoption path)
 export {
   createAuthz,

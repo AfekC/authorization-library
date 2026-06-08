@@ -98,6 +98,70 @@ relaxed binding — e.g. `authz.user-issuer` → `AUTHZ_USER_ISSUER`:
 Absent variables are omitted so library defaults apply. Required-field validation
 is performed by `createAuthz` (fail-fast at startup).
 
+## Observability
+
+The library can route audit logs, metrics, and authorization spans through the
+local in-house package `@hatraa/otel-ts`. In this repo it is consumed from the
+vendored tarball:
+
+```json
+"@hatraa/otel-ts": "file:./vendor/hatraa-otel-ts-7.0.11.tgz"
+```
+
+For full HTTP/Nest auto-instrumentation, initialize it before loading Express,
+NestJS, or HTTP clients:
+
+```ts
+import { initObservability, createAuthz } from "authz-nestjs";
+
+initObservability({
+  enabled: true,
+  serviceName: "orders-api",
+  systemName: "auth-library",
+  envName: "drill",
+  otelExporterOtlpEndpoint: "http://localhost:4317",
+});
+
+const authz = await createAuthz({ observability: { enabled: true } });
+```
+
+Env-only bootstrap also supports:
+
+| Env var | Required | Default | Description |
+|---|---|---|---|
+| `AUTHZ_OTEL_ENABLED` | no | `false` | Truthy value enables the o11y bridge in `createAuthz()` |
+| `AUTHZ_OTEL_SERVICE_NAME` | when enabled | `authz` | OTel service name |
+| `AUTHZ_OTEL_SYSTEM_NAME` | when enabled | `authz` | OTel `system` resource attribute |
+| `AUTHZ_OTEL_ENV_NAME` | when enabled | `live` | One of `drill`, `live`, `global` |
+| `AUTHZ_OTEL_EXPORTER_OTLP_ENDPOINT` | no | SDK default | OTLP/gRPC traces endpoint |
+
+When enabled:
+
+- audit events use `otelLogger`;
+- the existing authz counters/gauges are exposed via the o11y Prometheus reader
+  (default `:9464/metrics`);
+- the middleware decision path is wrapped in an `authz.request` span.
+
+### Local in-house observability package
+
+This repo consumes the in-house Node observability SDK from a vendored tarball:
+`libraries/authz-nestjs/vendor/hatraa-otel-ts-7.0.11.tgz`. That allows
+`authz-nestjs` to use the local `o11y-node` package without publishing it to npm.
+
+To refresh the vendored package from a local `o11y-node` checkout:
+
+PowerShell:
+```powershell
+tests\scripts\install-o11y-node.ps1 -O11yNodeDir C:\path\to\o11y-node
+```
+
+Bash:
+```bash
+tests/scripts/install-o11y-node.sh /path/to/o11y-node
+```
+
+Then re-run `npm install` in `libraries/authz-nestjs`.
+
 ## SPI extension points
 
 - `TokenValidator` — swap JWT validation logic

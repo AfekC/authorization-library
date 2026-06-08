@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.2</version>
+    <version>3.5.9</version>
     <relativePath/>
   </parent>
 
@@ -35,6 +35,16 @@
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
+    </dependency>
+    <!-- In-house observability starter (idf.hatraa:o11y-lib): JSON logging,
+         OTLP/gRPC tracing, Prometheus metrics, @Span AOP. Optional: only
+         consumers that opt in pull it transitively. Installed into the local
+         Maven repo via tests/scripts/install-o11y.ps1 (not published). -->
+    <dependency>
+      <groupId>idf.hatraa</groupId>
+      <artifactId>o11y-lib</artifactId>
+      <version>1.0.1</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>

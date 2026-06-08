@@ -8,6 +8,8 @@
     "start": "node src/main.js"
   },
   "dependencies": {
+    "@hatraa/otel-ts": "file:../../../libraries/authz-nestjs/vendor/hatraa-otel-ts-7.0.11.tgz",
+    "axios": "^1.7.2",
     "authz-nestjs": "*",
     "express": "^4.19.2",
     "js-yaml": "^4.1.0"

@@ -44,6 +44,34 @@ Spring Boot auto-configuration library for config-driven authorization.
 
 6. **Start the app.** Every request is now enforced globally — no per-route opt-in.
 
+## Observability
+
+When `idf.hatraa:o11y-lib:1.0.1` is present in the consuming app, the authz
+library routes its existing telemetry through that stack:
+
+- audit logs continue to use the `AUTHZ` logger and are emitted as JSON by the
+  o11y logback config;
+- token-validation entry points are annotated with `@Span`, so trace/span ids
+  are added to the logging MDC by the o11y aspect;
+- `Metrics` keeps its in-process counters/gauges for health and tests, and also
+  mirrors updates to Micrometer when a `MeterRegistry` is available.
+
+Install the local o11y artifact into the same Maven repo used by the Docker
+build wrapper before running apps that depend on it:
+
+```powershell
+tests\scripts\install-o11y.ps1 -O11ySpringDir C:\path\to\o11y-springboot
+```
+
+Set the o11y service metadata in the application, for example:
+
+```properties
+service.name=orders-api
+environment=drill
+system=auth-library
+management.otlp.tracing.endpoint=http://alloy:4317
+```
+
 ## Configuration
 
 All properties go in `application.yaml` under the `authz.*` namespace. They are
