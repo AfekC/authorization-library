@@ -17,11 +17,14 @@ import com.example.authz.sync.KafkaCacheEventHandler;
 import com.example.authz.web.AuthorizationFilter;
 import com.example.authz.web.AuthzRequestContext;
 import com.example.authz.web.NimbusJwksTokenValidator;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.client.RestClientCustomizer;
 import org.springframework.boot.web.client.RestTemplateCustomizer;
@@ -47,7 +50,7 @@ import java.util.List;
  * outbound identity provider, and the global enforcement filter. Every bean is
  * @ConditionalOnMissingBean so an app can override any of them.
  */
-@AutoConfiguration
+@AutoConfiguration(beforeName = "idf.hatraa.ObservabilityAutoConfiguration")
 @EnableConfigurationProperties(AuthzProperties.class)
 public class AuthzAutoConfiguration {
 
@@ -113,6 +116,67 @@ public class AuthzAutoConfiguration {
     @ConditionalOnMissingBean
     public Metrics authzMetrics() {
         return new Metrics();
+    }
+
+    /**
+     * Mirrors the authz {@link Metrics} counters/gauges onto a Micrometer
+     * {@code MeterRegistry} when one is present (e.g. brought by the in-house
+     * o11y starter or Spring Boot Actuator), so they appear on the Prometheus
+     * scrape endpoint. Guarded by {@code @ConditionalOnClass} so consumers
+     * without Micrometer are unaffected — the registry types are only loaded
+     * when this nested config is processed.
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(io.micrometer.core.instrument.MeterRegistry.class)
+    static class MicrometerMetricsBinding {
+        @Bean
+        InitializingBean authzMetricsMicrometerBinder(
+                Metrics metrics,
+                ObjectProvider<io.micrometer.core.instrument.MeterRegistry> registry) {
+            return () -> {
+                io.micrometer.core.instrument.MeterRegistry reg = registry.getIfAvailable();
+                if (reg != null) {
+                    java.util.concurrent.ConcurrentHashMap<String, io.micrometer.core.instrument.Counter> counters =
+                            new java.util.concurrent.ConcurrentHashMap<>();
+                    java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicLong> gauges =
+                            new java.util.concurrent.ConcurrentHashMap<>();
+                    metrics.addSink(new Metrics.Sink() {
+                        @Override
+                        public void incrementCounter(String name) {
+                            counters.computeIfAbsent(name, reg::counter).increment();
+                        }
+
+                        @Override
+                        public void setGauge(String name, long value) {
+                            java.util.concurrent.atomic.AtomicLong holder = gauges.computeIfAbsent(name, k -> {
+                                java.util.concurrent.atomic.AtomicLong a = new java.util.concurrent.atomic.AtomicLong();
+                                io.micrometer.core.instrument.Gauge
+                                        .builder(name, a, java.util.concurrent.atomic.AtomicLong::doubleValue)
+                                        .register(reg);
+                                return a;
+                            });
+                            holder.set(value);
+                        }
+                    });
+                }
+            };
+        }
+    }
+
+    /**
+     * o11y-lib's auto-configuration expects this utility bean but the library
+     * declares it as a component outside the consuming application's scan path.
+     * Provide it when o11y-lib is present so local-only consumers do not need to
+     * add an extra component scan.
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = "idf.hatraa.util.ConfigurationUtil")
+    static class O11yCompatibilityBinding {
+        @Bean
+        @ConditionalOnMissingBean
+        idf.hatraa.util.ConfigurationUtil authzO11yConfigurationUtil() {
+            return new idf.hatraa.util.ConfigurationUtil();
+        }
     }
 
     @Bean

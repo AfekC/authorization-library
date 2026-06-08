@@ -2,6 +2,7 @@ package com.example.authz.observability;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -14,6 +15,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * metric name suffix: {@code _expired}, {@code _invalid_signature},
  * {@code _malformed}. Call {@link #incTokenFailure(String, TokenFailureMode)}
  * to increment both the aggregate and the mode-specific counter atomically.
+ *
+ * <p><b>Observability bridge:</b> the in-process maps remain the source of truth
+ * for {@link #snapshot()}/health. Optional telemetry sinks can subscribe to
+ * updates via {@link #addSink(Sink)}; the Spring auto-configuration uses that
+ * hook to mirror values to Micrometer when a registry is present.
  */
 public class Metrics {
     public static final String AUTHZ_SUCCESS = "authz_success_total";
@@ -92,12 +98,43 @@ public class Metrics {
     private final Map<String, AtomicLong> counters = new ConcurrentHashMap<>();
     private final Map<String, Long> gauges = new ConcurrentHashMap<>();
 
+    private final CopyOnWriteArrayList<Sink> sinks = new CopyOnWriteArrayList<>();
+
+    /**
+     * Optional metrics mirror. Implementations must be non-throwing: a broken
+     * observability backend must never change authorization behavior.
+     */
+    public interface Sink {
+        void incrementCounter(String name);
+        void setGauge(String name, long value);
+    }
+
+    public void addSink(Sink sink) {
+        if (sink != null) {
+            sinks.addIfAbsent(sink);
+        }
+    }
+
     public void inc(String name) {
         counters.computeIfAbsent(name, k -> new AtomicLong()).incrementAndGet();
+        for (Sink sink : sinks) {
+            try {
+                sink.incrementCounter(name);
+            } catch (RuntimeException ignored) {
+                // Metrics export is best-effort.
+            }
+        }
     }
 
     public void setGauge(String name, long value) {
         gauges.put(name, value);
+        for (Sink sink : sinks) {
+            try {
+                sink.setGauge(name, value);
+            } catch (RuntimeException ignored) {
+                // Metrics export is best-effort.
+            }
+        }
     }
 
     public long get(String name) {

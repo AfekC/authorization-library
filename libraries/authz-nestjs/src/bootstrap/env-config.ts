@@ -150,6 +150,24 @@ export function optionsFromEnv(env: EnvSource = process.env): Partial<CreateAuth
     opts.serviceToken = { tokenUrl, clientId: svcClientId, clientSecret };
   }
 
+  // --- observability (@hatraa/otel-ts): only when AUTHZ_OTEL_ENABLED is truthy ---
+  const otelEnabled = stringFromEnv(env, "AUTHZ_OTEL_ENABLED");
+  if (otelEnabled === "true" || otelEnabled === "1") {
+    opts.observability = {
+      enabled: true,
+      serviceName: stringFromEnv(env, "AUTHZ_OTEL_SERVICE_NAME"),
+      systemName: stringFromEnv(env, "AUTHZ_OTEL_SYSTEM_NAME"),
+      envName: stringFromEnv(env, "AUTHZ_OTEL_ENV_NAME") as
+        | "drill"
+        | "live"
+        | "global"
+        | undefined,
+      otelExporterOtlpEndpoint:
+        stringFromEnv(env, "AUTHZ_OTEL_EXPORTER_OTLP_ENDPOINT") ??
+        stringFromEnv(env, "OTEL_EXPORTER_OTLP_ENDPOINT"),
+    };
+  }
+
   return opts;
 }
 

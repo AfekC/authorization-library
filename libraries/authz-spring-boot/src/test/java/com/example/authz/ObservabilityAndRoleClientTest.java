@@ -7,7 +7,9 @@ import com.example.authz.observability.Metrics;
 import com.example.authz.sync.CacheBootstrap;
 import com.example.authz.sync.DiskCache;
 import com.example.authz.sync.HttpRoleServiceClient;
+import com.example.authz.web.NimbusJwksTokenValidator;
 import com.sun.net.httpserver.HttpServer;
+import idf.hatraa.annotation.Span;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -83,6 +86,15 @@ class ObservabilityAndRoleClientTest {
 
     private String stubUrl() {
         return "http://localhost:" + stubPort;
+    }
+
+    @Test
+    void o11y_tokenValidationEntryPointsAreSpanned() throws Exception {
+        Method user = NimbusJwksTokenValidator.class.getMethod("validateUserToken", String.class);
+        Method service = NimbusJwksTokenValidator.class.getMethod("validateServiceToken", String.class);
+
+        assertEquals("authz.validate_user_token", user.getAnnotation(Span.class).name());
+        assertEquals("authz.validate_service_token", service.getAnnotation(Span.class).name());
     }
 
     // =========================================================================

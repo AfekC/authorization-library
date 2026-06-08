@@ -24,6 +24,11 @@ All wiring is in [`src/main.js`](src/main.js):
 4. **Business routes** — handlers read `req.authz`; authorization logic stays in
    the yaml file only.
 
+Observability is enabled in the demo: `initObservability()` runs before
+Express/Axios are loaded, then `createAuthz()` enables the o11y bridge through
+`AUTHZ_OTEL_*`. The demo emits structured audit logs, an `authz.request` span,
+and Prometheus metrics on `http://localhost:9464/metrics`.
+
 For the full `AUTHZ_*` variable list, `CreateAuthzOptions`, and library API
 (`req.authz`, `authz.health()`, SPI overrides, etc.), see
 [`authz-nestjs` → Getting Started](../../libraries/authz-nestjs/README.md#getting-started).

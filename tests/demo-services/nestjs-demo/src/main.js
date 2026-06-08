@@ -16,6 +16,18 @@
  * outbound call made from within an authorized request context.
  */
 const path = require("path");
+const { initObservability } = require("authz-nestjs");
+
+const OTEL_ENV = (process.env.ENV_NAME || process.env.ENVIRONMENT || "drill").toLowerCase();
+
+initObservability({
+  enabled: true,
+  serviceName: process.env.SERVICE_NAME || "nestjs-demo",
+  systemName: process.env.SYSTEM_NAME || process.env.SYSTEM || "auth-library",
+  envName: OTEL_ENV,
+  otelExporterOtlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+});
+
 const express = require("express");
 const axios = require("axios");
 const { createAuthz } = require("authz-nestjs");
@@ -44,6 +56,13 @@ function ensureAuthzEnv() {
   set("AUTHZ_TOKEN_URL", `${MOCK}/sso/token`);
   set("AUTHZ_CLIENT_ID", process.env.CLIENT_ID || "nestjs-demo-id");
   set("AUTHZ_CLIENT_SECRET", process.env.CLIENT_SECRET || "nestjs-demo-secret");
+  set("AUTHZ_OTEL_ENABLED", "true");
+  set("AUTHZ_OTEL_SERVICE_NAME", process.env.SERVICE_NAME || "nestjs-demo");
+  set("AUTHZ_OTEL_SYSTEM_NAME", process.env.SYSTEM_NAME || process.env.SYSTEM || "auth-library");
+  set("AUTHZ_OTEL_ENV_NAME", OTEL_ENV);
+  if (process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
+    set("AUTHZ_OTEL_EXPORTER_OTLP_ENDPOINT", process.env.OTEL_EXPORTER_OTLP_ENDPOINT);
+  }
 }
 
 async function main() {

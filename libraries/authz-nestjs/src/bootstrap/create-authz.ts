@@ -19,6 +19,9 @@ import { KafkaCacheEventHandler } from "../cache-sync/kafka";
 import { CacheBootstrap, CacheMode } from "../cache-sync/bootstrap";
 import { LoggingAuditSink, buildAuditEvent } from "../audit/audit";
 import { Metrics, METRIC, buildHealth, TokenFailureMode, classifyTokenFailure } from "../observability/metrics";
+import { ObservabilityConfig, initObservability, createAuthzTracer, AuthzTracer, AuthzSpan } from "../observability/otel";
+import { bridgeMetricsToOtel } from "../observability/otel-bridge";
+import { OtelAuditSink } from "../observability/otel-audit-sink";
 import { AuditSink, ServiceIdentityProvider, TokenValidator, RoleResolver, PolicyEngine, AttributeProvider } from "../spi";
 import { extractBearer } from "../inbound-auth/bearer";
 import { ClientCredentialsProvider } from "../service-token/provider";
@@ -75,6 +78,16 @@ export interface CreateAuthzOptions {
     clientId: string;
     clientSecret: string;
   };
+
+  /**
+   * Opt-in observability via `@hatraa/otel-ts` (OTLP traces, Prometheus metrics,
+   * JSON logs). Off by default. When `enabled`, the in-process metrics are
+   * mirrored to an OTel meter, the decision path is wrapped in a span, and the
+   * default audit sink emits through `otelLogger`. For full request
+   * auto-instrumentation, call {@link initObservability} at the very top of your
+   * entrypoint before importing NestJS/HTTP.
+   */
+  observability?: ObservabilityConfig;
 
   /** Overrides for advanced use. */
   validator?: TokenValidator;
@@ -182,7 +195,21 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
   const engine = loadAuthorizationConfig(yamlText); // fail-fast on config error
   const cache = new PermissionCache();
   const metrics = new Metrics();
-  const audit = opts.auditSink ?? new LoggingAuditSink();
+
+  // Opt-in observability (@hatraa/otel-ts): mirror the in-process metrics to an
+  // OTel meter (→ Prometheus), trace the decision path, and emit audit via
+  // otelLogger. Everything is lazy — nothing from the OTel/pprof stack is loaded
+  // unless `observability.enabled` is set, so the default path is unchanged.
+  let tracer: AuthzTracer | undefined;
+  if (opts.observability?.enabled) {
+    initObservability(opts.observability); // idempotent; safe if the app already called it
+    bridgeMetricsToOtel(metrics);
+    tracer = createAuthzTracer("authz");
+  }
+
+  const audit =
+    opts.auditSink ??
+    (opts.observability?.enabled ? new OtelAuditSink() : new LoggingAuditSink());
 
   const validator: TokenValidator =
     opts.validator ??
@@ -239,7 +266,7 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
   boot.startSeedRetry(); // 2s/4s/8s backoff until seed→normal
   boot.startReconciler(opts.reconcileIntervalMs ?? 300000);
 
-  const middleware = async (req: any, res: any, next: () => void) => {
+  const runAuthz = async (req: any, res: any, next: () => void, span?: AuthzSpan) => {
     const headers = stripUntrustedHeaders(req.headers ?? {});
     const bearer = extractBearer(headers["authorization"]) ?? null;
     const serviceToken = (headers["x-service-token"] as string) ?? null;
@@ -317,6 +344,14 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
       decision = result.decision;
       matchedRule = result.matchedRule;
     }
+    if (span) {
+      span.setAttribute("authz.decision", decision);
+      span.setAttribute("authz.method", req.method);
+      span.setAttribute("authz.path", requestPath);
+      span.setAttribute("authz.authType", ctx.authenticationType);
+      if (ctx.role) span.setAttribute("authz.role", ctx.role);
+      if (ctx.serviceName) span.setAttribute("authz.service", ctx.serviceName);
+    }
     audit.emit(
       buildAuditEvent({
         ctx,
@@ -337,6 +372,22 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
     metrics.inc(METRIC.permissionDenied);
     res.status(403).json({ error: "authorization denied" });
   };
+
+  // When tracing is on, wrap each decision in an "authz.decision" span; otherwise
+  // the middleware is exactly the bare decision path (no behavioral change).
+  const middleware = tracer
+    ? (req: any, res: any, next: () => void): Promise<void> =>
+        tracer!.startActiveSpan("authz.decision", async (span: AuthzSpan) => {
+          try {
+            await runAuthz(req, res, next, span);
+          } catch (err) {
+            span.recordException(err);
+            throw err;
+          } finally {
+            span.end();
+          }
+        })
+    : runAuthz;
 
   return {
     engine,

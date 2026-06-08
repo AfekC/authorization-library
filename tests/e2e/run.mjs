@@ -3,10 +3,47 @@
  * Drives the same request scenarios against the NestJS demo (:5001) and the
  * Spring demo (:5002) and asserts identical HTTP outcomes — proving both
  * library implementations agree on real requests, not just unit vectors.
+ *
+ * Output policy: stay quiet on success. Each check is recorded; only FAILED
+ * checks print a line as they happen, and a grouped summary prints at the end.
  */
 const MOCK = process.env.MOCK_URL || "http://localhost:4000";
 const NEST = process.env.NEST_URL || "http://localhost:5001";
 const SPRING = process.env.SPRING_URL || "http://localhost:5002";
+
+// --- result collection ----------------------------------------------------
+// Every assertion in the suite funnels through record(); failures print inline,
+// passes stay silent, and report() prints a per-section + grand-total summary.
+const results = [];
+const sectionOrder = [];
+
+function record(section, name, ok, detail = "") {
+  if (!sectionOrder.includes(section)) sectionOrder.push(section);
+  results.push({ section, name, ok, detail });
+  if (!ok) {
+    console.log(`  FAIL  [${section}] ${name}${detail ? `  — ${detail}` : ""}`);
+  }
+}
+
+function report() {
+  const total = results.length;
+  const failed = results.filter((r) => !r.ok).length;
+  const passed = total - failed;
+
+  console.log(`\n${"=".repeat(60)}`);
+  console.log("e2e summary");
+  console.log("-".repeat(60));
+  for (const section of sectionOrder) {
+    const rs = results.filter((r) => r.section === section);
+    const f = rs.filter((r) => !r.ok).length;
+    const status = f ? "FAIL" : " ok ";
+    console.log(`  ${status}  ${section.padEnd(42)} ${rs.length - f}/${rs.length}`);
+  }
+  console.log("-".repeat(60));
+  console.log(`  ${failed ? "FAIL" : "PASS"}  ${`total checks passed`.padEnd(42)} ${passed}/${total}`);
+  console.log("=".repeat(60));
+  return failed;
+}
 
 async function login(role, aud) {
   const r = await fetch(`${MOCK}/auth/login`, {
@@ -75,29 +112,18 @@ async function main() {
     { name: "no matching route", req: { method: "GET", path: "/customers/1", bearer: mgr }, expect: 403 },
   ];
 
-  let failures = 0;
-  console.log(`\n${"scenario".padEnd(48)} expect  nest  spring  result`);
-  console.log("-".repeat(80));
   for (const s of scenarios) {
     const nest = await call(NEST, s.req);
     const spring = await call(SPRING, s.req);
-    const ok = nest === s.expect && spring === s.expect;
     // POST /orders returns 201 on nest demo but 200 on spring; normalise 2xx.
-    const norm = (c) => (c >= 200 && c < 300 ? Math.floor(s.expect / 100) === 2 ? s.expect : c : c);
+    const norm = (c) => (c >= 200 && c < 300 ? (Math.floor(s.expect / 100) === 2 ? s.expect : c) : c);
     const okNorm = norm(nest) === s.expect && norm(spring) === s.expect;
-    if (!okNorm) failures++;
-    console.log(
-      `${s.name.padEnd(48)} ${String(s.expect).padEnd(7)} ${String(nest).padEnd(5)} ${String(spring).padEnd(7)} ${okNorm ? "PASS" : "FAIL"}`,
-    );
+    record("decision matrix", s.name, okNorm, `expect=${s.expect} nest=${nest} spring=${spring}`);
   }
 
-  console.log("-".repeat(80));
-
   // --- Live Kafka propagation: BOTH demos consume role-updates events ---
-  console.log("\nKafka propagation (both demos consume role-updates):");
   const beforeNest = await call(NEST, { method: "POST", path: "/orders", bearer: viewer });
   const beforeSpring = await call(SPRING, { method: "POST", path: "/orders", bearer: viewer });
-  console.log(`  VIEWER POST /orders before grant: nest=${beforeNest} spring=${beforeSpring} (expect 403)`);
   await fetch(`${MOCK}/admin/role-event`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -112,13 +138,8 @@ async function main() {
     if (!ok2xx(afterSpring)) afterSpring = await call(SPRING, { method: "POST", path: "/orders", bearer: viewer });
     if (ok2xx(afterNest) && ok2xx(afterSpring)) break;
   }
-  console.log(`  VIEWER POST /orders after  grant: nest=${afterNest} spring=${afterSpring} (expect 2xx)`);
-  const nestProp = beforeNest === 403 && ok2xx(afterNest);
-  const springProp = beforeSpring === 403 && ok2xx(afterSpring);
-  if (!nestProp) failures++;
-  if (!springProp) failures++;
-  console.log(`  nestjs propagation:  ${nestProp ? "PASS" : "FAIL"}`);
-  console.log(`  spring propagation:  ${springProp ? "PASS" : "FAIL"}`);
+  record("kafka propagation", "nestjs consumes role-update", beforeNest === 403 && ok2xx(afterNest), `before=${beforeNest} after=${afterNest} (expect 403→2xx)`);
+  record("kafka propagation", "spring consumes role-update", beforeSpring === 403 && ok2xx(afterSpring), `before=${beforeSpring} after=${afterSpring} (expect 403→2xx)`);
   // Restore VIEWER to original perms for idempotency.
   await fetch(`${MOCK}/admin/role-event`, {
     method: "POST",
@@ -127,7 +148,6 @@ async function main() {
   });
 
   // --- Forced refresh: publish-roles triggers a full re-fetch on BOTH demos ---
-  console.log("\nForced refresh (publish-roles -> full re-fetch):");
   // Establish a deterministic baseline independent of prior tests: silently set
   // VIEWER to READ_ORDER only, force a refresh, and wait until BOTH demos converge
   // to 403 for POST /orders (prior tests may have left the cache stale-high).
@@ -145,7 +165,6 @@ async function main() {
     beforeSpringR = await call(SPRING, { method: "POST", path: "/orders", bearer: viewer });
     if (beforeNestR === 403 && beforeSpringR === 403) break;
   }
-  console.log(`  VIEWER POST /orders before refresh: nest=${beforeNestR} spring=${beforeSpringR} (expect 403)`);
   // Silently grant VIEWER WRITE_ORDER in the Role Service — NO role-updates event,
   // so only a forced re-fetch (publish-roles) can make the demos observe it.
   await fetch(`${MOCK}/admin/roles`, {
@@ -162,13 +181,8 @@ async function main() {
     if (!ok2xx(afterSpringR)) afterSpringR = await call(SPRING, { method: "POST", path: "/orders", bearer: viewer });
     if (ok2xx(afterNestR) && ok2xx(afterSpringR)) break;
   }
-  console.log(`  VIEWER POST /orders after  refresh: nest=${afterNestR} spring=${afterSpringR} (expect 2xx)`);
-  const nestRefresh = beforeNestR === 403 && ok2xx(afterNestR);
-  const springRefresh = beforeSpringR === 403 && ok2xx(afterSpringR);
-  if (!nestRefresh) failures++;
-  if (!springRefresh) failures++;
-  console.log(`  nestjs forced-refresh:  ${nestRefresh ? "PASS" : "FAIL"}`);
-  console.log(`  spring forced-refresh:  ${springRefresh ? "PASS" : "FAIL"}`);
+  record("forced refresh", "nestjs re-fetches on publish-roles", beforeNestR === 403 && ok2xx(afterNestR), `before=${beforeNestR} after=${afterNestR} (expect 403→2xx)`);
+  record("forced refresh", "spring re-fetches on publish-roles", beforeSpringR === 403 && ok2xx(afterSpringR), `before=${beforeSpringR} after=${afterSpringR} (expect 403→2xx)`);
   // Restore VIEWER to original perms for idempotency.
   await fetch(`${MOCK}/admin/roles`, {
     method: "POST",
@@ -178,7 +192,6 @@ async function main() {
   await fetch(`${MOCK}/admin/publish-roles`, { method: "POST" });
 
   // --- Outbound propagation: nestjs-demo forwards a user call to spring-demo ---
-  console.log("\nOutbound propagation (nestjs-demo -> spring-demo):");
   const fwdResp = await fetch(`${NEST}/orders/7/forward`, {
     method: "POST",
     headers: { Authorization: `Bearer ${mgr}`, "X-Correlation-Id": "corr-e2e-fwd" },
@@ -195,24 +208,19 @@ async function main() {
     "correlation id propagated": fwd.downstream?.seenCorrelationId === "corr-e2e-fwd",
   };
   for (const [label, ok] of Object.entries(checks)) {
-    if (!ok) failures++;
-    console.log(`  ${label.padEnd(34)} ${ok ? "PASS" : "FAIL"}`);
+    record("outbound nestjs→spring", label, ok);
   }
   if (Object.values(checks).some((v) => !v)) {
-    console.log("  raw:", JSON.stringify(fwd));
+    console.log("  raw [outbound nestjs→spring]:", JSON.stringify(fwd));
   }
 
   // --- Audience enforcement (§2.2): wrong-audience token rejected by BOTH ---
-  console.log("\nAudience enforcement (wrong aud -> 401 on both):");
   const wrongAud = await login("MANAGER", "wrong-api");
   const audNest = await call(NEST, { method: "GET", path: "/orders/7", bearer: wrongAud });
   const audSpring = await call(SPRING, { method: "GET", path: "/orders/7", bearer: wrongAud });
-  const audOk = audNest === 401 && audSpring === 401;
-  if (!audOk) failures++;
-  console.log(`  wrong-aud GET /orders/7: nest=${audNest} spring=${audSpring}  ${audOk ? "PASS" : "FAIL"}`);
+  record("audience enforcement", "wrong-aud GET /orders/7 → 401", audNest === 401 && audSpring === 401, `nest=${audNest} spring=${audSpring}`);
 
   // --- G6: Invalid service token scenarios (all must produce 401) ---
-  console.log("\nInvalid service token scenarios (G6):");
   const invalidModes = ["expired", "wrongSignature", "wrongTokenUse", "missingTokenUse", "malformed"];
   for (const mode of invalidModes) {
     const r = await fetch(`${MOCK}/admin/invalid-token`, {
@@ -225,24 +233,18 @@ async function main() {
       }),
     });
     const { token } = await r.json();
-    const name = `invalid svc token: ${mode}`;
     const nest = await call(NEST, { method: "POST", path: "/internal/reconcile", service: token });
     const spring = await call(SPRING, { method: "POST", path: "/internal/reconcile", service: token });
-    const ok = nest === 401 && spring === 401;
-    if (!ok) failures++;
-    console.log(`  ${name.padEnd(48)} 401      ${String(nest).padEnd(5)} ${String(spring).padEnd(7)} ${ok ? "PASS" : "FAIL"}`);
+    record("invalid service token", `${mode} → 401`, nest === 401 && spring === 401, `nest=${nest} spring=${spring}`);
   }
   // Missing X-Service-Token header on a service-only route.
   {
     const nest = await call(NEST, { method: "POST", path: "/internal/reconcile" });
     const spring = await call(SPRING, { method: "POST", path: "/internal/reconcile" });
-    const ok = nest === 401 && spring === 401;
-    if (!ok) failures++;
-    console.log(`  missing X-Service-Token header${" ".repeat(25)} 401      ${String(nest).padEnd(5)} ${String(spring).padEnd(7)} ${ok ? "PASS" : "FAIL"}`);
+    record("invalid service token", "missing X-Service-Token header → 401", nest === 401 && spring === 401, `nest=${nest} spring=${spring}`);
   }
 
   // --- G7: Reverse outbound propagation (spring-demo -> nestjs-demo) ---
-  console.log("\nOutbound propagation (spring-demo -> nestjs-demo):");
   const revResp = await fetch(`${SPRING}/orders/7/forward`, {
     method: "POST",
     headers: { Authorization: `Bearer ${mgr}`, "X-Correlation-Id": "corr-e2e-rev" },
@@ -257,13 +259,13 @@ async function main() {
     "correlation id propagated": rev.downstream?.seenCorrelationId === "corr-e2e-rev",
   };
   for (const [label, ok] of Object.entries(revChecks)) {
-    if (!ok) failures++;
-    console.log(`  ${label.padEnd(34)} ${ok ? "PASS" : "FAIL"}`);
+    record("outbound spring→nestjs", label, ok);
   }
   if (Object.values(revChecks).some((v) => !v)) {
-    console.log("  raw:", JSON.stringify(rev));
+    console.log("  raw [outbound spring→nestjs]:", JSON.stringify(rev));
   }
 
+  const failures = report();
   if (failures) {
     console.error(`\n${failures} check(s) FAILED`);
     process.exit(1);
