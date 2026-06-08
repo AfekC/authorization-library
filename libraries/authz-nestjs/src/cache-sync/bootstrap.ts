@@ -4,6 +4,9 @@ import { Metrics, METRIC, GAUGE } from "../observability/metrics";
 import { DiskCache } from "./disk";
 import { applyRoleEvent } from "./events";
 
+/** Seed-retry backoff sequence: 2s → 4s → 8s → 8s… */
+const SEED_RETRY_DELAYS_MS = [2000, 4000, 8000, 8000];
+
 /** Log and metric a disk write failure; must not throw. */
 function handleDiskWriteError(
   err: Error,
@@ -37,13 +40,15 @@ export interface CacheBootstrapDeps {
 /**
  * Startup state machine for the permission cache (architecture §8):
  *  - try Role Service -> atomic replace + write disk + (subscribe Kafka) -> normal
- *  - on failure -> seed from disk -> READY in seed mode -> reconciler retries
- * A periodic reconciler (startReconciler) promotes seed->normal and re-fetches
- * the full snapshot each cycle, catching any missed Kafka events.
+ *  - on failure -> seed from disk -> READY in seed mode
+ * Two background loops handle post-startup sync (§8.3):
+ *  - startSeedRetry: retries the Role Service until seed->normal promotion, then stops.
+ *  - startReconciler: periodic unconditional re-fetch; safety net for missed Kafka events.
  */
 export class CacheBootstrap {
   private mode: CacheMode = "seed";
   private stopped = false;
+  private seedRetryTimer: ReturnType<typeof setTimeout> | null = null;
   private reconcilerTimer: ReturnType<typeof setTimeout> | null = null;
   private lastSyncAt: Date | null = null;
   private kafkaConnected = false;
@@ -177,12 +182,53 @@ export class CacheBootstrap {
   }
 
   /**
-   * Periodic reconciler (§8.3): each cycle re-fetches the full snapshot and
-   * replaces the cache, promoting seed->normal once the Role Service is
-   * reachable. Since the snapshot has no version, the unconditional re-fetch is
-   * what catches any missed/out-of-order Kafka events. Safe to call after start.
+   * Seed-retry loop: retries the Role Service fetch with exponential backoff (2s, 4s, 8s,
+   * 8s…) until the first successful sync promotes the cache from seed to normal, then
+   * terminates. A no-op if the cache is already in normal mode.
+   *
+   * Errors here are expected while the Role Service is recovering and are logged
+   * but do NOT increment `roleRefreshFailures` — that metric is reserved for
+   * unexpected failures during normal operation (see startReconciler).
    */
-  startReconciler(intervalMs = 5000): void {
+  startSeedRetry(): void {
+    if (this.mode !== "seed") {
+      return; // already normal — no retry needed
+    }
+    const retry = async () => {
+      let attempt = 0;
+      while (!this.stopped && this.mode === "seed") {
+        const delay = SEED_RETRY_DELAYS_MS[Math.min(attempt, SEED_RETRY_DELAYS_MS.length - 1)];
+        attempt++;
+        await new Promise<void>((r) => {
+          const t = setTimeout(r, delay);
+          this.seedRetryTimer = t;
+          if (typeof t.unref === "function") t.unref();
+        });
+        this.seedRetryTimer = null;
+        if (this.stopped || this.mode !== "seed") break;
+        try {
+          await this.fullSync();
+          this.mode = "normal";
+          this.updateGauges();
+          this.deps.logger?.warn("authz seed retry succeeded — cache promoted to normal mode");
+          break; // job done; periodic reconciler takes over
+        } catch {
+          this.deps.logger?.warn(
+            `authz seed retry failed; will retry in ${delay}ms (attempt ${attempt})`,
+          );
+        }
+      }
+    };
+    void retry();
+  }
+
+  /**
+   * Periodic reconciler (§8.3): unconditional full re-fetch every `intervalMs` as a
+   * safety net for missed or out-of-order Kafka events. Also promotes seed->normal if
+   * it succeeds while still in seed mode (belt-and-suspenders alongside startSeedRetry).
+   * On error, increments `roleRefreshFailures` and keeps the current cache (fail-open).
+   */
+  startReconciler(intervalMs = 300000): void {
     const loop = async () => {
       while (!this.stopped) {
         // B11: Track the pending timer so stop() can clear it immediately,
@@ -216,10 +262,15 @@ export class CacheBootstrap {
     );
   }
 
-  /** Stop the reconciler loop and disconnect the Kafka consumer (e.g. on shutdown). */
+  /** Stop the reconciler loop, the seed-retry loop, and disconnect the Kafka consumer (e.g. on shutdown). */
   stop(): void {
     this.stopped = true;
-    // B11: Clear the pending timer so the loop wakes immediately and exits,
+    // Clear the pending seed-retry timer so the loop exits immediately.
+    if (this.seedRetryTimer !== null) {
+      clearTimeout(this.seedRetryTimer);
+      this.seedRetryTimer = null;
+    }
+    // B11: Clear the pending reconciler timer so the loop wakes immediately and exits,
     // rather than firing once more after the current interval elapses.
     // Mirrors Java's reconciler.interrupt() semantics.
     if (this.reconcilerTimer !== null) {

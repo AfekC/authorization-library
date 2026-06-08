@@ -11,7 +11,7 @@
  */
 
 import nock from "nock";
-import { createAuthz } from "../src/bootstrap/create-authz";
+import { createAuthz, createAuthzFromOptions as createAuthzWithOptions } from "../src/bootstrap/create-authz";
 import { ConfigError } from "../src/rule-config/types";
 
 const ROLE_SERVICE_URL = "http://localhost:18150";
@@ -28,6 +28,30 @@ function mockRoleService(): nock.Scope {
   return nock(ROLE_SERVICE_URL).get("/roles").reply(200, { viewer: ["read"] });
 }
 
+describe("createAuthz env-only bootstrap", () => {
+  const OLD_ENV = { ...process.env };
+
+  afterEach(() => {
+    process.env = { ...OLD_ENV };
+    nock.cleanAll();
+  });
+
+  it("reads required configuration from AUTHZ_* env vars", async () => {
+    mockRoleService();
+    process.env.AUTHZ_USER_ISSUER = "https://issuer";
+    process.env.AUTHZ_USER_JWKS_URI = "https://jwks";
+    process.env.AUTHZ_SERVICE_ISSUER = "https://sso";
+    process.env.AUTHZ_SERVICE_JWKS_URI = "https://sso-jwks";
+    process.env.AUTHZ_AUDIENCE = "my-app";
+    process.env.AUTHZ_ROLE_SERVICE_URL = ROLE_SERVICE_URL;
+    process.env.AUTHZ_AUTHORIZATION_YAML = VALID_YAML;
+    process.env.AUTHZ_RECONCILE_INTERVAL_MS = "999999";
+    const authz = await createAuthz();
+    expect(authz).toHaveProperty("middleware");
+    await authz.stop();
+  });
+});
+
 // ---------------------------------------------------------------------------
 // K4a — required options validation
 // ---------------------------------------------------------------------------
@@ -35,7 +59,7 @@ function mockRoleService(): nock.Scope {
 describe("K4a — required options validation", () => {
   it("throws ConfigError when audience is missing", async () => {
     await expect(
-      createAuthz({
+      createAuthzWithOptions({
         userIssuer: "https://issuer",
         userJwksUri: "https://jwks",
         roleServiceUrl: ROLE_SERVICE_URL,
@@ -46,7 +70,7 @@ describe("K4a — required options validation", () => {
 
   it("throws ConfigError when userIssuer is missing", async () => {
     await expect(
-      createAuthz({
+      createAuthzWithOptions({
         audience: "my-app",
         userJwksUri: "https://jwks",
         roleServiceUrl: ROLE_SERVICE_URL,
@@ -57,7 +81,7 @@ describe("K4a — required options validation", () => {
 
   it("throws ConfigError when userJwksUri is missing", async () => {
     await expect(
-      createAuthz({
+      createAuthzWithOptions({
         audience: "my-app",
         userIssuer: "https://issuer",
         roleServiceUrl: ROLE_SERVICE_URL,
@@ -68,7 +92,7 @@ describe("K4a — required options validation", () => {
 
   it("throws ConfigError when roleServiceUrl is missing", async () => {
     await expect(
-      createAuthz({
+      createAuthzWithOptions({
         audience: "my-app",
         userIssuer: "https://issuer",
         userJwksUri: "https://jwks",
@@ -81,7 +105,7 @@ describe("K4a — required options validation", () => {
 
   it("throws on multiple missing fields — first missing wins (Java order: userIssuer first)", async () => {
     await expect(
-      createAuthz({
+      createAuthzWithOptions({
         authorizationYaml: VALID_YAML,
       } as any),
     ).rejects.toThrow(/userIssuer/i);
@@ -95,7 +119,7 @@ describe("K4a — required options validation", () => {
 describe("K4b — YAML source validation", () => {
   it("throws when neither authorizationYaml nor authorizationYamlPath provided", async () => {
     await expect(
-      createAuthz({
+      createAuthzWithOptions({
         audience: "my-app",
         userIssuer: "https://issuer",
         userJwksUri: "https://jwks",
@@ -121,7 +145,7 @@ describe("K4c — Authz object shape", () => {
   });
 
   it("returns Authz object with middleware, engine, cache, metrics, mode, health, stop", async () => {
-    const authz = await createAuthz({
+    const authz = await createAuthzWithOptions({
       userIssuer: "https://issuer",
       userJwksUri: "https://jwks",
       serviceIssuer: "https://sso",
@@ -149,7 +173,7 @@ describe("K4c — Authz object shape", () => {
   });
 
   it("accepts authorizationYaml as text", async () => {
-    const authz = await createAuthz({
+    const authz = await createAuthzWithOptions({
       userIssuer: "https://issuer",
       userJwksUri: "https://jwks",
       serviceIssuer: "https://sso",
@@ -183,7 +207,7 @@ describe("K4d — Kafka conditional", () => {
   });
 
   it("skips Kafka subscription when no kafkaBrokers configured", async () => {
-    const authz = await createAuthz({
+    const authz = await createAuthzWithOptions({
       userIssuer: "https://issuer",
       userJwksUri: "https://jwks",
       serviceIssuer: "https://sso",
@@ -216,7 +240,7 @@ describe("K4e — service identity conditional", () => {
   });
 
   it("skips service identity when no serviceToken configured", async () => {
-    const authz = await createAuthz({
+    const authz = await createAuthzWithOptions({
       userIssuer: "https://issuer",
       userJwksUri: "https://jwks",
       serviceIssuer: "https://sso",
@@ -242,7 +266,7 @@ describe("K4e — service identity conditional", () => {
       .reply(200, { access_token: "tok", expires_in: 3600 });
     mockRoleService();
 
-    const authz = await createAuthz({
+    const authz = await createAuthzWithOptions({
       userIssuer: "https://issuer",
       userJwksUri: "https://jwks",
       serviceIssuer: "https://sso",

@@ -4,24 +4,26 @@
 
 ```
 auth-library/
-├── contracts/                  # Shared API contracts (REST, Kafka, config files)
-│   └── test-vectors/           # Language-neutral *.vectors.json (the parity spine)
+├── docs/
+│   ├── contracts/              # Shared API contracts (REST, Kafka, config files)
+│   │   └── test-vectors/       # Language-neutral *.vectors.json (the parity spine)
+│   └── standards/              # Language/framework coding standards
 ├── libraries/
 │   ├── authz-spring-boot/      # Spring Boot library (Java, Maven)
 │   │   └── src/test/java/      # JUnit 5 unit tests + SharedVectorsTest
 │   └── authz-nestjs/           # NestJS library (TypeScript)
 │       └── test/               # Jest unit tests + vectors.spec.ts
-├── demo-services/
-│   ├── spring-demo/            # Spring Boot demo (uses authz-spring-boot auto-config)
-│   ├── nestjs-demo/            # Express host using authz-nestjs createAuthz()
-│   └── mock-service/           # Mock: SSO + Auth JWKS, Role Service, Kafka publisher
-├── tests/
-│   └── e2e/                    # docker-compose stack + cross-language parity runner
-├── scripts/                    # mvn.sh / mvn.ps1 — Java build in a JDK-21 Docker image
+└── tests/
+    ├── e2e/                    # docker-compose stack + cross-language parity runner
+    ├── scripts/                # mvn.sh / mvn.ps1 — Java build in a JDK-21 Docker image
+    └── demo-services/
+        ├── spring-demo/        # Spring Boot demo (uses authz-spring-boot auto-config)
+        ├── nestjs-demo/        # Express host using authz-nestjs createAuthz()
+        └── mock-service/       # Mock: SSO + Auth JWKS, Role Service, Kafka publisher
 ```
 
 > **Toolchain note:** there is no host JDK in this environment, so the Java build runs in a
-> `maven:3-eclipse-temurin-21` Docker image via `scripts/mvn.(sh|ps1)`. Node 22 runs natively.
+> `maven:3-eclipse-temurin-21` Docker image via `tests/scripts/mvn.(sh|ps1)`. Node 22 runs natively.
 
 ## Key Design Decisions
 
@@ -63,12 +65,13 @@ authorization.yaml (fail-fast on config error)
   → Fetch full role state from Role Service (GET /roles → bare role map)
     → Success? → atomic cache replace → write disk cache → subscribe Kafka → READY
     → Failure? → disk cache present & non-empty → READY (seed mode); else FAIL FAST (refuse to start)
-  → start periodic reconciler (seed-retry + unconditional full re-fetch)
+  → startSeedRetry (2s/4s/8s backoff until SEED→NORMAL promotion)
+  → startReconciler (periodic unconditional full re-fetch, default 5min)
 ```
 
-**Seed mode:** If Role Service is unreachable at startup, the disk cache seeds the in-memory cache so the service becomes READY and serves traffic. The reconciler then retries until a full sync succeeds and promotes to normal mode.
+**Seed mode:** If Role Service is unreachable at startup, the disk cache seeds the in-memory cache so the service becomes READY and serves traffic. The seed-retry loop retries with exponential backoff (2s, 4s, 8s, 8s…) until a full sync succeeds and promotes to normal mode.
 
-**Reconciler:** A periodic loop (default 5s) unconditionally re-fetches the full role map from the Role Service each cycle (the response carries no version), healing any missed/out-of-order Kafka events, and promotes seed→normal once reachable.
+**Reconciler:** A periodic loop (default 5min) unconditionally re-fetches the full role map from the Role Service each cycle (the response carries no version), healing any missed/out-of-order Kafka events. Errors increment `role_refresh_failures_total`.
 
 ## Security
 
@@ -81,14 +84,14 @@ authorization.yaml (fail-fast on config error)
 
 ## Cross-Language Correctness
 
-Both implementations (Spring Boot Java + NestJS TypeScript) must pass the same **language-neutral test vectors** (`contracts/test-vectors/*.vectors.json`, 46 vectors) in CI before release. Each vector = `authorization.yaml` fragment + role cache + request params + expected decision (or `expectCompileError`). Covers: wildcard precedence, decision modes, every cell of the decision matrix above, edge cases (no match, unknown role, `*` service, missing dimensions).
+Both implementations (Spring Boot Java + NestJS TypeScript) must pass the same **language-neutral test vectors** (`docs/contracts/test-vectors/*.vectors.json`, 46 vectors) in CI before release. Each vector = `authorization.yaml` fragment + role cache + request params + expected decision (or `expectCompileError`). Covers: wildcard precedence, decision modes, every cell of the decision matrix above, edge cases (no match, unknown role, `*` service, missing dimensions).
 
 Beyond the vectors, `tests/e2e/run.mjs` drives the **same HTTP requests against both demo services** and asserts identical outcomes (decision matrix, live Kafka propagation, outbound propagation, audience rejection) — runtime cross-language parity.
 
 ## Observability, Outbound & Resilience (both libraries)
 
 - **Audit** — per-decision event, INFO one-liner + DEBUG structured JSON, including the governing permission of the matched rule; pluggable `AuditSink`.
-- **Metrics** — counters (`authz_success_total`, `authz_failure_total`, `authz_permission_denied_total`, `jwt_validation_failures_total` [user JWT], `service_token_failures_total` [service-token inbound validation + outbound acquisition], `role_event_skipped_total`, `role_refresh_failures_total`) + gauges (`permission_cache_version`, `permission_cache_age_seconds`).
+- **Metrics** — counters (`authz_success_total`, `authz_failure_total`, `authz_permission_denied_total`, `jwt_validation_failures_total` [user JWT], `service_token_failures_total` [service-token inbound validation + outbound acquisition], `role_event_skipped_total`, `role_refresh_failures_total`, `disk_cache_write_failures_total`) + gauges (`permission_cache_version`, `permission_cache_age_seconds`).
 - **Health** — cache status/version/age, mode, `roleServiceLastSync`, `kafkaConsumerConnected`.
 - **Outbound** — OAuth2 client-credentials service token (cached, reactive refresh within a clock-skew buffer, retry/backoff) + propagation of the user JWT and `X-Correlation-Id`/`X-Request-Id` downstream, **auto-attached** via framework interceptors (Spring `RestClient`/`RestTemplate` customizers; NestJS axios interceptor + `AsyncLocalStorage`). Backed by Spring Security OAuth2 Client + Resilience4j (Java) and `simple-oauth2` + `p-retry` (NestJS).
 - **Forced refresh** — a `publish-roles` Kafka topic triggers a full Role Service re-fetch (cache + disk), fail-open.
@@ -107,14 +110,14 @@ Beyond the vectors, `tests/e2e/run.mjs` drives the **same HTTP requests against 
 
 ## Commands
 
-Java builds run in Docker (no host JDK): `scripts/mvn.sh <module-dir> <args>` (bash) or
-`scripts\mvn.ps1 -ModuleDir <module-dir> <args>` (PowerShell).
+Java builds run in Docker (no host JDK): `tests/scripts/mvn.sh <module-dir> <args>` (bash) or
+`tests\scripts\mvn.ps1 -ModuleDir <module-dir> <args>` (PowerShell).
 
-- `npm test --workspace=authz-nestjs` — NestJS library unit tests (379)
-- `scripts/mvn.sh libraries/authz-spring-boot test` — Spring library unit tests (254)
-- `node demo-services/mock-service/src/index.js` — start mock (:4000)
-- `node demo-services/nestjs-demo/src/main.js` — start NestJS demo (:5001; env `MOCK_URL`, `KAFKA_BROKERS`)
-- `scripts/mvn.sh demo-services/spring-demo spring-boot:run` — start Spring demo (:5002)
+- `cd libraries/authz-nestjs && npm test` — NestJS library unit tests
+- `tests/scripts/mvn.sh libraries/authz-spring-boot test` — Spring library unit tests
+- `node tests/demo-services/mock-service/src/index.js` — start mock (:4000)
+- `node tests/demo-services/nestjs-demo/src/main.js` — start NestJS demo (:5001; env `MOCK_URL`, `KAFKA_BROKERS`)
+- `tests/scripts/mvn.sh tests/demo-services/spring-demo spring-boot:run` — start Spring demo (:5002)
 - `cd tests/e2e && docker compose up --build -d && node run.mjs && docker compose down -v` — full e2e
   (14 matrix scenarios ×2 langs + dual-demo Kafka propagation + outbound propagation + audience checks)
 

@@ -298,7 +298,9 @@ reports `false` until then).
 
 ### 8.3 Reconciliation
 
-A periodic reconciler (default every N seconds) re-fetches the full role map from the Role Service (`GET /roles`), atomically replaces the cache, and writes the disk cache. Because the Role Service response carries no version, the re-fetch is unconditional each cycle — a safety net that heals any state missed through consumer lag, rebalance gaps, or event ordering anomalies, and promotes a seed-mode cache to normal mode once the Role Service becomes reachable. It is not the primary update path.
+**Seed-retry loop.** When the service starts in seed mode (Role Service was unreachable), a background loop retries the full snapshot fetch with exponential backoff: 2s, 4s, 8s, then 8s indefinitely until it succeeds. On success it promotes the cache to normal mode and terminates (the periodic reconciler takes over). Errors are logged but do **not** increment `role_refresh_failures_total` — they are expected while the Role Service is recovering.
+
+**Periodic reconciler.** A separate loop (default every 5 minutes) unconditionally re-fetches the full role map from the Role Service (`GET /roles`), atomically replaces the cache, and writes the disk cache. Because the Role Service response carries no version, the re-fetch is unconditional each cycle — a safety net that heals any state missed through consumer lag, rebalance gaps, or event ordering anomalies. It is not the primary update path. Errors increment `role_refresh_failures_total` and the current cache is kept (fail-open).
 
 ### 8.4 Failover
 
@@ -376,6 +378,7 @@ The sink is pluggable via an `AuditSink` interface (§11) — default is structu
 | `service_token_failures_total` | counter |
 | `role_event_skipped_total` | counter |
 | `role_refresh_failures_total` | counter |
+| `disk_cache_write_failures_total` | counter |
 | `permission_cache_version` | gauge |
 | `permission_cache_age_seconds` | gauge |
 

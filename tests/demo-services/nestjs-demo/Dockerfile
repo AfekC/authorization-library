@@ -6,12 +6,12 @@ WORKDIR /app/demo
 # runtime deps so the library (copied as a real package below) resolves them.
 RUN npm init -y >/dev/null && \
     npm install --omit=dev --no-audit --no-fund express js-yaml jose axios kafkajs \
-      simple-oauth2 p-retry@^4 @nestjs/common reflect-metadata rxjs
+      simple-oauth2 p-retry@^4 @nestjs/common @nestjs/core reflect-metadata rxjs
 # Place the prebuilt library as a real package (not a symlink) so its internal
 # requires resolve against the node_modules above.
 COPY libraries/authz-nestjs/package.json node_modules/authz-nestjs/package.json
 COPY libraries/authz-nestjs/dist node_modules/authz-nestjs/dist
-COPY demo-services/nestjs-demo/src ./src
-COPY demo-services/nestjs-demo/authorization.yaml ./
+COPY tests/demo-services/nestjs-demo/src ./src
+COPY tests/demo-services/nestjs-demo/authorization.yaml ./
 EXPOSE 5001
 CMD ["node", "src/main.js"]

@@ -112,8 +112,8 @@
     {
       "name": "authz.reconcile-interval-ms",
       "type": "java.lang.Long",
-      "defaultValue": 5000,
-      "description": "Reconciler interval in milliseconds."
+      "defaultValue": 300000,
+      "description": "Periodic reconciler interval in milliseconds (5 minutes default). Seed-retry uses a separate 2s/4s/8s backoff."
     },
     {
       "name": "authz.token-url",

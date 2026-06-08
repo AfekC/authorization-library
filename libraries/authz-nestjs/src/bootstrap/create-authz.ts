@@ -25,6 +25,7 @@ import { ClientCredentialsProvider } from "../service-token/provider";
 import { runWithOutboundContext } from "../outbound/context-store";
 import { attachOutboundPropagation, AxiosLike } from "../outbound/propagation";
 import { ConfigError } from "../rule-config/types";
+import { optionsFromEnv } from "./env-config";
 
 /**
  * Everything needed to stand up authorization in one call. Most fields have
@@ -61,7 +62,7 @@ export interface CreateAuthzOptions {
   serviceTokenUseClaim?: string;
   /** Expected value of the service-token-use claim (default "service"). */
   serviceTokenUseValue?: string;
-  /** Periodic reconciler interval (ms). Default 5000. */
+  /** Periodic reconciler interval (ms). Default 300000 (5 minutes). */
   reconcileIntervalMs?: number;
   /** Role Service HTTP connect timeout (ms). Default 5000. */
   roleServiceConnectTimeout?: number;
@@ -145,13 +146,9 @@ function requireHttpUrl(value: string, fieldName: string): void {
  * Service snapshot -> disk seed fallback -> Kafka subscribe), and return a
  * global Express middleware plus the engine/cache/metrics.
  *
- * Usage:
- * ```ts
- * const authz = await createAuthz({ ...urls });
- * app.use(authz.middleware);   // global enforcement, no per-route opt-in
- * ```
+ * Internal options-based bootstrap (used by env wrappers and tests).
  */
-export async function createAuthz(opts: CreateAuthzOptions): Promise<Authz> {
+export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<Authz> {
   // P4: validation order matches Java's ConfigValidator order
   // userIssuer → userJwksUri → serviceIssuer → serviceJwksUri → roleServiceUrl → audience
   if (!opts.userIssuer) throw new ConfigError("Missing required option: userIssuer");
@@ -239,7 +236,8 @@ export async function createAuthz(opts: CreateAuthzOptions): Promise<Authz> {
     { metrics, logger: { warn: (m) => console.warn(m) } },
   );
   const { mode } = await boot.start();
-  boot.startReconciler(opts.reconcileIntervalMs ?? 5000);
+  boot.startSeedRetry(); // 2s/4s/8s backoff until seed→normal
+  boot.startReconciler(opts.reconcileIntervalMs ?? 300000);
 
   const middleware = async (req: any, res: any, next: () => void) => {
     const headers = stripUntrustedHeaders(req.headers ?? {});
@@ -376,4 +374,13 @@ export async function createAuthz(opts: CreateAuthzOptions): Promise<Authz> {
       }
     },
   };
+}
+
+/**
+ * Bootstrap authorization from AUTHZ_* environment variables only.
+ *
+ * This is the default public entrypoint and does not accept injected options.
+ */
+export async function createAuthz(): Promise<Authz> {
+  return createAuthzFromOptions(optionsFromEnv(process.env) as CreateAuthzOptions);
 }

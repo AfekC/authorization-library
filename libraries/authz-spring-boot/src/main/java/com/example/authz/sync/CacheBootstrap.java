@@ -14,9 +14,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Startup state machine for the permission cache (architecture §8):
  *  - try Role Service -> atomic replace + disk write + subscribe Kafka -> NORMAL
- *  - on failure -> seed from disk -> READY in SEED mode -> reconciler retries
- * A daemon reconciler (startReconciler) promotes SEED->NORMAL and re-fetches the
- * full snapshot each cycle, catching any missed Kafka events (§8.3).
+ *  - on failure -> seed from disk -> READY in SEED mode
+ * Two background loops handle post-startup sync (§8.3):
+ *  - startSeedRetry: retries the Role Service until SEED->NORMAL promotion, then stops.
+ *  - startReconciler: periodic unconditional re-fetch; safety net for missed Kafka events.
  */
 public class CacheBootstrap {
     private static final Logger LOG = LoggerFactory.getLogger(CacheBootstrap.class);
@@ -33,9 +34,13 @@ public class CacheBootstrap {
     private volatile Instant lastSyncAt;
     private volatile boolean kafkaConnected;
     private volatile boolean stopped;
+    private Thread seedRetry;
     private Thread reconciler;
     /** Q6: guard that prevents a second concurrent startReconciler() from spawning a second thread. */
     private final AtomicBoolean reconcilerStarted = new AtomicBoolean(false);
+
+    /** Seed-retry backoff sequence: 2s → 4s → 8s → 8s… */
+    private static final long[] SEED_RETRY_DELAYS_MS = {2000, 4000, 8000, 8000};
 
     public CacheBootstrap(PermissionCache cache, Spi.RoleServiceClient roleService, DiskCache disk) {
         this(cache, roleService, disk, null, null);
@@ -136,9 +141,58 @@ public class CacheBootstrap {
         }
     }
 
-    /** Periodic reconciler (§8.3): seed-retry + unconditional full re-fetch. */
+    /**
+     * Seed-retry loop: retries the Role Service fetch with exponential backoff (2s, 4s, 8s,
+     * 8s…) until the first successful sync promotes the cache from SEED to NORMAL, then
+     * terminates. A no-op if the cache is already in NORMAL mode.
+     * <p>
+     * Errors here are expected while the Role Service is recovering and are logged
+     * but do <em>not</em> increment {@code role_refresh_failures_total} — that metric
+     * is reserved for unexpected failures during normal operation (see
+     * {@link #startReconciler}).
+     */
+    public void startSeedRetry() {
+        if (mode != Mode.SEED) {
+            LOG.debug("authz startSeedRetry: already in NORMAL mode — no-op");
+            return;
+        }
+        seedRetry = new Thread(() -> {
+            int attempt = 0;
+            while (!stopped && mode == Mode.SEED) {
+                long delay = SEED_RETRY_DELAYS_MS[Math.min(attempt, SEED_RETRY_DELAYS_MS.length - 1)];
+                attempt++;
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                if (stopped || mode != Mode.SEED) return;
+                try {
+                    fullSync();
+                    mode = Mode.NORMAL;
+                    updateGauges();
+                    LOG.info("authz seed retry succeeded — cache promoted to NORMAL mode");
+                    return; // job done; periodic reconciler takes over
+                } catch (RuntimeException e) {
+                    LOG.warn("authz seed retry failed; will retry in {}ms (attempt {})", delay, attempt);
+                }
+            }
+        }, "authz-seed-retry");
+        seedRetry.setDaemon(true);
+        seedRetry.start();
+    }
+
+    /**
+     * Periodic reconciler (§8.3): unconditional full re-fetch every {@code intervalMs}
+     * as a safety net for missed or out-of-order Kafka events. Also promotes SEED→NORMAL
+     * if it succeeds while still in seed mode (belt-and-suspenders alongside
+     * {@link #startSeedRetry}). On error, increments {@code role_refresh_failures_total}
+     * and keeps the current cache (fail-open).
+     * <p>
+     * Q6: guard against double-start — a second call without an intervening stop() is a no-op.
+     */
     public void startReconciler(long intervalMs) {
-        // Q6: guard against double-start — a second call without an intervening stop() is a no-op.
         if (!reconcilerStarted.compareAndSet(false, true)) {
             LOG.debug("authz reconciler already running — ignoring duplicate startReconciler() call");
             return;
@@ -154,7 +208,7 @@ public class CacheBootstrap {
                 if (stopped) return;
                 try {
                     // Re-fetch the full snapshot each cycle (no version to compare);
-                    // promotes SEED->NORMAL once reachable and catches missed events.
+                    // catches missed/out-of-order Kafka events.
                     fullSync();
                     if (mode == Mode.SEED) mode = Mode.NORMAL;
                     updateGauges();
@@ -179,6 +233,7 @@ public class CacheBootstrap {
     public void stop() {
         stopped = true;
         reconcilerStarted.set(false); // allow restart on a fresh instance after stop()
+        if (seedRetry != null) seedRetry.interrupt();
         if (reconciler != null) reconciler.interrupt();
         if (events != null) events.stop();
     }

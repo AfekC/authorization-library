@@ -55,7 +55,16 @@ export { LoggingAuditSink, buildAuditEvent, formatInfoLine } from "./audit/audit
 export { Metrics, METRIC, GAUGE, buildHealth, HealthReport } from "./observability/metrics";
 
 // One-call bootstrap (simplest adoption path)
-export { createAuthz, CreateAuthzOptions, Authz, AuthorizedRequest } from "./bootstrap/create-authz";
+export {
+  createAuthz,
+  createAuthzFromOptions,
+  CreateAuthzOptions,
+  Authz,
+  AuthorizedRequest,
+} from "./bootstrap/create-authz";
+
+// Environment-variable-driven bootstrap (parity with Spring @ConfigurationProperties)
+export { optionsFromEnv, EnvSource } from "./bootstrap/env-config";
 
 // NestJS integration
 export { AuthzGuard, AuthzGuardDeps } from "./nest/authz.guard";

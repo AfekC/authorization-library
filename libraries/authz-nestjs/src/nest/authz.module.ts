@@ -1,6 +1,6 @@
 import { DynamicModule, Global, Module, OnModuleDestroy } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
-import { createAuthz, CreateAuthzOptions, Authz } from "../bootstrap/create-authz";
+import { createAuthzFromOptions, CreateAuthzOptions, Authz } from "../bootstrap/create-authz";
 import { AuthzGuard, AuthzGuardDeps } from "./authz.guard";
 
 /**
@@ -57,7 +57,7 @@ export class AuthzModule implements OnModuleDestroy {
     let authzPromise: Promise<Authz> | undefined;
     const getAuthz = (): Promise<Authz> => {
       if (!authzPromise) {
-        authzPromise = createAuthz(options);
+        authzPromise = createAuthzFromOptions(options);
       }
       return authzPromise;
     };

@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 /**
- * Loads the language-neutral vectors in contracts/test-vectors and asserts the
+ * Loads the language-neutral vectors in docs/contracts/test-vectors and asserts the
  * Java engine produces the same decisions as the NestJS engine.
  */
 class SharedVectorsTest {
@@ -33,10 +33,10 @@ class SharedVectorsTest {
     private static Path vectorDir() {
         // Resolved relative to the module working directory (repo/libraries/authz-spring-boot).
         Path here = Path.of(System.getProperty("user.dir"));
-        Path candidate = here.resolve("../../contracts/test-vectors").normalize();
+        Path candidate = here.resolve("../../docs/contracts/test-vectors").normalize();
         if (Files.isDirectory(candidate)) return candidate;
         // Fallback: repo root mounted at user.dir
-        return here.resolve("contracts/test-vectors").normalize();
+        return here.resolve("docs/contracts/test-vectors").normalize();
     }
 
     @TestFactory

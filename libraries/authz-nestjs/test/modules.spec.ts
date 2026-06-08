@@ -187,6 +187,47 @@ describe("CacheBootstrap", () => {
     fs.unlinkSync(file);
   });
 
+  it("startSeedRetry is a no-op when already in normal mode", async () => {
+    const file = path.join(os.tmpdir(), `ssr-noop-${Date.now()}.json`);
+    const boot = new CacheBootstrap(
+      new PermissionCache(),
+      okClient({ MANAGER: ["READ_ORDER"] }),
+      new DiskCache(file),
+    );
+    await boot.start();
+    expect(boot.mode_()).toBe("normal");
+    // Must not throw
+    boot.startSeedRetry();
+    boot.stop();
+    fs.unlinkSync(file);
+  });
+
+  it("startSeedRetry promotes seed -> normal once the Role Service recovers", async () => {
+    const file = path.join(os.tmpdir(), `ssr-promote-${Date.now()}.json`);
+    const disk = new DiskCache(file);
+    disk.write(new PermissionCache({ MANAGER: ["READ_ORDER"] }));
+    let up = false;
+    const flakyClient: RoleServiceClient = {
+      fetchSnapshot: async () => {
+        if (!up) throw new Error("down");
+        return { MANAGER: ["READ_ORDER", "WRITE_ORDER"] };
+      },
+    };
+    const cache = new PermissionCache();
+    const boot = new CacheBootstrap(cache, flakyClient, disk);
+    expect((await boot.start()).mode).toBe("seed");
+    boot.startSeedRetry();
+    up = true;
+    // First wait is 2s; wait for promotion up to 5s
+    for (let i = 0; i < 100 && boot.mode_() === "seed"; i++) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    boot.stop();
+    expect(boot.mode_()).toBe("normal");
+    expect(cache.permissionsForRole("MANAGER").has("WRITE_ORDER")).toBe(true);
+    fs.unlinkSync(file);
+  });
+
   it("reconciler promotes seed -> normal once the Role Service recovers", async () => {
     const file = path.join(os.tmpdir(), `recon-${Date.now()}.json`);
     const disk = new DiskCache(file);

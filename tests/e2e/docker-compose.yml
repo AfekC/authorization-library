@@ -18,7 +18,7 @@ services:
 
   mock:
     build:
-      context: ../../demo-services/mock-service
+      context: ../demo-services/mock-service
     environment:
       PORT: "4000"
       AUTH_ISSUER: "http://mock:4000/auth"
@@ -42,7 +42,7 @@ services:
   nestjs-demo:
     build:
       context: ../..
-      dockerfile: demo-services/nestjs-demo/Dockerfile
+      dockerfile: tests/demo-services/nestjs-demo/Dockerfile
     environment:
       PORT: "5001"
       MOCK_URL: "http://mock:4000"
@@ -59,7 +59,7 @@ services:
 
   spring-demo:
     build:
-      context: ../../demo-services/spring-demo
+      context: ../demo-services/spring-demo
     environment:
       MOCK_URL: "http://mock:4000"
       API_AUDIENCE: "orders-api"

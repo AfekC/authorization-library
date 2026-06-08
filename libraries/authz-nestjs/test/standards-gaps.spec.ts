@@ -22,7 +22,7 @@ import { ClientCredentialsProvider } from "../src/service-token/provider";
 import { buildOutboundHeaders } from "../src/outbound/propagation";
 import { RequestContext } from "../src/inbound-auth/context";
 import { RoleServiceClient, CacheEventHandler, ServiceIdentityProvider } from "../src/spi";
-import { createAuthz } from "../src/bootstrap/create-authz";
+import { createAuthzFromOptions as createAuthz } from "../src/bootstrap/create-authz";
 import { ConfigError } from "../src/rule-config/types";
 import nock from "nock";
 

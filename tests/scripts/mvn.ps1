@@ -1,12 +1,12 @@
 # Run Maven for the Java modules inside a JDK-21 container (no host JDK needed).
-# Usage: scripts\mvn.ps1 <maven-module-dir> <maven args...>
-# Example: scripts\mvn.ps1 libraries/authz-spring-boot test
+# Usage: tests\scripts\mvn.ps1 <maven-module-dir> <maven args...>
+# Example: tests\scripts\mvn.ps1 libraries/authz-spring-boot test
 param(
     [Parameter(Mandatory = $true)][string]$ModuleDir,
     [Parameter(ValueFromRemainingArguments = $true)][string[]]$MvnArgs
 )
 $ErrorActionPreference = "Stop"
-$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 
 docker run --rm `
   -v "${RepoRoot}:/work" `

@@ -9,7 +9,7 @@
  */
 
 import nock from "nock";
-import { createAuthz } from "../src/bootstrap/create-authz";
+import { createAuthzFromOptions as createAuthz } from "../src/bootstrap/create-authz";
 import { ConfigError } from "../src/rule-config/types";
 
 const ROLE_SERVICE_URL = "http://localhost:18151";

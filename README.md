@@ -5,26 +5,28 @@ Config-driven authorization middleware, implemented twice — **Spring Boot (Jav
 language-neutral vector suite plus a cross-language end-to-end test.
 
 See [`authz-middleware-architecture.md`](authz-middleware-architecture.md) for the full design
-and [`contracts/`](contracts/) for the wire/config contracts.
+and [`docs/contracts/`](docs/contracts/) for the wire/config contracts.
 
 ## Layout
 
 ```
-contracts/                     Shared REST/Kafka/config contracts + test-vectors/
+docs/
+  contracts/                   Shared REST/Kafka/config contracts + test-vectors/
 libraries/
   authz-spring-boot/           Java 21 / Spring Boot 3 library (Maven, JUnit 5)
   authz-nestjs/                TypeScript 5 / NestJS library (Jest)
-demo-services/
-  mock-service/                SSO + Auth JWKS, Role Service snapshot, Kafka publisher
-  spring-demo/                 Spring Boot app using authz-spring-boot
-  nestjs-demo/                 Express host using authz-nestjs (global enforcement + Kafka sync)
-tests/e2e/                     docker-compose stack + cross-language parity runner
-scripts/mvn.(sh|ps1)           Run the Java build in a JDK-21 Docker image (no host JDK needed)
+tests/
+  e2e/                         docker-compose stack + cross-language parity runner
+  scripts/mvn.(sh|ps1)         Run the Java build in a JDK-21 Docker image (no host JDK needed)
+  demo-services/
+    mock-service/              SSO + Auth JWKS, Role Service snapshot, Kafka publisher
+    spring-demo/               Spring Boot app using authz-spring-boot
+    nestjs-demo/               Express host using authz-nestjs (global enforcement + Kafka sync)
 ```
 
 ## The parity spine
 
-`contracts/test-vectors/*.vectors.json` are language-neutral vectors (rules + role cache +
+`docs/contracts/test-vectors/*.vectors.json` are language-neutral vectors (rules + role cache +
 request → expected decision, or `expectCompileError`). Both libraries load the *same* files:
 
 - **NestJS:** `libraries/authz-nestjs/test/vectors.spec.ts`
@@ -32,10 +34,26 @@ request → expected decision, or `expectCompileError`). Both libraries load the
 
 46 vectors cover wildcard precedence, ANY/ALL, every decision-matrix cell, and edge cases.
 
+## Getting Started
+
+Pick your stack and follow that library's own **Getting Started**, which walks
+through the minimal integration and describes every required configuration
+argument:
+
+- **NestJS / Node** → [`authz-nestjs` → Getting Started](libraries/authz-nestjs/README.md#getting-started)
+- **Spring Boot / Java** → [`authz-spring-boot` → Getting Started](libraries/authz-spring-boot/README.md#getting-started)
+
+Either way you supply the same essentials: an `authorization.yaml` (your rules),
+the **trust roots** (user + service issuer/JWKS), the **audience** for this
+service, and the **Role Service URL**. Everything else has sensible defaults.
+For complete runnable examples, see the demos —
+[nestjs-demo](tests/demo-services/nestjs-demo/README.md) and
+[spring-demo](tests/demo-services/spring-demo/README.md).
+
 ## Adopting the library (kept deliberately simple)
 
-- **NestJS / Node:** one call — `const authz = await createAuthz({...}); app.use(authz.middleware);`. See [`demo-services/nestjs-demo`](demo-services/nestjs-demo/README.md).
-- **Spring Boot:** zero wiring code — add the dependency, an `authorization.yaml`, and `authz.*` properties; auto-configuration registers the global filter. See [`demo-services/spring-demo`](demo-services/spring-demo/README.md).
+- **NestJS / Node:** one call — `const authz = await createAuthz({...}); app.use(authz.middleware);`. See [`tests/demo-services/nestjs-demo`](tests/demo-services/nestjs-demo/README.md).
+- **Spring Boot:** zero wiring code — add the dependency, an `authorization.yaml`, and `authz.*` properties; auto-configuration registers the global filter. See [`tests/demo-services/spring-demo`](tests/demo-services/spring-demo/README.md).
 
 In both, business routes contain **no** authorization code; rules live entirely in `authorization.yaml`.
 
@@ -59,15 +77,15 @@ In both, business routes contain **no** authorization code; rules live entirely 
 
 NestJS library (Node 22):
 ```
+cd libraries/authz-nestjs
 npm install
-npm test --workspace=authz-nestjs        # 379 tests (46 shared vectors + module/outbound/arch-fix tests)
+npm test
 ```
 
 Spring library (no host JDK required — uses Docker):
 ```
-scripts/mvn.sh libraries/authz-spring-boot test      # bash
-scripts\mvn.ps1 -ModuleDir libraries/authz-spring-boot test   # PowerShell
-# -> 254 tests (46 shared vectors + module/outbound/arch-fix tests)
+tests/scripts/mvn.sh libraries/authz-spring-boot test      # bash
+tests\scripts\mvn.ps1 -ModuleDir libraries/authz-spring-boot test   # PowerShell
 ```
 
 ## End-to-end (both demos + mock + Kafka)
@@ -86,6 +104,13 @@ docker compose down -v
   token + the user JWT + correlation id; the downstream sees a combined `USER_AND_SERVICE` request;
 - **audience enforcement** — a wrong-audience token is rejected (401) by both.
 
+
+## Documentation
+
+- [`authz-middleware-architecture.md`](authz-middleware-architecture.md) — full design specification.
+- [`docs/contracts/`](docs/contracts/) — REST/Kafka/config contracts and the shared [test vectors](docs/contracts/test-vectors/README.md).
+- **Per-component guides** — [`authz-spring-boot`](libraries/authz-spring-boot/README.md), [`authz-nestjs`](libraries/authz-nestjs/README.md), and the demos under [`tests/demo-services/`](tests/demo-services/).
+- **Coding standards** — [Spring / Java](docs/standards/spring-java-standards.md), [NestJS / TypeScript](docs/standards/nestjs-standards.md), and [README files](docs/standards/readme-standards.md).
 
 ## Build the Java library on a host with a JDK
 

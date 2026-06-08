@@ -157,6 +157,7 @@ public class AuthzAutoConfiguration {
                 events.getIfAvailable(),
                 metrics);
         CacheBootstrap.Mode mode = boot.start(); // snapshot, else seed from disk
+        boot.startSeedRetry(); // 2s/4s/8s backoff until SEED→NORMAL
         boot.startReconciler(props.getReconcileIntervalMs());
         org.slf4j.LoggerFactory.getLogger(AuthzAutoConfiguration.class)
                 .info("authz cache started in {} mode (v{})", mode, cache.version());

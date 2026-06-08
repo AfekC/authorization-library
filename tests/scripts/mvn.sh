@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Run Maven for the Java modules inside a JDK-21 container (no host JDK needed).
-# Usage: scripts/mvn.sh <maven-module-dir> <maven args...>
-# Example: scripts/mvn.sh libraries/authz-spring-boot test
+# Usage: tests/scripts/mvn.sh <maven-module-dir> <maven args...>
+# Example: tests/scripts/mvn.sh libraries/authz-spring-boot test
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 MODULE_DIR="${1:?module dir required}"
 shift
 

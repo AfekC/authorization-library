@@ -22,7 +22,7 @@ interface DecisionVector {
 
 const VECTOR_DIR = path.resolve(
   __dirname,
-  "../../../contracts/test-vectors",
+  "../../../docs/contracts/test-vectors",
 );
 
 function loadVectors(): { file: string; vectors: DecisionVector[] }[] {

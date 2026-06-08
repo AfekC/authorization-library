@@ -12,26 +12,27 @@
 ### NestJS library
 
 ```sh
-npm test --workspace=authz-nestjs
+cd libraries/authz-nestjs
+npm test
 ```
 
-Runs all 58 Jest unit tests. All tests must pass before opening a pull request.
+Runs the full Jest unit-test suite. All tests must pass before opening a pull request.
 
 ### Java (Spring Boot) library
 
 **PowerShell (Windows):**
 
 ```powershell
-scripts\mvn.ps1 -ModuleDir libraries/authz-spring-boot test
+tests\scripts\mvn.ps1 -ModuleDir libraries/authz-spring-boot test
 ```
 
 **Bash / macOS / Linux:**
 
 ```sh
-scripts/mvn.sh libraries/authz-spring-boot test
+tests/scripts/mvn.sh libraries/authz-spring-boot test
 ```
 
-Runs all 51 JUnit 5 unit tests inside a Docker container. Docker must be running.
+Runs the full JUnit 5 unit-test suite inside a Docker container. Docker must be running.
 
 ### Full end-to-end suite
 
@@ -47,7 +48,7 @@ scenarios, live Kafka propagation, outbound propagation, and audience rejection.
 
 ## Test-Vector Parity Requirement
 
-The 29 language-neutral test vectors in `contracts/test-vectors/*.vectors.json` are the
+The 29 language-neutral test vectors in `docs/contracts/test-vectors/*.vectors.json` are the
 authoritative cross-language parity spine. Every vector must pass in **both** libraries
 before a change is merged:
 

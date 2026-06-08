@@ -18,7 +18,7 @@ import { LoggingAuditSink } from "../src/audit/audit";
 import { Metrics, METRIC } from "../src/observability/metrics";
 import { TokenValidator, PolicyEngine, RoleResolver } from "../src/spi";
 import { extractBearer } from "../src/inbound-auth/bearer";
-import { createAuthz } from "../src/bootstrap/create-authz";
+import { createAuthzFromOptions as createAuthz } from "../src/bootstrap/create-authz";
 
 // ---------------------------------------------------------------------------
 // Shared helpers

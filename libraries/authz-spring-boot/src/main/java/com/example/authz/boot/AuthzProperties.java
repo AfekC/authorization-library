@@ -51,8 +51,8 @@ public class AuthzProperties {
     private String kafkaGroupId = "authz-cache-sync";
     /** Kafka consumer client ID prefix (default "authz-cache-sync"). */
     private String kafkaClientId = "authz-cache-sync";
-    /** Reconciler interval in ms (§8.3). */
-    private long reconcileIntervalMs = 5000;
+    /** Periodic reconciler interval in ms (§8.3). Default 5 minutes. */
+    private long reconcileIntervalMs = 300000;
     /** Outbound service-token (client-credentials); empty clientId -> disabled. */
     private String tokenUrl;
     private String clientId;

@@ -19,15 +19,8 @@ npm install
 ```ts
 import { createAuthz } from "authz-nestjs";
 
-const authz = await createAuthz({
-  userIssuer: "https://auth.example.com",
-  userJwksUri: "https://auth.example.com/.well-known/jwks.json",
-  serviceIssuer: "https://sso.example.com",
-  serviceJwksUri: "https://sso.example.com/.well-known/jwks.json",
-  audience: "my-app",
-  roleServiceUrl: "http://role-service:8080",
-  authorizationYamlPath: "config/authorization.yaml",
-});
+// Reads AUTHZ_* from process.env
+const authz = await createAuthz();
 
 app.use(authz.middleware); // global enforcement, no per-route opt-in
 ```
@@ -36,46 +29,74 @@ app.use(authz.middleware); // global enforcement, no per-route opt-in
 
 ```ts
 // main.ts
-const authz = await createAuthz({ ... });
+const authz = await createAuthz();
 app.use(authz.middleware);
 ```
 
+## Getting Started
+
+1. **Install** the package — see [Install](#install).
+
+2. **Write `authorization.yaml`** — your path → permission / allowed-service
+   rules. Authorization lives entirely here; business routes contain no auth code.
+
+3. **Set required `AUTHZ_*` variables** (see [Configuration](#configuration) for
+   the full list), then call `createAuthz()`:
+
+   ```ts
+   import { createAuthz } from "authz-nestjs";
+
+   const authz = await createAuthz(); // env-only bootstrap
+   ```
+
+4. **Enforce globally** — mount the middleware so every route is authorized with
+   no per-route opt-in:
+
+   ```ts
+   app.use(authz.middleware);
+   ```
+
+5. **Tune optional settings** *(only if defaults don't fit)* — see the
+   [Configuration](#configuration) table for defaults and descriptions.
+
+6. **Enable outbound identity** *(optional)* — see
+   [Configuration](#configuration) for the required env vars.
+
 ## Configuration
 
-Use `CreateAuthzOptions` to configure trust roots, permission distribution,
-and behavior:
+`createAuthz()` reads `AUTHZ_*` environment variables from `process.env`.
+For parity with Spring's `authz.*` property binding, the names follow Spring
+relaxed binding — e.g. `authz.user-issuer` → `AUTHZ_USER_ISSUER`:
 
-| Option | Required | Description |
-|---|---|---|
-| `userIssuer` | yes | Issuer of user JWTs |
-| `userJwksUri` | yes | JWKS URI for user JWT signature verification |
-| `serviceIssuer` | yes | Issuer of service tokens |
-| `serviceJwksUri` | yes | JWKS URI for service token verification |
-| `audience` | yes | Expected JWT audience |
-| `roleServiceUrl` | yes | Role Service base URL |
-| `authorizationYaml` | one-of | `authorization.yaml` content as text |
-| `authorizationYamlPath` | one-of | Path to `authorization.yaml` on disk |
-| `kafkaBrokers` | no | Enable Kafka-based incremental cache sync |
-| `serviceToken` | no | Outbound identity (client-credentials) |
-
-### Optional configuration
-
-These fields all have sensible defaults and only need to be set when the defaults do not fit.
-
-| Field | Type | Default | Purpose |
+| Env var | Required | Default | Description |
 |---|---|---|---|
-| `clockSkewSeconds` | `number` | `5` | Allowed clock-skew tolerance (seconds) applied to JWT `exp`/`nbf` validation for both user and service tokens |
-| `reconcileIntervalMs` | `number` | `5000` | How often (ms) the background reconciler unconditionally re-fetches the full role map from the Role Service |
-| `roleServiceConnectTimeout` | `number` | `5000` | Role Service HTTP connect timeout (ms) |
-| `roleServiceReadTimeout` | `number` | `5000` | Role Service HTTP read timeout (ms) |
-| `diskCachePath` | `string` | `"authorization-cache.json"` | Path to the on-disk role cache file used as a seed fallback when the Role Service is unreachable at startup |
-| `serviceTokenUseClaim` | `string` | `"token_use"` | JWT claim name inspected to identify a service token |
-| `serviceTokenUseValue` | `string` | `"service"` | Expected value of `serviceTokenUseClaim` for a token to be accepted as a service token |
-| `roleUpdatesTopic` | `string` | `"role-updates"` | Kafka topic carrying role UPSERT events |
-| `roleDeleteTopic` | `string` | `"role-delete"` | Kafka topic carrying role DELETE events |
-| `publishRolesTopic` | `string` | `"publish-roles"` | Kafka topic that triggers a forced full re-fetch of the role map |
-| `kafkaGroupId` | `string` | `"authz-cache-sync"` | Kafka consumer group prefix (a UUID is appended per instance to avoid group conflicts) |
-| `kafkaClientId` | `string` | `"authz-cache-sync"` | Kafka consumer client ID |
+| `AUTHZ_USER_ISSUER` | yes | — | Issuer of user JWTs (validated against the `iss` claim) |
+| `AUTHZ_USER_JWKS_URI` | yes | — | JWKS endpoint for user JWT signature verification |
+| `AUTHZ_SERVICE_ISSUER` | yes | — | Issuer of service tokens (validated against the `iss` claim) |
+| `AUTHZ_SERVICE_JWKS_URI` | yes | — | JWKS endpoint for service-token signature verification |
+| `AUTHZ_AUDIENCE` | yes | — | Expected `aud` claim in user JWTs |
+| `AUTHZ_ROLE_SERVICE_URL` | yes | — | Base URL of the Role Service for full role-map fetches |
+| `AUTHZ_AUTHORIZATION_YAML` | one-of | — | Inline YAML content (alternative to path) |
+| `AUTHZ_AUTHORIZATION_YAML_PATH` | one-of | — | Path to `authorization.yaml` on disk |
+| `AUTHZ_CLOCK_SKEW_SECONDS` | no | `5` | Clock-skew tolerance (seconds) for JWT `exp`/`nbf` validation |
+| `AUTHZ_RECONCILE_INTERVAL_MS` | no | `300000` | Interval (ms) for unconditional full role-map re-fetch from Role Service |
+| `AUTHZ_ROLE_SERVICE_CONNECT_TIMEOUT` | no | `5000` | Role Service HTTP connect timeout (ms) |
+| `AUTHZ_ROLE_SERVICE_READ_TIMEOUT` | no | `5000` | Role Service HTTP read timeout (ms) |
+| `AUTHZ_DISK_CACHE_PATH` | no | `"authorization-cache.json"` | Path to on-disk role cache file used as seed fallback when Role Service is unreachable at startup |
+| `AUTHZ_SERVICE_TOKEN_USE_CLAIM` | no | `"token_use"` | JWT claim name inspected to identify a service token |
+| `AUTHZ_SERVICE_TOKEN_USE_VALUE` | no | `"service"` | Expected value of the service-token-use claim |
+| `AUTHZ_KAFKA_BROKERS` | no | `""` | Comma-separated Kafka brokers; empty disables Kafka (snapshot + reconciler only) |
+| `AUTHZ_ROLE_UPDATES_TOPIC` | no | `"role-updates"` | Kafka topic carrying role UPSERT events |
+| `AUTHZ_ROLE_DELETE_TOPIC` | no | `"role-delete"` | Kafka topic carrying role DELETE events |
+| `AUTHZ_PUBLISH_ROLES_TOPIC` | no | `"publish-roles"` | Kafka topic that triggers a forced full re-fetch |
+| `AUTHZ_KAFKA_GROUP_ID` | no | `"authz-cache-sync"` | Kafka consumer group prefix (UUID appended per instance) |
+| `AUTHZ_KAFKA_CLIENT_ID` | no | `"authz-cache-sync"` | Kafka consumer client ID |
+| `AUTHZ_TOKEN_URL` | when outbound identity | — | SSO/OIDC token endpoint issuing service tokens via `client_credentials` |
+| `AUTHZ_CLIENT_ID` | presence enables | — | This service's OAuth2 client identifier |
+| `AUTHZ_CLIENT_SECRET` | when outbound identity | — | This service's OAuth2 client secret (inject from your secret store) |
+
+Absent variables are omitted so library defaults apply. Required-field validation
+is performed by `createAuthz` (fail-fast at startup).
 
 ## SPI extension points
 
@@ -89,11 +110,12 @@ These fields all have sensible defaults and only need to be set when the default
 ## Testing
 
 ```bash
-npm test --workspace=authz-nestjs
+npm install
+npm test
 ```
 
 ## Build
 
 ```bash
-npm run build --workspace=authz-nestjs
+npm run build
 ```

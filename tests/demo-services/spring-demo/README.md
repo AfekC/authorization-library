@@ -43,7 +43,7 @@ authz.client-id=spring-demo-id
 authz.client-secret=spring-demo-secret
 
 # Optional tuning (defaults shown)
-authz.reconcile-interval-ms=5000
+authz.reconcile-interval-ms=300000  # library default: 5 min
 authz.service-token-use-claim=token_use
 authz.service-token-use-value=service
 authz.clock-skew-seconds=5
@@ -88,8 +88,8 @@ Every `authz.*` bean is `@ConditionalOnMissingBean`, so you can override any pie
 ## Run
 
 ```
-# requires a JDK 21 + Maven, or use scripts/mvn.(sh|ps1) for Docker
-scripts/mvn.sh demo-services/spring-demo spring-boot:run
+# requires a JDK 21 + Maven, or use tests/scripts/mvn.(sh|ps1) for Docker
+tests/scripts/mvn.sh tests/demo-services/spring-demo spring-boot:run
 ```
 
-Or use the full stack in [`tests/e2e`](../../tests/e2e).
+Or use the full stack in [`tests/e2e`](../../e2e).

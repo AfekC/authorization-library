@@ -435,4 +435,99 @@ class HardeningGapsTest {
         assertEquals(countAtStop, countAfterWait,
                 "Q6: reconciler must not run after stop() is called");
     }
+
+    // =========================================================================
+    // Q7 — CacheBootstrap.startSeedRetry() with exponential backoff
+    // =========================================================================
+
+    @Test
+    void q7_startSeedRetryIsNoOpWhenAlreadyNormal(@TempDir Path tmp) {
+        PermissionCache cache = new PermissionCache();
+        CacheBootstrap boot = new CacheBootstrap(
+                cache,
+                () -> Map.of("R", List.of("READ")),
+                new DiskCache(tmp.resolve("q7a.json")));
+        boot.start(); // succeeds → NORMAL
+        // Must not throw or start a thread
+        boot.startSeedRetry();
+        // Should still be able to stop cleanly
+        boot.stop();
+    }
+
+    @Test
+    void q7_startSeedRetryPromotesSeedToNormal(@TempDir Path tmp) throws Exception {
+        DiskCache disk = new DiskCache(tmp.resolve("q7b.json"));
+        disk.write(new PermissionCache(Map.of("SEED", List.of("READ"))));
+        PermissionCache cache = new PermissionCache();
+        boolean[] up = { false };
+        CacheBootstrap boot = new CacheBootstrap(
+                cache,
+                () -> {
+                    if (!up[0]) throw new RuntimeException("down (Q7)");
+                    return Map.of("R", List.of("WRITE"));
+                },
+                disk);
+        assertEquals(CacheBootstrap.Mode.SEED, boot.start());
+
+        up[0] = true; // Role Service comes back
+        boot.startSeedRetry();
+
+        // First tick is after 2s backoff; wait for promotion
+        long deadline = System.currentTimeMillis() + 5000;
+        while (boot.mode() == CacheBootstrap.Mode.SEED && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50);
+        }
+        boot.stop();
+
+        assertEquals(CacheBootstrap.Mode.NORMAL, boot.mode(),
+                "Q7: startSeedRetry must promote SEED→NORMAL on success");
+    }
+
+    @Test
+    void q7_startSeedRetryDoesNotIncrementRoleRefreshFailures(@TempDir Path tmp) throws Exception {
+        Metrics metrics = new Metrics();
+        PermissionCache cache = new PermissionCache();
+        DiskCache disk = new DiskCache(tmp.resolve("q7c.json"));
+        disk.write(new PermissionCache(Map.of("SEED", List.of("READ"))));
+
+        CacheBootstrap boot = new CacheBootstrap(
+                cache,
+                () -> { throw new RuntimeException("still down (Q7)"); },
+                disk, null, metrics);
+        assertEquals(CacheBootstrap.Mode.SEED, boot.start());
+
+        long before = metrics.get(Metrics.ROLE_REFRESH_FAILURES);
+        boot.startSeedRetry();
+        // Wait for first retry tick to fail (2s sleep + margin)
+        Thread.sleep(2100);
+        boot.stop();
+
+        assertEquals(before, metrics.get(Metrics.ROLE_REFRESH_FAILURES),
+                "Q7: startSeedRetry must NOT increment role_refresh_failures_total");
+    }
+
+    @Test
+    void q7_startSeedRetryStopsAfterStopCall(@TempDir Path tmp) throws Exception {
+        DiskCache disk = new DiskCache(tmp.resolve("q7d.json"));
+        disk.write(new PermissionCache(Map.of("SEED", List.of("READ"))));
+        java.util.concurrent.atomic.AtomicInteger callCount = new java.util.concurrent.atomic.AtomicInteger();
+        PermissionCache cache = new PermissionCache();
+        CacheBootstrap boot = new CacheBootstrap(
+                cache,
+                () -> { callCount.incrementAndGet(); throw new RuntimeException("down (Q7)"); },
+                disk);
+        assertEquals(CacheBootstrap.Mode.SEED, boot.start());
+
+        boot.startSeedRetry();
+        // Stop immediately while thread is still in its first sleep
+        boot.stop();
+        int countAfterStop = callCount.get();
+
+        // Wait to see if any extra fullSync calls happen after stop
+        Thread.sleep(500);
+        int countAfterWait = callCount.get();
+
+        assertEquals(countAfterStop, countAfterWait,
+                "Q7: seed retry must not call fullSync after stop()");
+    }
 }
