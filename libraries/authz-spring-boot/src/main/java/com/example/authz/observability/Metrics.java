@@ -36,7 +36,6 @@ public class Metrics {
     public static final String SERVICE_TOKEN_FETCH_SUCCESS = "service_token_fetch_success_total";
     public static final String SERVICE_TOKEN_FETCH_DURATION = "service_token_fetch_duration_seconds";
     public static final String AUTHZ_REQUEST_DURATION = "authz_request_duration_seconds";
-    public static final String CACHE_VERSION = "permission_cache_version";
     public static final String CACHE_AGE_SECONDS = "permission_cache_age_seconds";
 
     // ---- G12: per-mode failure suffixes ----

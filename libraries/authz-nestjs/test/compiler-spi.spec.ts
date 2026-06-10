@@ -248,14 +248,11 @@ describe("D12 — SPI pluggability", () => {
   it("custom AttributeProvider returns attributes", () => {
     const ctx: RequestContext = Object.freeze({
       userId: "u1",
-      role: "VIEWER",
-      tenant: "t1",
+      roleId: "VIEWER",
       serviceName: null,
-      serviceId: null,
       requestId: "r1",
       correlationId: "c1",
       authenticationType: "USER",
-      jwtId: "j1",
     });
 
     let providerCalled = false;
@@ -274,14 +271,11 @@ describe("D12 — SPI pluggability", () => {
   it("null AttributeProvider returns empty attributes", () => {
     const ctx: RequestContext = Object.freeze({
       userId: "u1",
-      role: null,
-      tenant: null,
+      roleId: null,
       serviceName: null,
-      serviceId: null,
       requestId: "r1",
       correlationId: "c1",
       authenticationType: "USER",
-      jwtId: null,
     });
 
     const attrs = AuthorizationEngine.attributesFor(ctx, null);

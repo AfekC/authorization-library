@@ -264,7 +264,6 @@ export class CacheBootstrap {
   }
 
   private updateGauges(): void {
-    this.deps.metrics?.setGauge(GAUGE.cacheVersion, this.cache.version());
     this.deps.metrics?.setGauge(
       GAUGE.cacheAgeSeconds,
       Math.max(0, Math.floor((Date.now() - this.cache.lastUpdatedAt().getTime()) / 1000)),

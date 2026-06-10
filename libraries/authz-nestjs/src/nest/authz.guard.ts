@@ -32,6 +32,8 @@ export interface AuthzGuardDeps {
   policyEngine?: PolicyEngine;
   /** Optional: replaces the cache-based role lookup with a custom resolver. */
   roleResolver?: RoleResolver;
+  /** FULL mode when true/undefined; SERVICE-ONLY mode (ignore user JWTs) when false (§0.5). */
+  userAuthEnabled?: boolean;
 }
 
 /**
@@ -47,8 +49,34 @@ export class AuthzGuard implements CanActivate {
     const req = context.switchToHttp().getRequest();
     const headers = stripUntrustedHeaders(req.headers ?? {});
 
-    const bearer = extractBearer(headers["authorization"]);
+    // §0.5 — in SERVICE-ONLY mode the Authorization/Bearer header is ignored.
+    const userAuthEnabled = this.deps.userAuthEnabled !== false;
+    const bearer = userAuthEnabled ? extractBearer(headers["authorization"]) : undefined;
     const serviceToken = headers["x-service-token"] as string | undefined;
+
+    const requestPath = (req.path ?? req.url ?? "").split("?")[0];
+
+    // §3.1 — public:true routes require no validation and are allowed even
+    // without credentials (built-in engine only; a custom PolicyEngine owns all
+    // decisions, including public handling).
+    if (!this.deps.policyEngine) {
+      const pre = this.deps.engine.matchRule(req.method, requestPath);
+      if (pre && pre.isPublic) {
+        const anon = buildRequestContext({
+          user: null,
+          service: null,
+          correlationId: headers["x-correlation-id"] as string | undefined,
+          requestId: headers["x-request-id"] as string | undefined,
+        });
+        req[REQUEST_CONTEXT_KEY] = anon;
+        this.deps.audit.emit(
+          buildAuditEvent({ ctx: anon, method: req.method, path: requestPath,
+            permission: null, result: "ALLOW" }),
+        );
+        this.deps.metrics.inc(METRIC.authzSuccess);
+        return true;
+      }
+    }
 
     if (!bearer && !serviceToken) {
       this.deps.metrics.inc(METRIC.authzFailure);
@@ -87,8 +115,7 @@ export class AuthzGuard implements CanActivate {
     req[REQUEST_CONTEXT_KEY] = ctx;
     if (bearer) req.authzUserJwt = bearer;
 
-    const requestPath = (req.path ?? req.url ?? "").split("?")[0];
-    const authRequest = { method: req.method, path: requestPath, authType: ctx.authenticationType, role: ctx.role, serviceName: ctx.serviceName };
+    const authRequest = { method: req.method, path: requestPath, authType: ctx.authenticationType, role: ctx.roleId, serviceName: ctx.serviceName };
 
     let decision: import("../rule-config/types").Decision;
     let matchedRule: import("../rule-config/types").CompiledRule | null = null;
@@ -112,7 +139,6 @@ export class AuthzGuard implements CanActivate {
         path: requestPath,
         permission: auditPermission(matchedRule),
         result: decision,
-        policyVersion: this.deps.cache.version(),
       }),
     );
 

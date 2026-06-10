@@ -94,25 +94,13 @@ tests\scripts\mvn.ps1 -ModuleDir libraries/authz-spring-boot test   # PowerShell
 
 ## End-to-end (both demos + mock + Kafka)
 
+**Use the wrapper script** — it rebuilds both libraries' bundled artifacts before starting the
+stack, then runs the suite and always tears down (even on failure):
+
 ```
-cd tests/e2e
-docker compose up --build -d     # redpanda + mock + nestjs-demo (:5001) + spring-demo (:5002)
-node run.mjs                      # full cross-language parity suite
-docker compose down -v
+tests/e2e/run-e2e.sh                       # bash
+tests\e2e\run-e2e.ps1                       # PowerShell
 ```
-
-`run.mjs` stays quiet on success: it prints a line only for a **failed** check and ends with a
-grouped **summary** (per-section pass counts + grand total). It asserts, against **both** demos:
-- **14 decision-matrix scenarios** (USER / SERVICE / USER_AND_SERVICE, edge cases, tamper, no-match);
-- **live Kafka propagation** — a role change flows Role Service → Kafka → each demo's cache;
-- **outbound propagation** — nestjs-demo forwards a user call to spring-demo with its own service
-  token + the user JWT + correlation id; the downstream sees a combined `USER_AND_SERVICE` request;
-- **audience enforcement** — a wrong-audience token is rejected (401) by both.
-
-The unit suites are quiet on success too: the libraries log an audit line on every decision, so
-both suites buffer per-test console/log output and replay it **only when that test fails** (NestJS:
-`test/buffered-console.env.cjs`; Spring: `BufferingLogbackAppender` + `LogFlushExtension`).
-
 
 ## Documentation
 

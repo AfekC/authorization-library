@@ -49,7 +49,7 @@ async function login(role, aud) {
   const r = await fetch(`${MOCK}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sub: `u-${role}`, role, aud }),
+    body: JSON.stringify({ userId: `u-${role}`, roleId: role, aud }),
   });
   return (await r.json()).access_token;
 }

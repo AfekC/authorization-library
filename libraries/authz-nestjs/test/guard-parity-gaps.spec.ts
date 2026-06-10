@@ -42,7 +42,7 @@ function fakeCtx(headers: Record<string, unknown>, method = "GET", path = "/api/
 }
 
 const goodUserValidator: TokenValidator = {
-  validateUserToken: async () => ({ sub: "u1", role: "MANAGER" }),
+  validateUserToken: async () => ({ userId: "u1", roleId: "MANAGER" }),
   validateServiceToken: async () => { throw new Error("not expected"); },
 };
 
@@ -171,7 +171,7 @@ describe("M2 — createAuthz exposes validator and audit", () => {
 
   it("authz.validator is the validator instance passed in via opts.validator", async () => {
     const myValidator: TokenValidator = {
-      validateUserToken: async () => ({ sub: "u1", role: "admin" }),
+      validateUserToken: async () => ({ userId: "u1", roleId: "admin" }),
       validateServiceToken: async () => ({ service_name: "svc1" }),
     };
 
@@ -204,7 +204,7 @@ describe("M2 — createAuthz exposes validator and audit", () => {
       roleServiceUrl: ROLE_SERVICE_URL,
       authorizationYaml: VALID_YAML,
       validator: {
-        validateUserToken: async () => ({ sub: "u1", role: "admin" }),
+        validateUserToken: async () => ({ userId: "u1", roleId: "admin" }),
         validateServiceToken: async () => ({ service_name: "svc1" }),
       },
       auditSink: myAudit,
@@ -226,7 +226,7 @@ describe("M2 — createAuthz exposes validator and audit", () => {
       roleServiceUrl: ROLE_SERVICE_URL,
       authorizationYaml: VALID_YAML,
       validator: {
-        validateUserToken: async () => ({ sub: "u1", role: "admin" }),
+        validateUserToken: async () => ({ userId: "u1", roleId: "admin" }),
         validateServiceToken: async () => ({ service_name: "svc1" }),
       },
       reconcileIntervalMs: 999999,
@@ -248,7 +248,7 @@ describe("M2 — createAuthz exposes validator and audit", () => {
       roleServiceUrl: ROLE_SERVICE_URL,
       authorizationYaml: VALID_YAML,
       validator: {
-        validateUserToken: async () => ({ sub: "u1", role: "admin" }),
+        validateUserToken: async () => ({ userId: "u1", roleId: "admin" }),
         validateServiceToken: async () => ({ service_name: "svc1" }),
       },
       reconcileIntervalMs: 999999,
@@ -493,7 +493,7 @@ describe("N2 — guard error response bodies are { error: string }", () => {
       roleServiceUrl: ROLE_SERVICE_URL,
       authorizationYaml: VALID_YAML,
       validator: {
-        validateUserToken: async () => ({ sub: "u", role: "MANAGER" }),
+        validateUserToken: async () => ({ userId: "u", roleId: "MANAGER" }),
         validateServiceToken: async () => ({ service_name: "svc" }),
       },
       reconcileIntervalMs: 999999,
@@ -603,7 +603,7 @@ describe("N3 — guard uses extractBearer (array header parity with middleware)"
         validateUserToken: async (token) => {
           // Validator should receive the token string, not "Bearer ..." or an array
           if (typeof token !== "string") throw new Error("token is not a string");
-          return { sub: "u1", role: "MANAGER" };
+          return { userId: "u1", roleId: "MANAGER" };
         },
         validateServiceToken: async () => ({ service_name: "svc" }),
       },
@@ -634,7 +634,7 @@ describe("N3 — guard uses extractBearer (array header parity with middleware)"
     const capturingValidator: TokenValidator = {
       validateUserToken: async (token) => {
         capturedTokens.push(token);
-        return { sub: "u1", role: "MANAGER" };
+        return { userId: "u1", roleId: "MANAGER" };
       },
       validateServiceToken: async () => { throw new Error("not expected"); },
     };

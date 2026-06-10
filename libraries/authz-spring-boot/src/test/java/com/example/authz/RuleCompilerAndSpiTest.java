@@ -447,7 +447,7 @@ class RuleCompilerAndSpiTest {
 
         Spi.TokenValidator validUser = new Spi.TokenValidator() {
             public Map<String, Object> validateUserToken(String jwt) {
-                return Map.of("sub", "u1", "role", "VIEWER");
+                return Map.of("userId", "u1", "roleId", "VIEWER");
             }
             public Map<String, Object> validateServiceToken(String jwt) {
                 throw new RuntimeException("n/a");
@@ -490,7 +490,7 @@ class RuleCompilerAndSpiTest {
         // Build a request context
         com.example.authz.context.RequestContext ctx =
                 com.example.authz.context.RequestContextBuilder.build(
-                        new com.example.authz.context.Principals.User("u1", "VIEWER", "t1", "j1"),
+                        new com.example.authz.context.Principals.User("u1", "VIEWER"),
                         null, "c1", "r1");
 
         // Custom AttributeProvider returns extra attributes
@@ -514,7 +514,7 @@ class RuleCompilerAndSpiTest {
     void d12_nullAttributeProviderReturnsEmptyAttributes() {
         com.example.authz.context.RequestContext ctx =
                 com.example.authz.context.RequestContextBuilder.build(
-                        new com.example.authz.context.Principals.User("u1", "VIEWER", null, null),
+                        new com.example.authz.context.Principals.User("u1", "VIEWER"),
                         null, null, null);
 
         // null provider -> empty map (default behavior)

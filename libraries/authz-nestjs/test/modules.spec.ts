@@ -38,8 +38,8 @@ describe("stripUntrustedHeaders", () => {
 describe("buildRequestContext", () => {
   it("derives USER_AND_SERVICE and only uses claim-derived identity", () => {
     const ctx = buildRequestContext({
-      user: { userId: "u1", role: "MANAGER", tenant: "t1", jwtId: "j1" },
-      service: { serviceName: "scheduler", serviceId: "c1" },
+      user: { userId: "u1", roleId: "MANAGER" },
+      service: { serviceName: "scheduler" },
       correlationId: "c-xyz",
     });
     expect(ctx.authenticationType).toBe("USER_AND_SERVICE");
@@ -52,7 +52,7 @@ describe("buildRequestContext", () => {
   it("derives SERVICE when only a service principal is present", () => {
     const ctx = buildRequestContext({
       user: null,
-      service: { serviceName: "batch", serviceId: "c2" },
+      service: { serviceName: "batch" },
     });
     expect(ctx.authenticationType).toBe("SERVICE");
   });
@@ -287,7 +287,7 @@ rules:
 describe("audit formatting", () => {
   it("formats an info line for a user decision", () => {
     const ctx = buildRequestContext({
-      user: { userId: "u-123", role: "MANAGER", tenant: null, jwtId: null },
+      user: { userId: "u-123", roleId: "MANAGER" },
       service: null,
       correlationId: "c-xyz",
       requestId: "r-1",
@@ -298,7 +298,6 @@ describe("audit formatting", () => {
       path: "/orders/7",
       permission: "READ_ORDER",
       result: "ALLOW",
-      policyVersion: 42,
     });
     const line = formatInfoLine(evt);
     expect(line).toContain("AUTHZ ALLOW");

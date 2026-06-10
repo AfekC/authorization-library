@@ -114,27 +114,8 @@ describe("B8 — health roleServiceLastSync has millisecond ISO-8601 precision",
 });
 
 // ---------------------------------------------------------------------------
-// D2 — Gauges: permission_cache_version and permission_cache_age_seconds
+// D2 — Gauge: permission_cache_age_seconds
 // ---------------------------------------------------------------------------
-
-describe("D2 — gauge permission_cache_version", () => {
-  it("starts at 0 for a fresh cache", () => {
-    const metrics = new Metrics();
-    expect(metrics.get(GAUGE.cacheVersion)).toBe(0);
-  });
-
-  it("setGauge updates the value returned by get()", () => {
-    const metrics = new Metrics();
-    metrics.setGauge(GAUGE.cacheVersion, 7);
-    expect(metrics.get(GAUGE.cacheVersion)).toBe(7);
-  });
-
-  it("gauge is visible in snapshot()", () => {
-    const metrics = new Metrics();
-    metrics.setGauge(GAUGE.cacheVersion, 3);
-    expect(metrics.snapshot()[GAUGE.cacheVersion]).toBe(3);
-  });
-});
 
 describe("D2 — gauge permission_cache_age_seconds", () => {
   it("setGauge stores a value retrievable by get()", () => {
@@ -165,21 +146,6 @@ describe("D3 — buildHealth() cache status", () => {
     const cache = new PermissionCache({ VIEWER: ["READ_ORDER"] });
     const report = buildHealth(cache, "normal");
     expect(report.cacheStatus).toBe("initialized");
-  });
-});
-
-describe("D3 — buildHealth() version", () => {
-  it("reflects the cache version counter", async () => {
-    const cache = new PermissionCache();
-    await cache.replaceAll({ ADMIN: ["DELETE_ORDER"] }); // bumps version to 1
-    const report = buildHealth(cache, "normal");
-    expect(report.currentVersion).toBe(1);
-  });
-
-  it("version 0 for a brand-new cache", () => {
-    const cache = new PermissionCache();
-    const report = buildHealth(cache, "normal");
-    expect(report.currentVersion).toBe(0);
   });
 });
 

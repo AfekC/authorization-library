@@ -73,30 +73,40 @@ public class AuthorizationFilter extends OncePerRequestFilter {
     private final HeaderSanitizer headerSanitizer;
     private final Spi.PolicyEngine policyEngine;
     private final Spi.AttributeProvider attributeProvider;
+    /** FULL mode when true; SERVICE-ONLY mode (ignore user JWTs) when false (§0.5). */
+    private final boolean userAuthEnabled;
 
     public AuthorizationFilter(AuthorizationEngine engine, PermissionCache cache,
                                Spi.TokenValidator validator, Spi.AuditSink audit) {
         this(engine, cache, validator, audit, new Metrics(), new HeaderSanitizer(),
-                null, null);
+                null, null, true);
     }
 
     public AuthorizationFilter(AuthorizationEngine engine, PermissionCache cache,
                                Spi.TokenValidator validator, Spi.AuditSink audit,
                                Metrics metrics) {
         this(engine, cache, validator, audit, metrics, new HeaderSanitizer(),
-                null, null);
+                null, null, true);
     }
 
     public AuthorizationFilter(AuthorizationEngine engine, PermissionCache cache,
                                Spi.TokenValidator validator, Spi.AuditSink audit,
                                Metrics metrics, HeaderSanitizer headerSanitizer) {
-        this(engine, cache, validator, audit, metrics, headerSanitizer, null, null);
+        this(engine, cache, validator, audit, metrics, headerSanitizer, null, null, true);
     }
 
     public AuthorizationFilter(AuthorizationEngine engine, PermissionCache cache,
                                Spi.TokenValidator validator, Spi.AuditSink audit,
                                Metrics metrics, HeaderSanitizer headerSanitizer,
                                Spi.PolicyEngine policyEngine, Spi.AttributeProvider attributeProvider) {
+        this(engine, cache, validator, audit, metrics, headerSanitizer, policyEngine, attributeProvider, true);
+    }
+
+    public AuthorizationFilter(AuthorizationEngine engine, PermissionCache cache,
+                               Spi.TokenValidator validator, Spi.AuditSink audit,
+                               Metrics metrics, HeaderSanitizer headerSanitizer,
+                               Spi.PolicyEngine policyEngine, Spi.AttributeProvider attributeProvider,
+                               boolean userAuthEnabled) {
         this.engine = engine;
         this.cache = cache;
         this.validator = validator;
@@ -105,6 +115,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         this.headerSanitizer = headerSanitizer;
         this.policyEngine = policyEngine;
         this.attributeProvider = attributeProvider;
+        this.userAuthEnabled = userAuthEnabled;
     }
 
     /**
@@ -126,7 +137,8 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         java.lang.Runnable stopTimer = metrics != null ? metrics.startTimer(Metrics.AUTHZ_REQUEST_DURATION) : null;
 
         // B10 — Consume the token headers before stripping so they are still readable here.
-        String bearer = extractBearer(request.getHeader("Authorization"));
+        // §0.5 — in SERVICE-ONLY mode the Authorization/Bearer header is ignored entirely.
+        String bearer = userAuthEnabled ? extractBearer(request.getHeader("Authorization")) : null;
         String serviceToken = request.getHeader("X-Service-Token");
 
         // B10 — Defense-in-depth: wrap the response to strip untrusted identity
@@ -136,6 +148,28 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         // while dropping spoofed identity headers for any downstream code that reads
         // the request headers directly.
         HttpServletRequest sanitizedRequest = new SanitizingRequestWrapper(request, headerSanitizer);
+
+        // §3.1 — public:true routes require no validation and are allowed even
+        // without credentials. Detected via the built-in engine (a custom
+        // PolicyEngine owns all decisions, including public handling).
+        String matchPath = effectivePath(request);
+        if (policyEngine == null) {
+            CompiledRule pre = engine.matchRule(request.getMethod(), matchPath);
+            if (pre != null && pre.isPublic()) {
+                RequestContext anon = RequestContextBuilder.build(null, null,
+                        sanitizedRequest.getHeader("X-Correlation-Id"),
+                        sanitizedRequest.getHeader("X-Request-Id"));
+                request.setAttribute(CONTEXT_ATTR, anon);
+                audit.emit(AuditEvents.build(anon, request.getMethod(), matchPath, null, Decision.ALLOW));
+                metrics.inc(Metrics.AUTHZ_SUCCESS);
+                try {
+                    chain.doFilter(sanitizedRequest, response);
+                } finally {
+                    if (stopTimer != null) stopTimer.run();
+                }
+                return;
+            }
+        }
 
         if (bearer == null && serviceToken == null) {
             metrics.inc(Metrics.AUTHZ_FAILURE);
@@ -149,11 +183,10 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         if (bearer != null) {
             try {
                 Map<String, Object> c = validator.validateUserToken(bearer);
-                // C12 — treat non-string role claim as absent (null role → DENY)
-                Object roleClaim = c.get("role");
-                String role = (roleClaim instanceof String s) ? s : null;
-                user = new Principals.User(
-                        str(c.get("sub")), role, str(c.get("tenant")), str(c.get("jti")));
+                // C12 — treat non-string roleId claim as absent (null role → DENY)
+                Object roleClaim = c.get("roleId");
+                String roleId = (roleClaim instanceof String s) ? s : null;
+                user = new Principals.User(str(c.get("userId")), roleId);
             } catch (RuntimeException e) {
                 // G12 — increment aggregate + mode-specific counter
                 metrics.incTokenFailure(Metrics.JWT_VALIDATION_FAILURES,
@@ -167,7 +200,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
                 Map<String, Object> c = validator.validateServiceToken(serviceToken);
                 String name = c.get("service_name") != null ? str(c.get("service_name"))
                         : c.get("azp") != null ? str(c.get("azp")) : str(c.get("client_id"));
-                service = new Principals.Service(name, str(c.get("client_id")));
+                service = new Principals.Service(name);
             } catch (RuntimeException e) {
                 // G12 — increment aggregate + mode-specific counter
                 metrics.incTokenFailure(Metrics.SERVICE_TOKEN_FAILURES,
@@ -187,10 +220,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         // RequestContext record so the §2.4 schema is unchanged.
         if (bearer != null) request.setAttribute(AuthzRequestContext.USER_JWT_ATTR, bearer);
 
-        // B9 — Strip the servlet context path so the matched path is stable across
-        // root and non-root deployments, aligning with NestJS req.path semantics.
-        String matchPath = effectivePath(request);
-
+        // matchPath (B9 — context-path-stripped) was computed above for the public check.
         AuthType authType = ctx.authenticationType();
         Decision decision;
         CompiledRule matchedRule = null;
@@ -198,11 +228,11 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         if (policyEngine != null) {
             decision = policyEngine.authorize(
                 new AuthorizationRequest(request.getMethod(), matchPath,
-                        authType, ctx.role(), ctx.serviceName()));
+                        authType, ctx.roleId(), ctx.serviceName()));
         } else {
             DecisionResult result = engine.evaluate(
                 new AuthorizationRequest(request.getMethod(), matchPath,
-                        authType, ctx.role(), ctx.serviceName()),
+                        authType, ctx.roleId(), ctx.serviceName()),
                 cache);
             decision = result.decision();
             matchedRule = result.matchedRule();
@@ -211,7 +241,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         String auditPermission = matchedRule != null && matchedRule.hasPermissions()
                 ? String.join(",", matchedRule.permissions()) : null;
         audit.emit(AuditEvents.build(ctx, request.getMethod(), matchPath,
-                auditPermission, decision, cache.version()));
+                auditPermission, decision));
 
         try {
             if (decision == Decision.ALLOW) {

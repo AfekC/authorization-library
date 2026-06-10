@@ -246,20 +246,6 @@ class ObservabilityAndRoleClientTest {
     }
 
     @Test
-    void d3_reportVersionMatchesCacheVersion(@TempDir Path tmp) {
-        PermissionCache cache = new PermissionCache();
-        CacheBootstrap boot = new CacheBootstrap(cache,
-                () -> Map.of("R", List.of("READ")), new DiskCache(tmp.resolve("d3c.json")));
-        boot.start(); // triggers replaceAll -> version becomes 1
-
-        Report report = new AuthzHealth(cache, boot).report();
-        assertEquals(cache.version(), report.currentVersion(),
-                "D3: report.currentVersion must match cache.version()");
-        assertTrue(report.currentVersion() >= 1,
-                "D3: version must be at least 1 after a successful start()");
-    }
-
-    @Test
     void d3_reportModeIsNormalAfterSuccessfulStart(@TempDir Path tmp) {
         PermissionCache cache = new PermissionCache();
         CacheBootstrap boot = new CacheBootstrap(cache,
@@ -347,11 +333,11 @@ class ObservabilityAndRoleClientTest {
     }
 
     // =========================================================================
-    // D2 — Gauge metrics: permission_cache_version, permission_cache_age_seconds
+    // D2 — Gauge metric: permission_cache_age_seconds
     // =========================================================================
 
     @Test
-    void d2_cacheVersionGaugeSetAfterBootstrap(@TempDir Path tmp) {
+    void d2_cacheAgeGaugeSetAfterBootstrap(@TempDir Path tmp) {
         Metrics metrics = new Metrics();
         PermissionCache cache = new PermissionCache();
         CacheBootstrap boot = new CacheBootstrap(cache,
@@ -360,33 +346,9 @@ class ObservabilityAndRoleClientTest {
                 null, metrics);
         boot.start();
 
-        long gaugeValue = metrics.get(Metrics.CACHE_VERSION);
-        assertEquals(cache.version(), gaugeValue,
-                "D2: permission_cache_version gauge must match cache.version() after start()");
-        assertTrue(gaugeValue >= 1,
-                "D2: permission_cache_version gauge must be at least 1 after a successful start()");
-    }
-
-    @Test
-    void d2_cacheVersionGaugeUpdatesOnForcedRefresh(@TempDir Path tmp) {
-        Metrics metrics = new Metrics();
-        PermissionCache cache = new PermissionCache();
-        CacheBootstrap boot = new CacheBootstrap(cache,
-                () -> Map.of("R", List.of("READ")),
-                new DiskCache(tmp.resolve("d2vr.json")),
-                null, metrics);
-        boot.start();
-
-        long versionAfterStart = metrics.get(Metrics.CACHE_VERSION);
-
-        // Forced refresh causes another replaceAll -> version increments -> gauge updates
-        boot.forcedRefresh();
-
-        long versionAfterRefresh = metrics.get(Metrics.CACHE_VERSION);
-        assertTrue(versionAfterRefresh >= versionAfterStart,
-                "D2: permission_cache_version gauge must be >= value after start() after a forced refresh");
-        assertEquals(cache.version(), versionAfterRefresh,
-                "D2: permission_cache_version gauge must stay in sync with cache.version()");
+        long ageGauge = metrics.get(Metrics.CACHE_AGE_SECONDS);
+        assertTrue(ageGauge >= 0,
+                "D2: permission_cache_age_seconds gauge must be set after start()");
     }
 
     @Test
@@ -437,9 +399,7 @@ class ObservabilityAndRoleClientTest {
         // Counters unaffected by gauge sets
         assertEquals(2L, metrics.get(Metrics.AUTHZ_SUCCESS),
                 "D2: gauge updates must not affect counters");
-        // Gauges set independently
-        assertTrue(metrics.get(Metrics.CACHE_VERSION) >= 1,
-                "D2: permission_cache_version gauge must be set");
+        // Gauge set independently
         assertTrue(metrics.get(Metrics.CACHE_AGE_SECONDS) >= 0,
                 "D2: permission_cache_age_seconds gauge must be set");
     }

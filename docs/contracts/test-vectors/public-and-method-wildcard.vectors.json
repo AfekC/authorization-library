@@ -1,0 +1,54 @@
+[
+  {
+    "name": "public rule -> ALLOW for USER request even when role has no permissions",
+    "rules": [{ "path": "/health", "methods": ["GET"], "public": true }],
+    "roleCache": { "VIEWER": [] },
+    "request": { "method": "GET", "path": "/health", "authType": "USER", "role": "VIEWER" },
+    "expected": "ALLOW",
+    "reason": "public:true short-circuits to ALLOW regardless of permissions"
+  },
+  {
+    "name": "public rule -> ALLOW for SERVICE request not in any allow-list",
+    "rules": [{ "path": "/health", "methods": ["GET"], "public": true }],
+    "roleCache": {},
+    "request": { "method": "GET", "path": "/health", "authType": "SERVICE", "serviceName": "anything" },
+    "expected": "ALLOW",
+    "reason": "public:true ignores the service allow-list dimension"
+  },
+  {
+    "name": "public rule with methods [*] -> ALLOW for any method",
+    "rules": [{ "path": "/public/**", "methods": ["*"], "public": true }],
+    "roleCache": {},
+    "request": { "method": "DELETE", "path": "/public/anything", "authType": "USER", "role": "UNKNOWN" },
+    "expected": "ALLOW",
+    "reason": "method wildcard matches DELETE; public short-circuits to ALLOW"
+  },
+  {
+    "name": "non-public rule with methods [*] -> matches POST and still enforces permissions",
+    "rules": [{ "path": "/orders", "methods": ["*"], "permissions": ["WRITE_ORDER"] }],
+    "roleCache": { "MANAGER": ["WRITE_ORDER"] },
+    "request": { "method": "POST", "path": "/orders", "authType": "USER", "role": "MANAGER" },
+    "expected": "ALLOW",
+    "reason": "methods [*] matches POST; role holds the required permission"
+  },
+  {
+    "name": "non-public rule with methods [*] -> matches GET but DENY when permission missing",
+    "rules": [{ "path": "/orders", "methods": ["*"], "permissions": ["WRITE_ORDER"] }],
+    "roleCache": { "VIEWER": ["READ_ORDER"] },
+    "request": { "method": "GET", "path": "/orders", "authType": "USER", "role": "VIEWER" },
+    "expected": "DENY",
+    "reason": "methods [*] matches GET, but role lacks WRITE_ORDER -> DENY"
+  },
+  {
+    "name": "public rule combined with permissions -> compile error",
+    "rules": [{ "path": "/health", "methods": ["GET"], "public": true, "permissions": ["READ"] }],
+    "expectCompileError": true,
+    "reason": "public is mutually exclusive with permissions/decision/allowedServices"
+  },
+  {
+    "name": "public rule combined with allowedServices -> compile error",
+    "rules": [{ "path": "/health", "methods": ["GET"], "public": true, "allowedServices": ["svc"] }],
+    "expectCompileError": true,
+    "reason": "public is mutually exclusive with the service allow-list"
+  }
+]

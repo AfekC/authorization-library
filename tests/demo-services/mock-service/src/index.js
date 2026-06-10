@@ -9,7 +9,7 @@
  *   GET  /auth/jwks                — Auth Service JWKS (user JWT verification keys)
  *   GET  /sso/jwks                 — SSO JWKS (service token verification keys)
  *   GET  /.well-known/auth         — Auth Service OpenID discovery fragment
- *   POST /auth/login               — Issue a user JWT  { sub, role, tenant?, aud? }
+ *   POST /auth/login               — Issue a user JWT  { userId, roleId, aud? }
  *   POST /sso/token                — Issue a service token (client_credentials grant)
  *   GET  /roles                    — Role Service: full role map (503 when toggled down)
  *   POST /admin/role-event         — Publish a role upsert/delete + Kafka event
@@ -221,10 +221,14 @@ async function main() {
   // ── Auth Service: issue a user JWT ─────────────────────────────────────────
 
   app.post("/auth/login", async (req, res) => {
-    const { sub, role, tenant, aud } = req.body || {};
-    if (!sub || !role) return res.status(400).json({ error: "sub and role required" });
+    const body = req.body || {};
+    // Identity claims are userId/roleId (sub/role accepted as legacy aliases).
+    const userId = body.userId ?? body.sub;
+    const roleId = body.roleId ?? body.role;
+    const aud = body.aud;
+    if (!userId || !roleId) return res.status(400).json({ error: "userId and roleId required" });
     const token = await auth.sign(
-      { sub, role, tenant: tenant || null, jti: `jti-${Date.now()}` },
+      { userId, roleId },
       { audience: aud || AUDIENCE }, // aud override enables audience-rejection tests
     );
     res.json({ access_token: token, token_type: "Bearer" });

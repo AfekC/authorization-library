@@ -85,13 +85,11 @@ export const METRIC = {
 } as const;
 
 export const GAUGE = {
-  cacheVersion: "permission_cache_version",
   cacheAgeSeconds: "permission_cache_age_seconds",
 } as const;
 
 export interface HealthReport {
   cacheStatus: "initialized" | "empty";
-  currentVersion: number;
   cacheAgeSeconds: number;
   mode: CacheMode;
   roleServiceLastSync: string | null;
@@ -107,7 +105,6 @@ export function buildHealth(
   const empty = Object.keys(cache.toSnapshot()).length === 0;
   return {
     cacheStatus: empty ? "empty" : "initialized",
-    currentVersion: cache.version(),
     cacheAgeSeconds: Math.max(
       0,
       Math.floor((Date.now() - cache.lastUpdatedAt().getTime()) / 1000),

@@ -36,7 +36,6 @@ public final class PermissionCache {
     /** Guards all write paths; readers need no lock. */
     private final ReentrantLock writeLock = new ReentrantLock();
     private final AtomicReference<Map<String, Set<String>>> active = new AtomicReference<>();
-    private volatile long version;
     private volatile Instant lastUpdatedAt;
 
     public PermissionCache() {
@@ -45,7 +44,6 @@ public final class PermissionCache {
 
     public PermissionCache(Map<String, ? extends Iterable<String>> initial) {
         this.active.set(build(initial));
-        this.version = 0;
         this.lastUpdatedAt = Instant.now();
     }
 
@@ -65,21 +63,17 @@ public final class PermissionCache {
         return active.get().getOrDefault(role, Set.of());
     }
 
-    public long version() { return version; }
-
     public Instant lastUpdatedAt() { return lastUpdatedAt; }
 
     /**
      * Replace the whole map atomically (e.g. after a Role Service snapshot).
      * Acquires {@code writeLock} to serialise against concurrent Kafka events
      * (C6): a full-snapshot replace and an individual event cannot interleave.
-     * Bumps an internal generation counter for observability.
      */
     public void replaceAll(Map<String, ? extends Iterable<String>> roles) {
         writeLock.lock();
         try {
             active.set(build(roles));
-            this.version++;
             this.lastUpdatedAt = Instant.now();
         } finally {
             writeLock.unlock();
@@ -98,7 +92,6 @@ public final class PermissionCache {
             permissions.forEach(perms::add);
             next.put(role, Set.copyOf(perms));
             active.set(Map.copyOf(next));
-            this.version++;
             this.lastUpdatedAt = Instant.now();
         } finally {
             writeLock.unlock();
@@ -115,7 +108,6 @@ public final class PermissionCache {
             Map<String, Set<String>> next = new HashMap<>(active.get());
             next.remove(role);
             active.set(Map.copyOf(next));
-            this.version++;
             this.lastUpdatedAt = Instant.now();
         } finally {
             writeLock.unlock();

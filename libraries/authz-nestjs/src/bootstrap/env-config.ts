@@ -15,12 +15,12 @@ import { ConfigError } from "../rule-config/types";
  *
  * | Env var | Option | Notes |
  * |---|---|---|
- * | `AUTHZ_USER_ISSUER` | `userIssuer` | required |
- * | `AUTHZ_USER_JWKS_URI` | `userJwksUri` | required |
- * | `AUTHZ_SERVICE_ISSUER` | `serviceIssuer` | required |
- * | `AUTHZ_SERVICE_JWKS_URI` | `serviceJwksUri` | required |
- * | `AUTHZ_AUDIENCE` | `audience` | required |
- * | `AUTHZ_ROLE_SERVICE_URL` | `roleServiceUrl` | required |
+ * | `AUTHZ_SERVICE_ISSUER` | `serviceIssuer` | required (both modes) |
+ * | `AUTHZ_SERVICE_JWKS_URI` | `serviceJwksUri` | required (both modes) |
+ * | `AUTHZ_USER_ISSUER` | `userIssuer` | required only when user auth enabled |
+ * | `AUTHZ_USER_JWKS_URI` | `userJwksUri` | required only when user auth enabled |
+ * | `AUTHZ_USER_AUDIENCE` | `audience` | required only when user auth enabled |
+ * | `AUTHZ_ROLE_SERVICE_URL` | `roleServiceUrl` | required only when user auth enabled |
  * | `AUTHZ_AUTHORIZATION_YAML` | `authorizationYaml` | one-of (rules as text) |
  * | `AUTHZ_AUTHORIZATION_YAML_PATH` | `authorizationYamlPath` | one-of (rules file path) |
  * | `AUTHZ_CLOCK_SKEW_SECONDS` | `clockSkewSeconds` | number |
@@ -84,7 +84,7 @@ export function optionsFromEnv(env: EnvSource = process.env): Partial<CreateAuth
   if (serviceIssuer !== undefined) opts.serviceIssuer = serviceIssuer;
   const serviceJwksUri = stringFromEnv(env, "AUTHZ_SERVICE_JWKS_URI");
   if (serviceJwksUri !== undefined) opts.serviceJwksUri = serviceJwksUri;
-  const audience = stringFromEnv(env, "AUTHZ_AUDIENCE");
+  const audience = stringFromEnv(env, "AUTHZ_USER_AUDIENCE");
   if (audience !== undefined) opts.audience = audience;
   const roleServiceUrl = stringFromEnv(env, "AUTHZ_ROLE_SERVICE_URL");
   if (roleServiceUrl !== undefined) opts.roleServiceUrl = roleServiceUrl;

@@ -23,18 +23,26 @@ Spring Boot auto-configuration library for config-driven authorization.
    Your path → permission / allowed-service rules live entirely here.
 
 3. **Set the required `authz.*` properties** in `application.yaml` (see
-   [Configuration](#configuration) for the full list). Each is mandatory and
-   fails fast at startup if missing:
+   [Configuration](#configuration) for the full list). Service auth is always
+   required; user auth is an optional add-on block:
 
    ```yaml
    authz:
-     user-issuer: https://auth.example.com
-     user-jwks-uri: https://auth.example.com/.well-known/jwks.json
+     # Service auth (always required)
      service-issuer: https://sso.example.com
      service-jwks-uri: https://sso.example.com/.well-known/jwks.json
-     audience: my-app
+
+     # User auth (optional; all-or-nothing — omit to run in service-only mode)
+     user:
+       issuer: https://auth.example.com
+       jwks-uri: https://auth.example.com/.well-known/jwks.json
+       audience: my-app
      role-service-url: http://role-service:8080
    ```
+
+   When user auth is omitted, the library runs in **service-only mode**: only
+   `X-Service-Token` is accepted, only `allowedServices` rules are evaluated,
+   and no role-permission machinery (Role Service, cache, Kafka) is activated.
 
 4. **Tune optional properties** *(only if defaults don't fit)* — see the
    [Configuration](#configuration) table for defaults.
@@ -75,34 +83,47 @@ management.otlp.tracing.endpoint=http://alloy:4317
 ## Configuration
 
 All properties go in `application.yaml` under the `authz.*` namespace. They are
-also bindable as `AUTHZ_*` environment variables (Spring relaxed binding — e.g.
-`authz.user-issuer` → `AUTHZ_USER_ISSUER`).
+also bindable as `AUTHZ_*` environment variables (Spring relaxed binding).
+
+### Service auth (always active)
 
 | Property | Required | Default | Description |
 |---|---|---|---|
-| `authz.user-issuer` | yes | — | Issuer (`iss`) your user JWTs must carry |
-| `authz.user-jwks-uri` | yes | — | JWKS endpoint for user-JWT signature verification |
 | `authz.service-issuer` | yes | — | Issuer (`iss`) your service tokens must carry |
 | `authz.service-jwks-uri` | yes | — | JWKS endpoint for service-token signature verification |
-| `authz.audience` | yes | — | Expected JWT audience (`aud`) for this service |
-| `authz.role-service-url` | yes | — | Authoritative Role Service base URL |
 | `authz.config-location` | no | `classpath:authorization.yaml` | Spring resource location of `authorization.yaml` |
 | `authz.clock-skew-seconds` | no | `5` | Clock-skew tolerance (seconds) for JWT `exp`/`nbf` checks |
 | `authz.jwks-timeout-ms` | no | `5000` | HTTP timeout (ms) for JWKS fetches during token validation |
+| `authz.service-token-use-claim` | no | `token_use` | JWT claim inspected to identify a service token |
+| `authz.service-token-use-value` | no | `service` | Expected value of the service-token-use claim |
+| `authz.untrusted-header-prefixes` | no | *(empty)* | Extra inbound header-name prefixes to strip |
+| `authz.untrusted-header-exact` | no | *(empty)* | Extra exact inbound header names to strip |
+
+### User auth (optional; all-or-nothing)
+
+When user auth is configured, **all** fields below must be set. When absent, the role-permission machinery is entirely disabled and the library runs in service-only mode — only `X-Service-Token` is accepted and only `allowedServices` rules are evaluated.
+
+| Property | Required | Default | Description |
+|---|---|---|---|
+| `authz.user.issuer` | when configured | — | Issuer (`iss`) your user JWTs must carry |
+| `authz.user.jwks-uri` | when configured | — | JWKS endpoint for user-JWT signature verification |
+| `authz.user.audience` | when configured | — | Expected JWT audience (`aud`) for user JWTs |
+| `authz.role-service-url` | when configured | — | Authoritative Role Service base URL |
 | `authz.role-service-connect-timeout` | no | `5000` | Role Service HTTP connect timeout (ms) |
 | `authz.role-service-read-timeout` | no | `5000` | Role Service HTTP read timeout (ms) |
 | `authz.reconcile-interval-ms` | no | `300000` | Periodic reconciler interval (ms). Seed-retry uses a separate 2s/4s/8s backoff. |
 | `authz.disk-cache-path` | no | `authorization-cache.json` | On-disk role-cache file used as seed fallback at startup |
-| `authz.service-token-use-claim` | no | `token_use` | JWT claim inspected to identify a service token |
-| `authz.service-token-use-value` | no | `service` | Expected value of the service-token-use claim |
 | `authz.kafka-brokers` | no | *(empty)* | Kafka brokers for incremental role events; empty disables Kafka |
 | `authz.role-updates-topic` | no | `role-updates` | Kafka topic carrying role UPSERT events |
 | `authz.role-delete-topic` | no | `role-delete` | Kafka topic carrying role DELETE events |
 | `authz.publish-roles-topic` | no | `publish-roles` | Kafka topic that triggers a forced full re-fetch |
 | `authz.kafka-group-id` | no | `authz-cache-sync` | Kafka consumer group prefix (UUID appended per instance) |
 | `authz.kafka-client-id` | no | `authz-cache-sync` | Kafka consumer client ID prefix |
-| `authz.untrusted-header-prefixes` | no | *(empty)* | Extra inbound header-name prefixes to strip |
-| `authz.untrusted-header-exact` | no | *(empty)* | Extra exact inbound header names to strip |
+
+### Outbound identity (optional)
+
+| Property | Required | Default | Description |
+|---|---|---|---|
 | `authz.token-url` | when outbound identity | — | SSO/OIDC token endpoint for `client_credentials` grant |
 | `authz.client-id` | presence enables | — | This service's OAuth2 client identifier |
 | `authz.client-secret` | when outbound identity | — | This service's OAuth2 client secret (inject from secret store) |

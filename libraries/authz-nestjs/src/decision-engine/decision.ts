@@ -45,6 +45,9 @@ export function decide(
   request: AuthorizationRequest,
   cache: PermissionCache,
 ): Decision {
+  // public:true routes require no validation and are always allowed (§3.1, §5.1).
+  if (rule.isPublic) return "ALLOW";
+
   const ruleHasPermissions = (rule.permissions?.length ?? 0) > 0;
   const ruleHasServices = (rule.allowedServices?.length ?? 0) > 0;
 
@@ -77,6 +80,8 @@ export function decideWithResolver(
   request: AuthorizationRequest,
   resolver: RoleResolver,
 ): Decision {
+  if (rule.isPublic) return "ALLOW";
+
   const ruleHasPermissions = (rule.permissions?.length ?? 0) > 0;
   const ruleHasServices = (rule.allowedServices?.length ?? 0) > 0;
 

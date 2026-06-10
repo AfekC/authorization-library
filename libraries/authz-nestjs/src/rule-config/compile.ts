@@ -7,6 +7,7 @@ const ALLOWED_KEYS = new Set([
   "permissions",
   "decision",
   "allowedServices",
+  "public",
 ]);
 
 function parseSegments(path: string): Segment[] {
@@ -42,6 +43,28 @@ function compileOne(rule: RuleInput): CompiledRule {
   if (!Array.isArray(rule.methods) || rule.methods.length === 0) {
     throw new ConfigError(`rule "${rule.path}" must list at least one method`);
   }
+
+  // public:true is a no-validation route — mutually exclusive with the
+  // permission/service dimensions. Fail fast if combined (§3.1).
+  let isPublic = false;
+  if (rule.public !== undefined) {
+    if (typeof rule.public !== "boolean") {
+      throw new ConfigError(`rule "${rule.path}" field "public" must be a boolean`);
+    }
+    isPublic = rule.public;
+  }
+  if (
+    isPublic &&
+    (rule.permissions !== undefined ||
+      rule.decision !== undefined ||
+      rule.allowedServices !== undefined)
+  ) {
+    throw new ConfigError(
+      `rule "${rule.path}" is public: "permissions", "decision", and ` +
+        `"allowedServices" are not allowed on a public rule`,
+    );
+  }
+
   let decision: DecisionMode = "ANY";
   if (rule.decision !== undefined) {
     if (rule.decision !== "ANY" && rule.decision !== "ALL") {
@@ -57,6 +80,7 @@ function compileOne(rule: RuleInput): CompiledRule {
 
   return {
     path: rule.path,
+    // methods: ["*"] matches any HTTP method; "*" upper-cases to itself.
     methods: new Set(rule.methods.map((m) => m.toUpperCase())),
     permissions:
       rule.permissions && rule.permissions.length > 0
@@ -70,6 +94,7 @@ function compileOne(rule: RuleInput): CompiledRule {
     segments,
     scores,
     literalCount,
+    isPublic,
   };
 }
 
@@ -94,6 +119,8 @@ function patternsOverlap(a: CompiledRule, b: CompiledRule): boolean {
 }
 
 function methodsIntersect(a: CompiledRule, b: CompiledRule): boolean {
+  // methods: ["*"] matches any method, so a wildcard on either side always intersects.
+  if (a.methods.has("*") || b.methods.has("*")) return true;
   for (const m of a.methods) if (b.methods.has(m)) return true;
   return false;
 }

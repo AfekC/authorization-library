@@ -39,16 +39,22 @@ export interface CreateAuthzOptions {
   authorizationYaml?: string;
   authorizationYamlPath?: string;
 
-  /** Trust roots. */
-  userIssuer: string;
-  userJwksUri: string;
+  /** Service trust roots (always required). */
   serviceIssuer: string;
   serviceJwksUri: string;
-  audience: string;
   clockSkewSeconds?: number;
 
-  /** Permission distribution. */
-  roleServiceUrl: string;
+  /**
+   * User trust roots (optional, all-or-nothing). Omit all three to run in
+   * SERVICE-ONLY mode (§0.5): user JWTs are ignored and the role-permission
+   * machinery (Role Service, cache sync, Kafka) is disabled.
+   */
+  userIssuer?: string;
+  userJwksUri?: string;
+  audience?: string;
+
+  /** Permission distribution (required only when user auth is enabled). */
+  roleServiceUrl?: string;
   kafkaBrokers?: string[];
   /** Kafka topic carrying UPSERT events (default `role-updates`). */
   roleUpdatesTopic?: string;
@@ -109,6 +115,8 @@ export interface Authz {
   cache: PermissionCache;
   metrics: Metrics;
   mode: CacheMode;
+  /** False in SERVICE-ONLY mode (§0.5) — user JWTs are ignored. */
+  userAuthEnabled: boolean;
   /** The TokenValidator instance wired at startup — exposed for NestJS guard wiring (M2). */
   validator: TokenValidator;
   /** The AuditSink instance wired at startup — exposed for NestJS guard wiring (M2). */
@@ -162,22 +170,30 @@ function requireHttpUrl(value: string, fieldName: string): void {
  * Internal options-based bootstrap (used by env wrappers and tests).
  */
 export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<Authz> {
-  // P4: validation order matches Java's ConfigValidator order
-  // userIssuer → userJwksUri → serviceIssuer → serviceJwksUri → roleServiceUrl → audience
-  if (!opts.userIssuer) throw new ConfigError("Missing required option: userIssuer");
-  if (!opts.userJwksUri) throw new ConfigError("Missing required option: userJwksUri");
+  // Service auth is ALWAYS required (both modes).
   if (!opts.serviceIssuer) throw new ConfigError("Missing required option: serviceIssuer");
   if (!opts.serviceJwksUri) throw new ConfigError("Missing required option: serviceJwksUri");
-  if (!opts.roleServiceUrl) throw new ConfigError("Missing required option: roleServiceUrl");
-  if (!opts.audience || opts.audience.trim().length === 0)
-    throw new ConfigError("Missing required option: audience");
-
-  // Q4: URL well-formedness validation (http/https required)
-  requireHttpUrl(opts.userIssuer, "userIssuer");
-  requireHttpUrl(opts.userJwksUri, "userJwksUri");
   requireHttpUrl(opts.serviceIssuer, "serviceIssuer");
   requireHttpUrl(opts.serviceJwksUri, "serviceJwksUri");
-  requireHttpUrl(opts.roleServiceUrl, "roleServiceUrl");
+
+  // User auth is OPTIONAL and all-or-nothing (§0.5, §3.3). Enabled when any
+  // user-auth field is present; then every required field must be present.
+  const userAuthEnabled = Boolean(
+    opts.userIssuer || opts.userJwksUri || opts.audience || opts.roleServiceUrl,
+  );
+  if (userAuthEnabled) {
+    if (!opts.userIssuer)
+      throw new ConfigError("Missing required option when user auth is enabled: userIssuer");
+    if (!opts.userJwksUri)
+      throw new ConfigError("Missing required option when user auth is enabled: userJwksUri");
+    if (!opts.audience || opts.audience.trim().length === 0)
+      throw new ConfigError("Missing required option when user auth is enabled: audience");
+    if (!opts.roleServiceUrl)
+      throw new ConfigError("Missing required option when user auth is enabled: roleServiceUrl");
+    requireHttpUrl(opts.userIssuer, "userIssuer");
+    requireHttpUrl(opts.userJwksUri, "userJwksUri");
+    requireHttpUrl(opts.roleServiceUrl, "roleServiceUrl");
+  }
   if (opts.serviceToken?.tokenUrl) {
     requireHttpUrl(opts.serviceToken.tokenUrl, "serviceToken.tokenUrl");
   }
@@ -224,18 +240,20 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
       clockSkewSeconds: opts.clockSkewSeconds ?? 5,
     });
 
-  const events = opts.kafkaBrokers?.length
-    ? new KafkaCacheEventHandler({
-        brokers: opts.kafkaBrokers,
-        updatesTopic: opts.roleUpdatesTopic,
-        deleteTopic: opts.roleDeleteTopic,
-        publishTopic: opts.publishRolesTopic,
-        groupId: opts.kafkaGroupId,
-        clientId: opts.kafkaClientId,
-        logger: { warn: (m) => console.warn(m) },
-        onSkippedEvent: () => metrics.inc(METRIC.roleEventSkipped),
-      })
-    : undefined;
+  // Kafka role events are part of the role-permission machinery — FULL mode only.
+  const events =
+    userAuthEnabled && opts.kafkaBrokers?.length
+      ? new KafkaCacheEventHandler({
+          brokers: opts.kafkaBrokers,
+          updatesTopic: opts.roleUpdatesTopic,
+          deleteTopic: opts.roleDeleteTopic,
+          publishTopic: opts.publishRolesTopic,
+          groupId: opts.kafkaGroupId,
+          clientId: opts.kafkaClientId,
+          logger: { warn: (m) => console.warn(m) },
+          onSkippedEvent: () => metrics.inc(METRIC.roleEventSkipped),
+        })
+      : undefined;
 
   const serviceIdentity = opts.serviceToken
     ? new ClientCredentialsProvider({
@@ -252,25 +270,57 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
     await serviceIdentity.checkTokenEndpoint();
   }
 
-  const boot = new CacheBootstrap(
-    cache,
-    new HttpRoleServiceClient({
-      baseUrl: opts.roleServiceUrl,
-      connectTimeoutMs: opts.roleServiceConnectTimeout ?? 5000,
-      readTimeoutMs: opts.roleServiceReadTimeout ?? 5000,
-    }),
-    new DiskCache(opts.diskCachePath ?? "authorization-cache.json"),
-    events,
-    { metrics, logger: { warn: (m) => console.warn(m) } },
-  );
-  const { mode } = await boot.start();
-  boot.startSeedRetry(); // 2s/4s/8s backoff until seed→normal
-  boot.startReconciler(opts.reconcileIntervalMs ?? 300000);
+  // Role-permission machinery (Role Service snapshot, disk seed, Kafka,
+  // reconciler) — FULL mode only (§0.5). Absent in SERVICE-ONLY mode.
+  let boot: CacheBootstrap | undefined;
+  let mode: CacheMode = "normal";
+  if (userAuthEnabled) {
+    boot = new CacheBootstrap(
+      cache,
+      new HttpRoleServiceClient({
+        baseUrl: opts.roleServiceUrl!,
+        connectTimeoutMs: opts.roleServiceConnectTimeout ?? 5000,
+        readTimeoutMs: opts.roleServiceReadTimeout ?? 5000,
+      }),
+      new DiskCache(opts.diskCachePath ?? "authorization-cache.json"),
+      events,
+      { metrics, logger: { warn: (m) => console.warn(m) } },
+    );
+    ({ mode } = await boot.start());
+    boot.startSeedRetry(); // 2s/4s/8s backoff until seed→normal
+    boot.startReconciler(opts.reconcileIntervalMs ?? 300000);
+  }
 
   const runAuthz = async (req: any, res: any, next: () => void, span?: AuthzSpan) => {
     const headers = stripUntrustedHeaders(req.headers ?? {});
-    const bearer = extractBearer(headers["authorization"]) ?? null;
+    // §0.5 — in SERVICE-ONLY mode the Authorization/Bearer header is ignored.
+    const bearer = userAuthEnabled ? (extractBearer(headers["authorization"]) ?? null) : null;
     const serviceToken = (headers["x-service-token"] as string) ?? null;
+
+    // B9: strip any query string so the matched/audited path is the bare path.
+    const requestPath = (req.path ?? req.url ?? "").split("?")[0];
+
+    // §3.1 — public:true routes need no validation and are allowed even without
+    // credentials (built-in engine only; a custom PolicyEngine owns decisions).
+    if (!opts.policyEngine) {
+      const pre = engine.matchRule(req.method, requestPath);
+      if (pre && pre.isPublic) {
+        const anon = buildRequestContext({
+          user: null,
+          service: null,
+          correlationId: headers["x-correlation-id"] as string,
+          requestId: headers["x-request-id"] as string,
+        });
+        req.authz = anon;
+        audit.emit(
+          buildAuditEvent({ ctx: anon, method: req.method, path: requestPath,
+            permission: null, result: "ALLOW" }),
+        );
+        metrics.inc(METRIC.authzSuccess);
+        runWithOutboundContext(anon, null, next);
+        return;
+      }
+    }
 
     if (!bearer && !serviceToken) {
       metrics.inc(METRIC.authzFailure);
@@ -309,12 +359,6 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
     });
     req.authz = ctx;
 
-    // B9: strip any query string from the fallback req.url so the path used
-    // for rule matching and audit is always the bare path component (stable,
-    // consistent with Java's HttpServletRequest.getRequestURI() semantics).
-    const rawPath: string = req.path ?? req.url ?? "";
-    const requestPath = rawPath.split("?")[0];
-
     let decision: Decision;
     let matchedRule: CompiledRule | null = null;
 
@@ -323,14 +367,14 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
         method: req.method,
         path: requestPath,
         authType: ctx.authenticationType,
-        role: ctx.role,
+        role: ctx.roleId,
         serviceName: ctx.serviceName,
       });
     } else if (opts.roleResolver) {
       decision = engine.authorizeWithResolver(
         { method: req.method, path: requestPath,
           authType: ctx.authenticationType,
-          role: ctx.role, serviceName: ctx.serviceName },
+          role: ctx.roleId, serviceName: ctx.serviceName },
         opts.roleResolver,
       );
       const rule = engine.matchRule(req.method, requestPath);
@@ -339,7 +383,7 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
       const result = engine.evaluate(
         { method: req.method, path: requestPath,
           authType: ctx.authenticationType,
-          role: ctx.role, serviceName: ctx.serviceName },
+          role: ctx.roleId, serviceName: ctx.serviceName },
         cache,
       );
       decision = result.decision;
@@ -350,7 +394,7 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
       span.setAttribute("authz.method", req.method);
       span.setAttribute("authz.path", requestPath);
       span.setAttribute("authz.authType", ctx.authenticationType);
-      if (ctx.role) span.setAttribute("authz.role", ctx.role);
+      if (ctx.roleId) span.setAttribute("authz.role", ctx.roleId);
       if (ctx.serviceName) span.setAttribute("authz.service", ctx.serviceName);
     }
     audit.emit(
@@ -360,7 +404,6 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
         path: requestPath,
         permission: auditPermission(matchedRule),
         result: decision,
-        policyVersion: cache.version(),
       }),
     );
 
@@ -407,6 +450,7 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
     cache,
     metrics,
     mode,
+    userAuthEnabled,
     validator,
     audit,
     serviceIdentity,
@@ -424,12 +468,19 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
       return instance;
     },
     health: () =>
-      buildHealth(cache, boot.mode_(), {
-        roleServiceLastSync: boot.roleServiceLastSync(),
-        kafkaConsumerConnected: boot.isKafkaConnected(),
-      }),
+      // SERVICE-ONLY mode (§0.5): no cache machinery — report an empty cache in
+      // normal mode (cache-related fields are not meaningful without user auth).
+      boot
+        ? buildHealth(cache, boot.mode_(), {
+            roleServiceLastSync: boot.roleServiceLastSync(),
+            kafkaConsumerConnected: boot.isKafkaConnected(),
+          })
+        : buildHealth(cache, "normal", {
+            roleServiceLastSync: null,
+            kafkaConsumerConnected: false,
+          }),
     stop: async () => {
-      boot.stop();
+      boot?.stop();
       if (events) await events.stop();
       // Cancel the outbound provider's proactive-refresh timer so the process
       // can exit cleanly (graceful shutdown — clear timers/intervals).

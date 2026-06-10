@@ -42,7 +42,7 @@ describe("createAuthz env-only bootstrap", () => {
     process.env.AUTHZ_USER_JWKS_URI = "https://jwks";
     process.env.AUTHZ_SERVICE_ISSUER = "https://sso";
     process.env.AUTHZ_SERVICE_JWKS_URI = "https://sso-jwks";
-    process.env.AUTHZ_AUDIENCE = "my-app";
+    process.env.AUTHZ_USER_AUDIENCE = "my-app";
     process.env.AUTHZ_ROLE_SERVICE_URL = ROLE_SERVICE_URL;
     process.env.AUTHZ_AUTHORIZATION_YAML = VALID_YAML;
     process.env.AUTHZ_RECONCILE_INTERVAL_MS = "999999";
@@ -57,9 +57,13 @@ describe("createAuthz env-only bootstrap", () => {
 // ---------------------------------------------------------------------------
 
 describe("K4a — required options validation", () => {
+  // Service auth is ALWAYS required; user auth is all-or-nothing (§0.5).
+  // These tests supply the service fields, then probe user-field validation.
   it("throws ConfigError when audience is missing", async () => {
     await expect(
       createAuthzWithOptions({
+        serviceIssuer: "https://sso",
+        serviceJwksUri: "https://sso/jwks",
         userIssuer: "https://issuer",
         userJwksUri: "https://jwks",
         roleServiceUrl: ROLE_SERVICE_URL,
@@ -68,9 +72,11 @@ describe("K4a — required options validation", () => {
     ).rejects.toThrow(ConfigError);
   });
 
-  it("throws ConfigError when userIssuer is missing", async () => {
+  it("throws ConfigError when userIssuer is missing (user auth enabled)", async () => {
     await expect(
       createAuthzWithOptions({
+        serviceIssuer: "https://sso",
+        serviceJwksUri: "https://sso/jwks",
         audience: "my-app",
         userJwksUri: "https://jwks",
         roleServiceUrl: ROLE_SERVICE_URL,
@@ -79,9 +85,11 @@ describe("K4a — required options validation", () => {
     ).rejects.toThrow(/userIssuer/i);
   });
 
-  it("throws ConfigError when userJwksUri is missing", async () => {
+  it("throws ConfigError when userJwksUri is missing (user auth enabled)", async () => {
     await expect(
       createAuthzWithOptions({
+        serviceIssuer: "https://sso",
+        serviceJwksUri: "https://sso/jwks",
         audience: "my-app",
         userIssuer: "https://issuer",
         roleServiceUrl: ROLE_SERVICE_URL,
@@ -90,7 +98,7 @@ describe("K4a — required options validation", () => {
     ).rejects.toThrow(/jwks/i);
   });
 
-  it("throws ConfigError when roleServiceUrl is missing", async () => {
+  it("throws ConfigError when roleServiceUrl is missing (user auth enabled)", async () => {
     await expect(
       createAuthzWithOptions({
         audience: "my-app",
@@ -103,12 +111,12 @@ describe("K4a — required options validation", () => {
     ).rejects.toThrow(/roleServiceUrl/i);
   });
 
-  it("throws on multiple missing fields — first missing wins (Java order: userIssuer first)", async () => {
+  it("throws ConfigError when serviceIssuer is missing (service auth always required)", async () => {
     await expect(
       createAuthzWithOptions({
         authorizationYaml: VALID_YAML,
       } as any),
-    ).rejects.toThrow(/userIssuer/i);
+    ).rejects.toThrow(/serviceIssuer/i);
   });
 });
 
@@ -154,7 +162,7 @@ describe("K4c — Authz object shape", () => {
       roleServiceUrl: ROLE_SERVICE_URL,
       authorizationYaml: VALID_YAML,
       validator: {
-        validateUserToken: async () => ({ sub: "user1", role: "admin" }),
+        validateUserToken: async () => ({ userId: "user1", roleId: "admin" }),
         validateServiceToken: async () => ({ service_name: "svc1" }),
       },
       reconcileIntervalMs: 999999,
@@ -182,7 +190,7 @@ describe("K4c — Authz object shape", () => {
       roleServiceUrl: ROLE_SERVICE_URL,
       authorizationYaml: VALID_YAML,
       validator: {
-        validateUserToken: async () => ({ sub: "u1", role: "admin" }),
+        validateUserToken: async () => ({ userId: "u1", roleId: "admin" }),
         validateServiceToken: async () => ({ service_name: "s1" }),
       },
       reconcileIntervalMs: 999999,
@@ -216,7 +224,7 @@ describe("K4d — Kafka conditional", () => {
       roleServiceUrl: ROLE_SERVICE_URL,
       authorizationYaml: VALID_YAML,
       validator: {
-        validateUserToken: async () => ({ sub: "u1", role: "admin" }),
+        validateUserToken: async () => ({ userId: "u1", roleId: "admin" }),
         validateServiceToken: async () => ({ service_name: "s1" }),
       },
       reconcileIntervalMs: 999999,
@@ -249,7 +257,7 @@ describe("K4e — service identity conditional", () => {
       roleServiceUrl: ROLE_SERVICE_URL,
       authorizationYaml: VALID_YAML,
       validator: {
-        validateUserToken: async () => ({ sub: "u1", role: "admin" }),
+        validateUserToken: async () => ({ userId: "u1", roleId: "admin" }),
         validateServiceToken: async () => ({ service_name: "s1" }),
       },
       reconcileIntervalMs: 999999,
@@ -275,7 +283,7 @@ describe("K4e — service identity conditional", () => {
       roleServiceUrl: ROLE_SERVICE_URL,
       authorizationYaml: VALID_YAML,
       validator: {
-        validateUserToken: async () => ({ sub: "u1", role: "admin" }),
+        validateUserToken: async () => ({ userId: "u1", roleId: "admin" }),
         validateServiceToken: async () => ({ service_name: "s1" }),
       },
       reconcileIntervalMs: 999999,

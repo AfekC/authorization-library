@@ -10,11 +10,11 @@ public final class AuditEvents {
     private AuditEvents() {}
 
     public static AuditEvent build(RequestContext ctx, String method, String path,
-                                   String permission, Decision result, long policyVersion) {
+                                   String permission, Decision result) {
         return new AuditEvent(
                 Instant.now().toString(),
                 ctx.userId(),
-                ctx.role(),
+                ctx.roleId(),
                 ctx.serviceName(),
                 path,
                 method,
@@ -22,14 +22,13 @@ public final class AuditEvents {
                 result,
                 ctx.authenticationType().name(),
                 ctx.requestId(),
-                ctx.correlationId(),
-                policyVersion);
+                ctx.correlationId());
     }
 
     /** Short one-line summary for operational monitoring. */
     public static String infoLine(AuditEvent e) {
         String who = e.userId() != null
-                ? "userId=" + e.userId() + "  role=" + e.role()
+                ? "userId=" + e.userId() + "  roleId=" + e.roleId()
                 : "svc=" + e.serviceName();
         String perm = e.permission() != null ? "  perm=" + e.permission() : "";
         return String.format("AUTHZ %-5s %s %s  %s%s  corr=%s",

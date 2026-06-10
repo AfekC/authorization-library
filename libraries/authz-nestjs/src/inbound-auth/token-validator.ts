@@ -23,13 +23,17 @@ function withCause(message: string, cause: unknown): Error {
 export const DEFAULT_JWKS_TIMEOUT_MS = 5000;
 
 export interface JwksValidatorConfig {
-  /** Auth Service issuer + JWKS for user JWTs. */
-  userIssuer: string;
-  userJwksUri: string;
+  /**
+   * Auth Service issuer + JWKS + audience for user JWTs. Optional: omit all
+   * three to run in SERVICE-ONLY mode (§0.5), where user JWTs are never
+   * validated and {@link JwksTokenValidator.validateUserToken} throws.
+   */
+  userIssuer?: string;
+  userJwksUri?: string;
+  audience?: string;
   /** SSO issuer + JWKS for service tokens. */
   serviceIssuer: string;
   serviceJwksUri: string;
-  audience: string;
   clockSkewSeconds?: number;
   /** Pinned algorithms (alg:none is always rejected). */
   algorithms?: string[];
@@ -45,18 +49,25 @@ export interface JwksValidatorConfig {
 
 /** Validates JWTs against remote JWKS for the Auth Service and SSO provider. */
 export class JwksTokenValidator implements TokenValidator {
-  private readonly userJwks: JWTVerifyGetKey;
+  /** Undefined in SERVICE-ONLY mode (no user-JWT validation). */
+  private readonly userJwks?: JWTVerifyGetKey;
   private readonly serviceJwks: JWTVerifyGetKey;
   private readonly algorithms: string[];
 
   constructor(private readonly cfg: JwksValidatorConfig) {
     const timeoutDuration = cfg.jwksTimeoutMs ?? DEFAULT_JWKS_TIMEOUT_MS;
-    this.userJwks = createRemoteJWKSet(new URL(cfg.userJwksUri), { timeoutDuration });
+    // SERVICE-ONLY mode (§0.5): no user JWKS when user auth is not configured.
+    this.userJwks = cfg.userJwksUri
+      ? createRemoteJWKSet(new URL(cfg.userJwksUri), { timeoutDuration })
+      : undefined;
     this.serviceJwks = createRemoteJWKSet(new URL(cfg.serviceJwksUri), { timeoutDuration });
     this.algorithms = cfg.algorithms ?? ["RS256", "ES256"];
   }
 
   async validateUserToken(jwt: string): Promise<TokenClaims> {
+    if (!this.userJwks) {
+      throw new Error("user auth is disabled (service-only mode)");
+    }
     try {
       const { payload } = await jwtVerify(jwt, this.userJwks, {
         issuer: this.cfg.userIssuer,
@@ -112,10 +123,9 @@ export class JwksTokenValidator implements TokenValidator {
 /** Map validated user claims to a principal (identity only from claims). */
 export function userPrincipalFromClaims(claims: JWTPayload): UserPrincipal {
   return {
-    userId: (claims.sub as string) ?? null,
-    role: typeof claims.role === "string" ? (claims.role as string) : null,
-    tenant: (claims.tenant as string) ?? null,
-    jwtId: (claims.jti as string) ?? null,
+    userId: (claims.userId as string) ?? null,
+    // Non-string roleId (number, array, …) is treated as absent → empty perms → DENY.
+    roleId: typeof claims.roleId === "string" ? (claims.roleId as string) : null,
   };
 }
 
@@ -130,6 +140,5 @@ export function servicePrincipalFromClaims(
     null;
   return {
     serviceName: name,
-    serviceId: (claims.client_id as string) ?? null,
   };
 }

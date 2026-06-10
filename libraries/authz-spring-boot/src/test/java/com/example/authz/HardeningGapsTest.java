@@ -79,8 +79,8 @@ class HardeningGapsTest {
         p.setUserJwksUri("not-a-url");
         ConfigException ex = assertThrows(ConfigException.class, () -> validate(p),
                 "Q4: malformed userJwksUri must throw ConfigException");
-        assertTrue(ex.getMessage().contains("user-jwks-uri"),
-                "Q4: error must mention 'user-jwks-uri', got: " + ex.getMessage());
+        assertTrue(ex.getMessage().contains("user.jwks-uri"),
+                "Q4: error must mention 'user.jwks-uri', got: " + ex.getMessage());
     }
 
     @Test
@@ -109,8 +109,8 @@ class HardeningGapsTest {
         p.setUserIssuer("ht tp://broken url");
         ConfigException ex = assertThrows(ConfigException.class, () -> validate(p),
                 "Q4: malformed userIssuer must throw ConfigException");
-        assertTrue(ex.getMessage().contains("user-issuer"),
-                "Q4: error must mention 'user-issuer', got: " + ex.getMessage());
+        assertTrue(ex.getMessage().contains("user.issuer"),
+                "Q4: error must mention 'user.issuer', got: " + ex.getMessage());
     }
 
     @Test
@@ -129,8 +129,8 @@ class HardeningGapsTest {
         p.setUserJwksUri("ftp://auth.example.com/jwks.json");
         ConfigException ex = assertThrows(ConfigException.class, () -> validate(p),
                 "Q4: ftp scheme is not http/https and must be rejected");
-        assertTrue(ex.getMessage().contains("user-jwks-uri"),
-                "Q4: error must mention 'user-jwks-uri', got: " + ex.getMessage());
+        assertTrue(ex.getMessage().contains("user.jwks-uri"),
+                "Q4: error must mention 'user.jwks-uri', got: " + ex.getMessage());
     }
 
     @Test
@@ -332,7 +332,7 @@ class HardeningGapsTest {
         // ROLE_REFRESH_FAILURES on failure or duplicated version increments.
         // The key assertion: no exception was thrown and stop() works cleanly.
         // We verify the invariant indirectly: the bootstrap is still functional.
-        assertTrue(cache.version() >= 1,
+        assertFalse(cache.snapshot().isEmpty(),
                 "Q6: cache must have been populated after double startReconciler");
     }
 

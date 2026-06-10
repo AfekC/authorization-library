@@ -237,7 +237,7 @@ describe("buildOutboundHeaders", () => {
 
   it("propagates JWT, service token, and trace ids", async () => {
     const ctx = buildRequestContext({
-      user: { userId: "u1", role: "MANAGER", tenant: null, jwtId: "j1" },
+      user: { userId: "u1", roleId: "MANAGER" },
       service: null,
       correlationId: "corr-1",
       requestId: "req-1",
@@ -250,7 +250,7 @@ describe("buildOutboundHeaders", () => {
   });
 
   it("omits Authorization for service-to-service calls", async () => {
-    const ctx = buildRequestContext({ user: null, service: { serviceName: "scheduler", serviceId: "c1" } });
+    const ctx = buildRequestContext({ user: null, service: { serviceName: "scheduler" } });
     const h = await buildOutboundHeaders({ ctx, userJwt: null, serviceIdentity: provider });
     expect(h["Authorization"]).toBeUndefined();
     expect(h["X-Service-Token"]).toBe("svc-token");
@@ -261,7 +261,7 @@ describe("buildOutboundHeaders", () => {
   // -------------------------------------------------------------------------
   it("B5 — whitespace-only userJwt is NOT propagated as 'Bearer    '", async () => {
     const ctx = buildRequestContext({
-      user: { userId: "u1", role: "MANAGER", tenant: null, jwtId: null },
+      user: { userId: "u1", roleId: "MANAGER" },
       service: null,
     });
     const h = await buildOutboundHeaders({
@@ -274,7 +274,7 @@ describe("buildOutboundHeaders", () => {
 
   it("B5 — empty string userJwt is NOT propagated", async () => {
     const ctx = buildRequestContext({
-      user: { userId: "u1", role: "MANAGER", tenant: null, jwtId: null },
+      user: { userId: "u1", roleId: "MANAGER" },
       service: null,
     });
     const h = await buildOutboundHeaders({
@@ -287,7 +287,7 @@ describe("buildOutboundHeaders", () => {
 
   it("B5 — a valid non-blank userJwt is still propagated correctly", async () => {
     const ctx = buildRequestContext({
-      user: { userId: "u1", role: "MANAGER", tenant: null, jwtId: null },
+      user: { userId: "u1", roleId: "MANAGER" },
       service: null,
     });
     const h = await buildOutboundHeaders({
@@ -303,7 +303,7 @@ describe("buildOutboundHeaders", () => {
   // -------------------------------------------------------------------------
   it("F4/G5 — X-Service-Token is absent when serviceIdentity is undefined", async () => {
     const ctx = buildRequestContext({
-      user: { userId: "u1", role: "MANAGER", tenant: null, jwtId: null },
+      user: { userId: "u1", roleId: "MANAGER" },
       service: null,
       correlationId: "c1",
       requestId: "r1",
@@ -328,7 +328,7 @@ describe("buildOutboundHeaders", () => {
       getServiceToken: async () => { throw new Error("SSO unreachable after retries"); },
     };
     const ctx = buildRequestContext({
-      user: { userId: "u2", role: "MANAGER", tenant: null, jwtId: null },
+      user: { userId: "u2", roleId: "MANAGER" },
       service: null,
       correlationId: "c-fail",
       requestId: "r-fail",
@@ -352,7 +352,7 @@ describe("buildOutboundHeaders", () => {
       getServiceToken: async () => { throw new Error("token endpoint down"); },
     };
     const ctx = buildRequestContext({
-      user: { userId: "u3", role: "ADMIN", tenant: null, jwtId: null },
+      user: { userId: "u3", roleId: "ADMIN" },
       service: null,
     });
     // Must resolve — not reject — even when service token acquisition throws
@@ -376,7 +376,7 @@ describe("G4 — attachOutboundPropagation interceptor is fail-open on service t
     attachOutboundPropagation(axiosLike, { serviceIdentity: failingIdentity });
 
     const ctx = buildRequestContext({
-      user: { userId: "u-axios", role: "MANAGER", tenant: null, jwtId: null },
+      user: { userId: "u-axios", roleId: "MANAGER" },
       service: null,
       correlationId: "axcorr",
       requestId: "axreq",
@@ -405,7 +405,7 @@ describe("G4 — attachOutboundPropagation interceptor is fail-open on service t
     attachOutboundPropagation(axiosLike, { serviceIdentity: goodIdentity });
 
     const ctx = buildRequestContext({
-      user: { userId: "u-good", role: "VIEWER", tenant: null, jwtId: null },
+      user: { userId: "u-good", roleId: "VIEWER" },
       service: null,
       correlationId: "corr-good",
       requestId: "req-good",

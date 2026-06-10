@@ -25,7 +25,7 @@ export class LoggingAuditSink implements AuditSink {
 export function formatInfoLine(e: AuditEvent): string {
   const who =
     e.userId != null
-      ? `userId=${e.userId}  role=${e.role}`
+      ? `userId=${e.userId}  roleId=${e.roleId}`
       : `svc=${e.serviceName}`;
   const perm = e.permission != null ? `  perm=${e.permission}` : "";
   return `AUTHZ ${e.result.padEnd(5)} ${e.method} ${e.path}  ${who}${perm}  corr=${e.correlationId}`;
@@ -38,13 +38,12 @@ export function buildAuditEvent(params: {
   path: string;
   permission: string | null;
   result: Decision;
-  policyVersion: number;
 }): AuditEvent {
   const { ctx } = params;
   return {
     timestamp: new Date().toISOString(),
     userId: ctx.userId,
-    role: ctx.role,
+    roleId: ctx.roleId,
     serviceName: ctx.serviceName,
     path: params.path,
     method: params.method,
@@ -53,6 +52,5 @@ export function buildAuditEvent(params: {
     authenticationType: ctx.authenticationType,
     requestId: ctx.requestId,
     correlationId: ctx.correlationId,
-    policyVersion: params.policyVersion,
   };
 }

@@ -17,13 +17,10 @@ public final class RequestContextBuilder {
 
         return new RequestContext(
                 user != null ? user.userId() : null,
-                user != null ? user.role() : null,
-                user != null ? user.tenant() : null,
+                user != null ? user.roleId() : null,
                 service != null ? service.serviceName() : null,
-                service != null ? service.serviceId() : null,
                 (requestId != null && !requestId.isBlank()) ? requestId : UUID.randomUUID().toString(),
                 (correlationId != null && !correlationId.isBlank()) ? correlationId : UUID.randomUUID().toString(),
-                authType,
-                user != null ? user.jwtId() : null);
+                authType);
     }
 }

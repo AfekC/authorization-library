@@ -16,7 +16,7 @@ describe("optionsFromEnv — required trust roots", () => {
       AUTHZ_USER_JWKS_URI: "https://auth.example.com/jwks",
       AUTHZ_SERVICE_ISSUER: "https://sso.example.com",
       AUTHZ_SERVICE_JWKS_URI: "https://sso.example.com/jwks",
-      AUTHZ_AUDIENCE: "orders-api",
+      AUTHZ_USER_AUDIENCE: "orders-api",
       AUTHZ_ROLE_SERVICE_URL: "http://role-service:8080",
     });
     expect(opts).toMatchObject({
@@ -30,7 +30,7 @@ describe("optionsFromEnv — required trust roots", () => {
   });
 
   it("omits absent fields so library defaults apply", () => {
-    const opts = optionsFromEnv({ AUTHZ_AUDIENCE: "orders-api" });
+    const opts = optionsFromEnv({ AUTHZ_USER_AUDIENCE: "orders-api" });
     expect(opts).toEqual({ audience: "orders-api" });
     expect("userIssuer" in opts).toBe(false);
   });

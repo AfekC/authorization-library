@@ -23,7 +23,7 @@ describe("B1 — whitespace-only trace/correlation IDs treated as absent", () =>
   it("a whitespace-only correlationId is replaced with a UUID", () => {
     const ctx = buildRequestContext({
       user: null,
-      service: { serviceName: "s", serviceId: "s-id" },
+      service: { serviceName: "s" },
       correlationId: "   ", // whitespace-only
     });
     // Must not be "   " — should be a UUID
@@ -37,7 +37,7 @@ describe("B1 — whitespace-only trace/correlation IDs treated as absent", () =>
 
   it("a whitespace-only requestId is replaced with a UUID", () => {
     const ctx = buildRequestContext({
-      user: { userId: "u", role: "R", tenant: null, jwtId: null },
+      user: { userId: "u", roleId: "R" },
       service: null,
       requestId: "\t\n  ", // whitespace-only
     });
@@ -50,7 +50,7 @@ describe("B1 — whitespace-only trace/correlation IDs treated as absent", () =>
   it("a valid non-blank correlationId is preserved as-is", () => {
     const ctx = buildRequestContext({
       user: null,
-      service: { serviceName: "s", serviceId: "sid" },
+      service: { serviceName: "s" },
       correlationId: "corr-123",
     });
     expect(ctx.correlationId).toBe("corr-123");
@@ -59,7 +59,7 @@ describe("B1 — whitespace-only trace/correlation IDs treated as absent", () =>
   it("an empty-string correlationId is replaced with a UUID", () => {
     const ctx = buildRequestContext({
       user: null,
-      service: { serviceName: "s", serviceId: "sid" },
+      service: { serviceName: "s" },
       correlationId: "",
     });
     expect(ctx.correlationId).toMatch(
@@ -75,7 +75,7 @@ describe("B1 — whitespace-only trace/correlation IDs treated as absent", () =>
 describe("F1 — RequestContext is frozen (immutable)", () => {
   it("the returned context object is frozen", () => {
     const ctx = buildRequestContext({
-      user: { userId: "u1", role: "R", tenant: null, jwtId: null },
+      user: { userId: "u1", roleId: "R" },
       service: null,
     });
     expect(Object.isFrozen(ctx)).toBe(true);
@@ -83,7 +83,7 @@ describe("F1 — RequestContext is frozen (immutable)", () => {
 
   it("attempting to mutate a frozen field throws in strict mode", () => {
     const ctx = buildRequestContext({
-      user: { userId: "u1", role: "MANAGER", tenant: null, jwtId: null },
+      user: { userId: "u1", roleId: "MANAGER" },
       service: null,
     });
     // In strict mode (TypeScript compiles to strict JS modules) this throws.
@@ -108,8 +108,8 @@ rules:
 
   const goodValidator: TokenValidator = {
     validateUserToken: async () => ({
-      sub: "u1",
-      role: "MANAGER",
+      userId: "u1",
+      roleId: "MANAGER",
       iss: "https://auth.example.com",
       aud: "api://my-service",
       exp: Math.floor(Date.now() / 1000) + 3600,

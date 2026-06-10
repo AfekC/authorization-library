@@ -138,7 +138,7 @@ class RequestPathAndAuditFixesTest {
     void c12_integerRoleClaimTreatedAsNullRole() throws Exception {
         // role claim is Integer 123 — must NOT be coerced to "123"
         Spi.TokenValidator v = userValidatorReturning(
-                Map.of("sub", "u1", "role", 123, "tenant", "t1", "jti", "j1"));
+                Map.of("userId", "u1", "roleId", 123));
         Metrics metrics = new Metrics();
         CapturingSink sink = new CapturingSink();
         AuthorizationFilter filter = new AuthorizationFilter(
@@ -155,8 +155,8 @@ class RequestPathAndAuditFixesTest {
         assertEquals(HttpStatus.FORBIDDEN.value(), res.getStatus(),
                 "C12: integer role claim must result in null role → DENY, not coerced to '123'");
         // Audit must have null or empty role, not "123"
-        assertNotEquals("123", sink.last == null ? null : sink.last.role(),
-                "C12: audit role must not be coerced from integer to string '123'");
+        assertNotEquals("123", sink.last == null ? null : sink.last.roleId(),
+                "C12: audit roleId must not be coerced from integer to string '123'");
         assertEquals(1, metrics.get(Metrics.PERMISSION_DENIED));
     }
 
@@ -164,7 +164,7 @@ class RequestPathAndAuditFixesTest {
     void c12_arrayRoleClaimTreatedAsNullRole() throws Exception {
         // role claim is a List — must also be treated as absent
         Spi.TokenValidator v = userValidatorReturning(
-                Map.of("sub", "u1", "role", List.of("ADMIN"), "jti", "j1"));
+                Map.of("userId", "u1", "roleId", List.of("ADMIN")));
         Metrics metrics = new Metrics();
         AuthorizationFilter filter = new AuthorizationFilter(
                 engine(SIMPLE_YAML),
@@ -185,7 +185,7 @@ class RequestPathAndAuditFixesTest {
     void c12_stringRoleClaimWorksNormally() throws Exception {
         // String role claim must continue to work as before
         Spi.TokenValidator v = userValidatorReturning(
-                Map.of("sub", "u1", "role", "VIEWER", "jti", "j1"));
+                Map.of("userId", "u1", "roleId", "VIEWER"));
         AuthorizationFilter filter = new AuthorizationFilter(
                 engine(SIMPLE_YAML),
                 new PermissionCache(Map.of("VIEWER", List.of("READ_ORDER"))),
@@ -233,7 +233,7 @@ class RequestPathAndAuditFixesTest {
     void b9_ruleMatchingUsesStrippedPath() throws Exception {
         // Rule is at /orders — the request URI includes a context path /ctx
         Spi.TokenValidator v = userValidatorReturning(
-                Map.of("sub", "u1", "role", "VIEWER", "jti", "j1"));
+                Map.of("userId", "u1", "roleId", "VIEWER"));
         AuthorizationFilter filter = new AuthorizationFilter(
                 engine(SIMPLE_YAML),
                 new PermissionCache(Map.of("VIEWER", List.of("READ_ORDER"))),
@@ -257,7 +257,7 @@ class RequestPathAndAuditFixesTest {
     @Test
     void b10_sanitizerHidesSpoofedXUserHeader() throws Exception {
         Spi.TokenValidator v = userValidatorReturning(
-                Map.of("sub", "u1", "role", "VIEWER", "jti", "j1"));
+                Map.of("userId", "u1", "roleId", "VIEWER"));
         // Capture the request that reaches the chain to inspect its headers
         final jakarta.servlet.http.HttpServletRequest[] chainReq = new jakarta.servlet.http.HttpServletRequest[1];
         jakarta.servlet.FilterChain capturingChain = (request, response) -> {
@@ -295,7 +295,7 @@ class RequestPathAndAuditFixesTest {
     @Test
     void b10_sanitizerAllowsCorrelationHeaders() throws Exception {
         Spi.TokenValidator v = userValidatorReturning(
-                Map.of("sub", "u1", "role", "VIEWER", "jti", "j1"));
+                Map.of("userId", "u1", "roleId", "VIEWER"));
         final jakarta.servlet.http.HttpServletRequest[] chainReq = new jakarta.servlet.http.HttpServletRequest[1];
         jakarta.servlet.FilterChain capturingChain = (request, response) -> {
             chainReq[0] = (jakarta.servlet.http.HttpServletRequest) request;
@@ -414,9 +414,9 @@ class RequestPathAndAuditFixesTest {
                 new AuthorizationRequest("POST", "/admin", AuthType.USER, "M", null), cache);
 
         RequestContext ctx = RequestContextBuilder.build(
-                new Principals.User("u1", "M", null, null), null, "c1", "r1");
+                new Principals.User("u1", "M"), null, "c1", "r1");
         AuditEvent event = AuditEvents.build(ctx, "POST", "/admin",
-                result.auditPermission(), result.decision(), cache.version());
+                result.auditPermission(), result.decision());
 
         assertEquals(result.auditPermission(), event.permission(),
                 "A3: AuditEvent.permission must match DecisionResult.auditPermission");
@@ -432,10 +432,10 @@ class RequestPathAndAuditFixesTest {
     void d6_debugAuditJsonContainsAllRequiredSchemaFields() throws Exception {
         // Build a representative AuditEvent (ALLOW, user request with permission)
         RequestContext ctx = RequestContextBuilder.build(
-                new Principals.User("user-42", "VIEWER", "tenant-1", "jti-xyz"),
+                new Principals.User("user-42", "VIEWER"),
                 null, "corr-001", "req-002");
         AuditEvent event = AuditEvents.build(ctx, "GET", "/orders",
-                "READ_ORDER", Decision.ALLOW, 7L);
+                "READ_ORDER", Decision.ALLOW);
 
         // Serialize to JSON using the same ObjectMapper as LoggingAuditSink
         ObjectMapper mapper = new ObjectMapper();
@@ -445,7 +445,7 @@ class RequestPathAndAuditFixesTest {
         // Architecture §10.1 required fields
         assertTrue(parsed.containsKey("timestamp"),        "D6: 'timestamp' must be in audit JSON");
         assertTrue(parsed.containsKey("userId"),           "D6: 'userId' must be in audit JSON");
-        assertTrue(parsed.containsKey("role"),             "D6: 'role' must be in audit JSON");
+        assertTrue(parsed.containsKey("roleId"),           "D6: 'roleId' must be in audit JSON");
         assertTrue(parsed.containsKey("path"),             "D6: 'path' must be in audit JSON");
         assertTrue(parsed.containsKey("method"),           "D6: 'method' must be in audit JSON");
         assertTrue(parsed.containsKey("result"),           "D6: 'result' must be in audit JSON");
@@ -454,23 +454,20 @@ class RequestPathAndAuditFixesTest {
                 "D6: 'authenticationType' must be in audit JSON");
         assertTrue(parsed.containsKey("correlationId"),   "D6: 'correlationId' must be in audit JSON");
         assertTrue(parsed.containsKey("requestId"),       "D6: 'requestId' must be in audit JSON");
-        assertTrue(parsed.containsKey("policyVersion"),   "D6: 'policyVersion' must be in audit JSON");
 
         // Verify governing permission value is correct
         assertEquals("READ_ORDER", parsed.get("permission"),
                 "D6: governing permission must appear in the JSON");
         assertEquals("ALLOW", parsed.get("result"),
                 "D6: result must be 'ALLOW'");
-        assertEquals(7, parsed.get("policyVersion"),
-                "D6: policyVersion must match");
     }
 
     @Test
     void d6_debugAuditJsonMultiPermissionHasCommaJoined() throws Exception {
         RequestContext ctx = RequestContextBuilder.build(
-                new Principals.User("u1", "M", null, null), null, "c1", "r1");
+                new Principals.User("u1", "M"), null, "c1", "r1");
         AuditEvent event = AuditEvents.build(ctx, "POST", "/admin",
-                "WRITE_ORDER,ADMIN", Decision.ALLOW, 1L);
+                "WRITE_ORDER,ADMIN", Decision.ALLOW);
 
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(event);
@@ -492,7 +489,7 @@ class RequestPathAndAuditFixesTest {
         AuditEvent event = new AuditEvent(
                 "2026-06-07T00:00:00Z", "u1", "VIEWER", null,
                 "/orders", "GET", "READ_ORDER", Decision.ALLOW, "USER",
-                "r1", "c1", 1L);
+                "r1", "c1");
         // Must not throw
         assertDoesNotThrow(() -> sink.emit(event),
                 "C11: LoggingAuditSink.emit must never throw");
@@ -629,7 +626,7 @@ class RequestPathAndAuditFixesTest {
         Metrics metrics = new Metrics();
         // User has role VIEWER but rule requires WRITE_ORDER
         Spi.TokenValidator v = userValidatorReturning(
-                Map.of("sub", "u1", "role", "VIEWER", "jti", "j1"));
+                Map.of("userId", "u1", "roleId", "VIEWER"));
         AuthorizationFilter filter = new AuthorizationFilter(
                 engine("rules:\n  - path: /admin\n    methods: [POST]\n    permissions: [WRITE_ORDER]\n"),
                 new PermissionCache(Map.of("VIEWER", List.of("READ_ORDER"))),

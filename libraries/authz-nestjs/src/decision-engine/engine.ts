@@ -47,7 +47,8 @@ export class AuthorizationEngine {
     const segs = splitPath(path);
     let best: CompiledRule | null = null;
     for (const rule of this.rules) {
-      if (!rule.methods.has(upper)) continue;
+      // methods: ["*"] matches any HTTP method.
+      if (!rule.methods.has("*") && !rule.methods.has(upper)) continue;
       if (!matchPath(rule.segments, segs)) continue;
       if (best === null || compareSpecificity(rule, best) > 0) best = rule;
     }

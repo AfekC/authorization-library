@@ -127,7 +127,7 @@ class ArchitectureFixesTest {
     @Test
     void allowStoresUserJwtAndAuditsPermission() throws Exception {
         Spi.TokenValidator validUser = new Spi.TokenValidator() {
-            public Map<String, Object> validateUserToken(String jwt) { return Map.of("sub", "u1", "role", "R"); }
+            public Map<String, Object> validateUserToken(String jwt) { return Map.of("userId", "u1", "roleId", "R"); }
             public Map<String, Object> validateServiceToken(String jwt) { throw new RuntimeException("n/a"); }
         };
         Metrics metrics = new Metrics();
@@ -153,7 +153,7 @@ class ArchitectureFixesTest {
     @Test
     void outboundInterceptorAttachesHeadersFromCurrentRequest() throws Exception {
         RequestContext ctx = RequestContextBuilder.build(
-                new Principals.User("u", "R", null, null), null, "c-1", "r-1");
+                new Principals.User("u", "R"), null, "c-1", "r-1");
         MockHttpServletRequest httpReq = new MockHttpServletRequest();
         httpReq.setAttribute(AuthzRequestContext.CONTEXT_ATTR, ctx);
         httpReq.setAttribute(AuthzRequestContext.USER_JWT_ATTR, "user-jwt");

@@ -15,6 +15,9 @@ public final class DecisionEvaluator {
     private DecisionEvaluator() {}
 
     public static Decision decide(CompiledRule rule, AuthorizationRequest req, PermissionCache cache) {
+        // public:true routes require no validation and are always allowed (§3.1, §5.1).
+        if (rule.isPublic()) return Decision.ALLOW;
+
         boolean hasPerms = rule.hasPermissions();
         boolean hasServices = rule.hasAllowedServices();
 

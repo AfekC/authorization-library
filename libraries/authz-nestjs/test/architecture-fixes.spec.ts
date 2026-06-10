@@ -116,7 +116,7 @@ describe("axios outbound auto-propagation (§9/§12)", () => {
     expect(outside.headers["Authorization"]).toBeUndefined();
 
     const ctx = buildRequestContext({
-      user: { userId: "u", role: "M", tenant: null, jwtId: null },
+      user: { userId: "u", roleId: "M" },
       service: null,
       correlationId: "c-1",
       requestId: "r-1",

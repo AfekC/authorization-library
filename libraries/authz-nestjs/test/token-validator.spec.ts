@@ -407,13 +407,13 @@ describe("servicePrincipalFromClaims — name fallback priority (G8)", () => {
     expect(p.serviceName).toBeNull();
   });
 
-  it("always reads serviceId from client_id", () => {
+  it("derives serviceName from service_name/azp/client_id precedence", () => {
     const p = servicePrincipalFromClaims({
       service_name: "s",
       azp: "az",
       client_id: "c",
     });
-    expect(p.serviceId).toBe("c");
+    expect(p.serviceName).toBe("s");
   });
 });
 
@@ -422,20 +422,16 @@ describe("servicePrincipalFromClaims — name fallback priority (G8)", () => {
 // ===========================================================================
 
 describe("userPrincipalFromClaims", () => {
-  it("maps sub → userId, role, tenant, jti", () => {
+  it("maps userId and roleId claims", () => {
     const p = userPrincipalFromClaims({
-      sub: "u-1",
-      role: "ADMIN",
-      tenant: "t-1",
-      jti: "j-1",
+      userId: "u-1",
+      roleId: "ADMIN",
     });
-    expect(p).toEqual({ userId: "u-1", role: "ADMIN", tenant: "t-1", jwtId: "j-1" });
+    expect(p).toEqual({ userId: "u-1", roleId: "ADMIN" });
   });
 
-  it("returns null for absent optional claims", () => {
-    const p = userPrincipalFromClaims({ sub: "u-1" });
-    expect(p.role).toBeNull();
-    expect(p.tenant).toBeNull();
-    expect(p.jwtId).toBeNull();
+  it("returns null for absent/invalid claims", () => {
+    const p = userPrincipalFromClaims({ userId: "u-1" });
+    expect(p.roleId).toBeNull();
   });
 });

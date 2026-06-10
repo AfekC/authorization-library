@@ -70,6 +70,35 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
                 DEFAULT_JWKS_TIMEOUT_MS);
     }
 
+    /**
+     * SERVICE-ONLY mode factory (§0.5): builds a validator that verifies service
+     * tokens only. There is no user-JWT decoder and audience is not required;
+     * {@link #validateUserToken(String)} is never called because the filter
+     * ignores the {@code Authorization} header in service-only mode.
+     */
+    public static NimbusJwksTokenValidator serviceOnly(
+            String serviceIssuer, String serviceJwksUri,
+            String serviceTokenUseClaim, String serviceTokenUseValue,
+            long clockSkewSeconds, long jwksTimeoutMs) {
+        return new NimbusJwksTokenValidator(serviceIssuer, serviceJwksUri,
+                serviceTokenUseClaim, serviceTokenUseValue, clockSkewSeconds, jwksTimeoutMs);
+    }
+
+    /** Service-only constructor: no user decoder, no audience requirement. */
+    private NimbusJwksTokenValidator(String serviceIssuer, String serviceJwksUri,
+                                     String serviceTokenUseClaim, String serviceTokenUseValue,
+                                     long clockSkewSeconds, long jwksTimeoutMs) {
+        String effectiveClaim = (serviceTokenUseClaim == null || serviceTokenUseClaim.isBlank())
+                ? "token_use"
+                : serviceTokenUseClaim;
+        Duration skew = Duration.ofSeconds(clockSkewSeconds);
+        RestOperations jwksHttp = jwksRestOperations(jwksTimeoutMs);
+        this.userDecoder = null;
+        this.serviceDecoder = serviceDecoder(serviceJwksUri, serviceIssuer, skew, jwksHttp);
+        this.serviceTokenUseClaim = effectiveClaim;
+        this.serviceTokenUseValue = serviceTokenUseValue;
+    }
+
     public NimbusJwksTokenValidator(String userIssuer, String userJwksUri,
                                     String serviceIssuer, String serviceJwksUri,
                                     String audience, String serviceTokenUseClaim,
@@ -149,6 +178,9 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
     @Override
     @Span(name = "authz.validate_user_token")
     public Map<String, Object> validateUserToken(String jwt) {
+        if (userDecoder == null) {
+            throw new IllegalStateException("user auth is disabled (service-only mode)");
+        }
         try {
             return userDecoder.decode(jwt).getClaims();
         } catch (JwtException e) {

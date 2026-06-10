@@ -233,7 +233,6 @@ public class CacheBootstrap {
 
     private void updateGauges() {
         if (metrics == null) return;
-        metrics.setGauge(Metrics.CACHE_VERSION, cache.version());
         metrics.setGauge(Metrics.CACHE_AGE_SECONDS,
                 Math.max(0, (System.currentTimeMillis() - cache.lastUpdatedAt().toEpochMilli()) / 1000));
     }

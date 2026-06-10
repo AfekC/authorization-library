@@ -120,7 +120,7 @@ class OutboundTest {
     @Test
     void outboundHeadersPropagateJwtServiceTokenAndTraceIds() {
         RequestContext ctx = RequestContextBuilder.build(
-                new Principals.User("u1", "MANAGER", null, "j1"), null, "corr-1", "req-1");
+                new Principals.User("u1", "MANAGER"), null, "corr-1", "req-1");
         Spi.ServiceIdentityProvider provider = () -> "svc-token";
 
         Map<String, String> h = OutboundHeaders.build(ctx, "user-jwt", provider);
@@ -174,7 +174,7 @@ class OutboundTest {
     @Test
     void g4_outboundHeadersFailOpenWhenProviderThrows() {
         RequestContext ctx = RequestContextBuilder.build(
-                new Principals.User("u1", "MANAGER", null, "j1"), null, "corr-x", "req-x");
+                new Principals.User("u1", "MANAGER"), null, "corr-x", "req-x");
         Spi.ServiceIdentityProvider throwingProvider = () -> {
             throw new RuntimeException("SSO unreachable");
         };
@@ -197,7 +197,7 @@ class OutboundTest {
     @Test
     void f4_outboundHeadersOmitsServiceTokenWhenNoProvider() {
         RequestContext ctx = RequestContextBuilder.build(
-                new Principals.User("u2", "VIEWER", null, "j2"), null, "corr-y", "req-y");
+                new Principals.User("u2", "VIEWER"), null, "corr-y", "req-y");
 
         Map<String, String> headers = OutboundHeaders.build(ctx, "jwt-value", null);
 
@@ -215,7 +215,7 @@ class OutboundTest {
     @Test
     void g14_interceptorWithNullProviderPropagatesJwtAndTraceIds() throws Exception {
         RequestContext ctx = RequestContextBuilder.build(
-                new Principals.User("u3", "ADMIN", null, "j3"), null, "corr-z", "req-z");
+                new Principals.User("u3", "ADMIN"), null, "corr-z", "req-z");
         MockHttpServletRequest httpReq = new MockHttpServletRequest();
         httpReq.setAttribute(AuthzRequestContext.CONTEXT_ATTR, ctx);
         httpReq.setAttribute(AuthzRequestContext.USER_JWT_ATTR, "jwt-z");
@@ -242,7 +242,7 @@ class OutboundTest {
     @Test
     void g4_interceptorFailOpenWhenProviderThrows() throws Exception {
         RequestContext ctx = RequestContextBuilder.build(
-                new Principals.User("u4", "MANAGER", null, "j4"), null, "corr-q", "req-q");
+                new Principals.User("u4", "MANAGER"), null, "corr-q", "req-q");
         MockHttpServletRequest httpReq = new MockHttpServletRequest();
         httpReq.setAttribute(AuthzRequestContext.CONTEXT_ATTR, ctx);
         httpReq.setAttribute(AuthzRequestContext.USER_JWT_ATTR, "jwt-q");

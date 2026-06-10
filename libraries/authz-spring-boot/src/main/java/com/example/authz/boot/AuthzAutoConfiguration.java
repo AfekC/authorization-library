@@ -35,7 +35,12 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.io.Resource;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.web.context.annotation.RequestScope;
 
 import java.net.URI;
@@ -59,18 +64,26 @@ public class AuthzAutoConfiguration {
         return new ConfigValidator(props);
     }
 
+    /**
+     * Matches when user auth is enabled (FULL mode, §0.5). Gates the entire
+     * role-permission machinery (cache bootstrap, Kafka consumer, reconciler,
+     * health, role resolver) so it is absent in SERVICE-ONLY mode. Binds the
+     * {@code authz.*} properties from the environment (relaxed binding) and
+     * delegates to {@link AuthzProperties#isUserAuthEnabled()}.
+     */
+    static class OnUserAuthEnabled implements Condition {
+        @Override
+        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+            AuthzProperties p = Binder.get(context.getEnvironment())
+                    .bind("authz", AuthzProperties.class)
+                    .orElseGet(AuthzProperties::new);
+            return p.isUserAuthEnabled();
+        }
+    }
+
     static class ConfigValidator {
         ConfigValidator(AuthzProperties props) {
-            // Each property: presence check first (existing style), then Q4 URL well-formedness.
-            // Pairing them keeps the error message consistent with the property that failed.
-            if (props.getUserIssuer() == null || props.getUserIssuer().isBlank())
-                throw new com.example.authz.config.ConfigException("authz.user-issuer must be configured");
-            requireHttpUrl(props.getUserIssuer(), "authz.user-issuer");
-
-            if (props.getUserJwksUri() == null || props.getUserJwksUri().isBlank())
-                throw new com.example.authz.config.ConfigException("authz.user-jwks-uri must be configured");
-            requireHttpUrl(props.getUserJwksUri(), "authz.user-jwks-uri");
-
+            // Service auth is ALWAYS required (both modes).
             if (props.getServiceIssuer() == null || props.getServiceIssuer().isBlank())
                 throw new com.example.authz.config.ConfigException("authz.service-issuer must be configured");
             requireHttpUrl(props.getServiceIssuer(), "authz.service-issuer");
@@ -79,12 +92,28 @@ public class AuthzAutoConfiguration {
                 throw new com.example.authz.config.ConfigException("authz.service-jwks-uri must be configured");
             requireHttpUrl(props.getServiceJwksUri(), "authz.service-jwks-uri");
 
-            if (props.getRoleServiceUrl() == null || props.getRoleServiceUrl().isBlank())
-                throw new com.example.authz.config.ConfigException("authz.role-service-url must be configured");
-            requireHttpUrl(props.getRoleServiceUrl(), "authz.role-service-url");
+            // User auth is OPTIONAL and all-or-nothing (§0.5, §3.3). When any
+            // user-auth field is present, every required field must be present.
+            if (props.isUserAuthEnabled()) {
+                if (props.getUserIssuer() == null || props.getUserIssuer().isBlank())
+                    throw new com.example.authz.config.ConfigException(
+                            "authz.user.issuer must be configured when user auth is enabled");
+                requireHttpUrl(props.getUserIssuer(), "authz.user.issuer");
 
-            if (props.getAudience() == null || props.getAudience().isBlank())
-                throw new com.example.authz.config.ConfigException("authz.audience must be configured");
+                if (props.getUserJwksUri() == null || props.getUserJwksUri().isBlank())
+                    throw new com.example.authz.config.ConfigException(
+                            "authz.user.jwks-uri must be configured when user auth is enabled");
+                requireHttpUrl(props.getUserJwksUri(), "authz.user.jwks-uri");
+
+                if (props.getAudience() == null || props.getAudience().isBlank())
+                    throw new com.example.authz.config.ConfigException(
+                            "authz.user.audience must be configured when user auth is enabled");
+
+                if (props.getRoleServiceUrl() == null || props.getRoleServiceUrl().isBlank())
+                    throw new com.example.authz.config.ConfigException(
+                            "authz.role-service-url must be configured when user auth is enabled");
+                requireHttpUrl(props.getRoleServiceUrl(), "authz.role-service-url");
+            }
 
             // tokenUrl is optional — validate only when present (Q4)
             if (props.getTokenUrl() != null && !props.getTokenUrl().isBlank()) {
@@ -194,8 +223,9 @@ public class AuthzAutoConfiguration {
         return new PermissionCache();
     }
 
-    /** Kafka consumer for incremental role events (only when brokers configured). */
+    /** Kafka consumer for incremental role events (only in FULL mode, when brokers configured). */
     @Bean
+    @Conditional(OnUserAuthEnabled.class)
     @ConditionalOnMissingBean(Spi.CacheEventHandler.class)
     public Spi.CacheEventHandler authzKafkaEventHandler(AuthzProperties props) {
         if (props.getKafkaBrokers() == null || props.getKafkaBrokers().isEmpty()) {
@@ -206,8 +236,9 @@ public class AuthzAutoConfiguration {
                 props.getPublishRolesTopic(), props.getKafkaGroupId(), props.getKafkaClientId());
     }
 
-    /** Startup state machine: snapshot -> seed fallback -> subscribe -> reconcile. */
+    /** Startup state machine: snapshot -> seed fallback -> subscribe -> reconcile (FULL mode only). */
     @Bean(destroyMethod = "stop")
+    @Conditional(OnUserAuthEnabled.class)
     @ConditionalOnMissingBean
     public CacheBootstrap cacheBootstrap(PermissionCache cache, Metrics metrics, AuthzProperties props,
                                          ObjectProvider<Spi.CacheEventHandler> events) {
@@ -224,11 +255,13 @@ public class AuthzAutoConfiguration {
         boot.startSeedRetry(); // 2s/4s/8s backoff until SEED→NORMAL
         boot.startReconciler(props.getReconcileIntervalMs());
         org.slf4j.LoggerFactory.getLogger(AuthzAutoConfiguration.class)
-                .info("authz cache started in {} mode (v{})", mode, cache.version());
+                .info("authz cache started in {} mode", mode);
         return boot;
     }
 
+    /** Cache health indicator (FULL mode only — §10.3). */
     @Bean
+    @Conditional(OnUserAuthEnabled.class)
     @ConditionalOnMissingBean
     public AuthzHealth authzHealth(PermissionCache cache, CacheBootstrap bootstrap) {
         return new AuthzHealth(cache, bootstrap);
@@ -237,6 +270,13 @@ public class AuthzAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public Spi.TokenValidator authzTokenValidator(AuthzProperties props) {
+        if (!props.isUserAuthEnabled()) {
+            // SERVICE-ONLY mode (§0.5): no user-JWT decoder, no audience requirement.
+            return NimbusJwksTokenValidator.serviceOnly(
+                    props.getServiceIssuer(), props.getServiceJwksUri(),
+                    props.getServiceTokenUseClaim(), props.getServiceTokenUseValue(),
+                    props.getClockSkewSeconds(), props.getJwksTimeoutMs());
+        }
         return new NimbusJwksTokenValidator(
                 props.getUserIssuer(), props.getUserJwksUri(),
                 props.getServiceIssuer(), props.getServiceJwksUri(),
@@ -315,7 +355,9 @@ public class AuthzAutoConfiguration {
         return restTemplate -> restTemplate.getInterceptors().add(interceptor);
     }
 
+    /** Role resolver (FULL mode only — §11). */
     @Bean
+    @Conditional(OnUserAuthEnabled.class)
     @ConditionalOnMissingBean
     public Spi.RoleResolver authzRoleResolver(PermissionCache cache) {
         return cache::permissionsForRole;
@@ -336,9 +378,13 @@ public class AuthzAutoConfiguration {
     @Bean
     public AuthorizationFilter authzFilter(
             AuthorizationEngine engine, PermissionCache cache, Spi.TokenValidator validator,
-            Spi.AuditSink audit, Metrics metrics, CacheBootstrap bootstrap) {
-        // bootstrap param enforces init order: cache is populated before serving.
-        return new AuthorizationFilter(engine, cache, validator, audit, metrics);
+            Spi.AuditSink audit, Metrics metrics, AuthzProperties props,
+            ObjectProvider<CacheBootstrap> bootstrap, HeaderSanitizer headerSanitizer) {
+        // Touch the bootstrap (FULL mode only) to enforce init order: the cache is
+        // populated before the filter serves. Absent in SERVICE-ONLY mode.
+        bootstrap.getIfAvailable();
+        return new AuthorizationFilter(engine, cache, validator, audit, metrics,
+                headerSanitizer, null, null, props.isUserAuthEnabled());
     }
 
     @Bean

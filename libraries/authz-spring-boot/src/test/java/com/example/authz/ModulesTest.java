@@ -36,15 +36,15 @@ class ModulesTest {
     @Test
     void contextBuilderDerivesAuthType() {
         RequestContext both = RequestContextBuilder.build(
-                new Principals.User("u1", "MANAGER", "t1", "j1"),
-                new Principals.Service("scheduler", "c1"), "c-xyz", null);
+                new Principals.User("u1", "MANAGER"),
+                new Principals.Service("scheduler"), "c-xyz", null);
         assertEquals(AuthType.USER_AND_SERVICE, both.authenticationType());
         assertEquals("u1", both.userId());
         assertEquals("c-xyz", both.correlationId());
         assertNotNull(both.requestId());
 
         RequestContext svc = RequestContextBuilder.build(
-                null, new Principals.Service("batch", "c2"), null, null);
+                null, new Principals.Service("batch"), null, null);
         assertEquals(AuthType.SERVICE, svc.authenticationType());
     }
 

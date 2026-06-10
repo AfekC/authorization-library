@@ -1,4 +1,4 @@
-const { generateKeyPair, exportJWK, SignJWT } = require("jose");
+﻿const { generateKeyPair, exportJWK, SignJWT } = require("jose");
 const crypto = require("crypto");
 
 /**
@@ -6,23 +6,23 @@ const crypto = require("crypto");
  * (service tokens). Each exposes a JWKS; both libraries verify against them.
  *
  * Key rotation (G13):
- *   issuer.rotate()          — Generate a new keypair, publish old+new in JWKS,
+ *   issuer.rotate()          â€” Generate a new keypair, publish old+new in JWKS,
  *                              and start signing with the new kid. Returns the new kid.
- *   issuer.retireOldKeys()   — Drop all keys except the current signing key from the
+ *   issuer.retireOldKeys()   â€” Drop all keys except the current signing key from the
  *                              JWKS (call after the overlap window has elapsed).
- *   issuer.signingKid        — The kid currently used to sign new tokens (getter).
- *   issuer.jwks              — Live JWKS document (getter, always current).
+ *   issuer.signingKid        â€” The kid currently used to sign new tokens (getter).
+ *   issuer.jwks              â€” Live JWKS document (getter, always current).
  *
  * Invalid-token minting (G6):
  *   issuer.signInvalid(claims, opts)
- *                            — Mint a token that is deliberately broken. opts.mode:
- *     "expired"          — iat and exp both in the past (expired 5 min ago),
+ *                            â€” Mint a token that is deliberately broken. opts.mode:
+ *     "expired"          â€” iat and exp both in the past (expired 5 min ago),
  *                          signed with the real private key so only exp is wrong.
- *     "wrongSignature"   — signed with a throwaway key not in the JWKS.
- *     "wrongTokenUse"    — valid token but token_use = "INVALID_USE".
- *     "missingTokenUse"  — correctly signed, non-expired token, no token_use claim.
- *     "missingClaims"    — omits iss/aud/exp; bare header+payload, bogus signature.
- *     "malformed"        — returns the literal string "not.a.jwt".
+ *     "wrongSignature"   â€” signed with a throwaway key not in the JWKS.
+ *     "wrongTokenUse"    â€” valid token but token_use = "INVALID_USE".
+ *     "missingTokenUse"  â€” correctly signed, non-expired token, no token_use claim.
+ *     "missingClaims"    â€” omits iss/aud/exp; bare header+payload, bogus signature.
+ *     "malformed"        â€” returns the literal string "not.a.jwt".
  */
 async function createIssuer(issuer, initialKid) {
   // All active keypairs: kid -> { privateKey, publicJwk }
@@ -56,7 +56,7 @@ async function createIssuer(issuer, initialKid) {
     return sig.toString("base64url");
   }
 
-  // ── Public API ─────────────────────────────────────────────────────────────
+  // â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /** Rotate: generate a new keypair, add to JWKS alongside old keys, switch signing. */
   async function rotate() {
@@ -92,7 +92,7 @@ async function createIssuer(issuer, initialKid) {
 
   /**
    * Mint a deliberately broken token for adverse-condition / G6 testing.
-   * @param {object} claims  Base payload claims (e.g. { sub, role }).
+   * @param {object} claims  Base payload claims (e.g. { userId, roleId }).
    * @param {{ mode?: string, audience?: string }} opts
    * @returns {Promise<string>} The broken JWT (or literal "not.a.jwt").
    */
@@ -152,7 +152,7 @@ async function createIssuer(issuer, initialKid) {
       }
 
       case "missingTokenUse": {
-        // Structurally valid, correctly signed, not expired — but no token_use claim.
+        // Structurally valid, correctly signed, not expired â€” but no token_use claim.
         const { privateKey } = keyring.get(_signingKid);
         let b = new SignJWT({ ...claims })
           .setProtectedHeader({ alg: "RS256", kid: _signingKid })
@@ -174,7 +174,7 @@ async function createIssuer(issuer, initialKid) {
     get signingKid() {
       return _signingKid;
     },
-    /** Live JWKS document — always reflects the current keyring. */
+    /** Live JWKS document â€” always reflects the current keyring. */
     get jwks() {
       return _buildJwks();
     },
@@ -186,3 +186,4 @@ async function createIssuer(issuer, initialKid) {
 }
 
 module.exports = { createIssuer };
+

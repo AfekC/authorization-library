@@ -19,7 +19,7 @@ public class AuthzHealth {
         this.bootstrap = bootstrap;
     }
 
-    public record Report(String cacheStatus, long currentVersion, long cacheAgeSeconds,
+    public record Report(String cacheStatus, long cacheAgeSeconds,
                          String mode, String roleServiceLastSync, boolean kafkaConsumerConnected) {}
 
     public Report report() {
@@ -27,7 +27,6 @@ public class AuthzHealth {
         Instant sync = bootstrap.roleServiceLastSync();
         return new Report(
                 empty ? "empty" : "initialized",
-                cache.version(),
                 // B7: FLOOR to whole seconds — explicit integer division truncation (1.999s → 1).
                 Math.max(0, (System.currentTimeMillis() - cache.lastUpdatedAt().toEpochMilli()) / 1000),
                 bootstrap.mode().name(),

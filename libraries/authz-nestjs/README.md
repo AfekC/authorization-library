@@ -66,31 +66,45 @@ app.use(authz.middleware);
 
 `createAuthz()` reads `AUTHZ_*` environment variables from `process.env`.
 For parity with Spring's `authz.*` property binding, the names follow Spring
-relaxed binding — e.g. `authz.user-issuer` → `AUTHZ_USER_ISSUER`:
+relaxed binding.
+
+### Service auth (always active)
 
 | Env var | Required | Default | Description |
 |---|---|---|---|
-| `AUTHZ_USER_ISSUER` | yes | — | Issuer of user JWTs (validated against the `iss` claim) |
-| `AUTHZ_USER_JWKS_URI` | yes | — | JWKS endpoint for user JWT signature verification |
 | `AUTHZ_SERVICE_ISSUER` | yes | — | Issuer of service tokens (validated against the `iss` claim) |
 | `AUTHZ_SERVICE_JWKS_URI` | yes | — | JWKS endpoint for service-token signature verification |
-| `AUTHZ_AUDIENCE` | yes | — | Expected `aud` claim in user JWTs |
-| `AUTHZ_ROLE_SERVICE_URL` | yes | — | Base URL of the Role Service for full role-map fetches |
+| `AUTHZ_SERVICE_TOKEN_USE_CLAIM` | no | `"token_use"` | JWT claim name inspected to identify a service token |
+| `AUTHZ_SERVICE_TOKEN_USE_VALUE` | no | `"service"` | Expected value of the service-token-use claim |
 | `AUTHZ_AUTHORIZATION_YAML` | one-of | — | Inline YAML content (alternative to path) |
 | `AUTHZ_AUTHORIZATION_YAML_PATH` | one-of | — | Path to `authorization.yaml` on disk |
 | `AUTHZ_CLOCK_SKEW_SECONDS` | no | `5` | Clock-skew tolerance (seconds) for JWT `exp`/`nbf` validation |
+
+### User auth (optional; all-or-nothing)
+
+When user auth is configured, **all** fields below must be set. When absent, the role-permission machinery is entirely disabled and the library runs in service-only mode — only `X-Service-Token` is accepted and only `allowedServices` rules are evaluated.
+
+| Env var | Required | Default | Description |
+|---|---|---|---|
+| `AUTHZ_USER_ISSUER` | when configured | — | Issuer of user JWTs (validated against the `iss` claim) |
+| `AUTHZ_USER_JWKS_URI` | when configured | — | JWKS endpoint for user JWT signature verification |
+| `AUTHZ_USER_AUDIENCE` | when configured | — | Expected `aud` claim in user JWTs |
+| `AUTHZ_ROLE_SERVICE_URL` | when configured | — | Base URL of the Role Service for full role-map fetches |
 | `AUTHZ_RECONCILE_INTERVAL_MS` | no | `300000` | Interval (ms) for unconditional full role-map re-fetch from Role Service |
 | `AUTHZ_ROLE_SERVICE_CONNECT_TIMEOUT` | no | `5000` | Role Service HTTP connect timeout (ms) |
 | `AUTHZ_ROLE_SERVICE_READ_TIMEOUT` | no | `5000` | Role Service HTTP read timeout (ms) |
 | `AUTHZ_DISK_CACHE_PATH` | no | `"authorization-cache.json"` | Path to on-disk role cache file used as seed fallback when Role Service is unreachable at startup |
-| `AUTHZ_SERVICE_TOKEN_USE_CLAIM` | no | `"token_use"` | JWT claim name inspected to identify a service token |
-| `AUTHZ_SERVICE_TOKEN_USE_VALUE` | no | `"service"` | Expected value of the service-token-use claim |
 | `AUTHZ_KAFKA_BROKERS` | no | `""` | Comma-separated Kafka brokers; empty disables Kafka (snapshot + reconciler only) |
 | `AUTHZ_ROLE_UPDATES_TOPIC` | no | `"role-updates"` | Kafka topic carrying role UPSERT events |
 | `AUTHZ_ROLE_DELETE_TOPIC` | no | `"role-delete"` | Kafka topic carrying role DELETE events |
 | `AUTHZ_PUBLISH_ROLES_TOPIC` | no | `"publish-roles"` | Kafka topic that triggers a forced full re-fetch |
 | `AUTHZ_KAFKA_GROUP_ID` | no | `"authz-cache-sync"` | Kafka consumer group prefix (UUID appended per instance) |
 | `AUTHZ_KAFKA_CLIENT_ID` | no | `"authz-cache-sync"` | Kafka consumer client ID |
+
+### Outbound identity (optional)
+
+| Env var | Required | Default | Description |
+|---|---|---|---|
 | `AUTHZ_TOKEN_URL` | when outbound identity | — | SSO/OIDC token endpoint issuing service tokens via `client_credentials` |
 | `AUTHZ_CLIENT_ID` | presence enables | — | This service's OAuth2 client identifier |
 | `AUTHZ_CLIENT_SECRET` | when outbound identity | — | This service's OAuth2 client secret (inject from your secret store) |

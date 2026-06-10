@@ -6,27 +6,21 @@ import { AuthType } from "../rule-config/types";
  * Inbound identity headers are never trusted (see stripUntrustedHeaders).
  */
 export interface RequestContext {
-  userId: string | null;
-  role: string | null;
-  tenant: string | null;
+  userId: string | null;   // always null in service-only mode
+  roleId: string | null;   // always null in service-only mode
   serviceName: string | null;
-  serviceId: string | null;
   requestId: string;
   correlationId: string;
   authenticationType: AuthType;
-  jwtId: string | null;
 }
 
 export interface UserPrincipal {
   userId: string | null;
-  role: string | null;
-  tenant: string | null;
-  jwtId: string | null;
+  roleId: string | null;
 }
 
 export interface ServicePrincipal {
   serviceName: string | null;
-  serviceId: string | null;
 }
 
 /**
@@ -160,13 +154,10 @@ export function buildRequestContext(params: {
   const { user, service } = params;
   return Object.freeze({
     userId: user?.userId ?? null,
-    role: user?.role ?? null,
-    tenant: user?.tenant ?? null,
+    roleId: user?.roleId ?? null,
     serviceName: service?.serviceName ?? null,
-    serviceId: service?.serviceId ?? null,
     requestId: nonBlank(params.requestId) ?? randomUUID(),
     correlationId: nonBlank(params.correlationId) ?? randomUUID(),
     authenticationType: deriveAuthType(user, service),
-    jwtId: user?.jwtId ?? null,
   });
 }

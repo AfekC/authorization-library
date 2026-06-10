@@ -38,16 +38,17 @@ Fetched at library startup and periodically during reconciliation. The authorita
 
 Exposed by the library, not an external dependency.
 
+Fields marked with `†` are **only present when user auth is enabled** (§0.5 of the architecture doc). In service-only mode the health indicator reports only basic service reachability; cache-related fields are absent.
+
 | Field | Type | Description |
 |-------|------|-------------|
-| `cacheStatus` | string | `"initialized"` or `"empty"` |
-| `currentVersion` | integer | Cache version counter; increments on each full sync or Kafka event |
-| `cacheAgeSeconds` | integer | Seconds since the last cache write (truncated in Java, rounded in NestJS) |
-| `mode` | string | `"NORMAL"` (synced from Role Service) or `"SEED"` (running from disk cache; Role Service not yet reached) |
-| `roleServiceLastSync` | string \| null | ISO-8601 timestamp of the last successful `GET /roles` fetch, or `null` |
-| `kafkaConsumerConnected` | boolean | Whether the Kafka consumer is running |
+| `cacheStatus` † | string | `"initialized"` or `"empty"` |
+| `cacheAgeSeconds` † | integer | Seconds since the last cache write (truncated in Java, rounded in NestJS) |
+| `mode` † | string | `"NORMAL"` (synced from Role Service) or `"SEED"` (running from disk cache; Role Service not yet reached) |
+| `roleServiceLastSync` † | string \| null | ISO-8601 timestamp of the last successful `GET /roles` fetch, or `null` |
+| `kafkaConsumerConnected` † | boolean | Whether the Kafka consumer is running |
 
-The `mode` field is emitted by both libraries: Java (`AuthzHealth.Report.mode` —
+The `mode` field is emitted by both libraries when user auth is enabled: Java (`AuthzHealth.Report.mode` —
 `CacheBootstrap.Mode.NORMAL` / `SEED`) and NestJS (`HealthReport.mode` — the
 `CacheMode` union `"normal"` / `"seed"`).
 

@@ -36,7 +36,7 @@ const BASE_OPTS = {
   authorizationYaml: VALID_YAML,
   reconcileIntervalMs: 999999,
   validator: {
-    validateUserToken: async () => ({ sub: "u1", role: "admin" }),
+    validateUserToken: async () => ({ userId: "u1", roleId: "admin" }),
     validateServiceToken: async () => ({ service_name: "svc1", token_use: "service" }),
   },
 } as const;
@@ -82,7 +82,7 @@ describe("P1 — serviceTokenUseValue passed to JwksTokenValidator", () => {
       reconcileIntervalMs: 999999,
       serviceTokenUseValue: "my-custom-use",
       validator: {
-        validateUserToken: async () => ({ sub: "u1", role: "admin" }),
+        validateUserToken: async () => ({ userId: "u1", roleId: "admin" }),
         validateServiceToken: async (_jwt: string) => {
           validateServiceTokenCalled = true;
           return { service_name: "svc", token_use: "my-custom-use" };
@@ -168,71 +168,75 @@ describe("P2 — serviceIssuer and serviceJwksUri are required fields", () => {
 });
 
 // ---------------------------------------------------------------------------
-// P4 — validation order matches Java's order
-//      Java order: userIssuer → userJwksUri → serviceIssuer → serviceJwksUri
-//                  → roleServiceUrl → audience
+// P4 — validation order (§0.5 dual-mode)
+//      Service auth is ALWAYS required and validated first:
+//        serviceIssuer → serviceJwksUri
+//      User auth is all-or-nothing; once enabled (any user field present):
+//        userIssuer → userJwksUri → audience → roleServiceUrl
 // ---------------------------------------------------------------------------
 
-describe("P4 — required-property validation order matches Java", () => {
-  it("reports userIssuer first when all required fields are absent", async () => {
+describe("P4 — required-property validation order (dual-mode)", () => {
+  it("reports serviceIssuer first when all required fields are absent", async () => {
     await expect(
       createAuthz({ authorizationYaml: VALID_YAML } as any),
-    ).rejects.toThrow(/userIssuer/i);
-  });
-
-  it("reports userJwksUri before serviceIssuer", async () => {
-    await expect(
-      createAuthz({
-        userIssuer: "https://auth.example.com",
-        authorizationYaml: VALID_YAML,
-      } as any),
-    ).rejects.toThrow(/userJwksUri/i);
-  });
-
-  it("reports serviceIssuer before serviceJwksUri", async () => {
-    await expect(
-      createAuthz({
-        userIssuer: "https://auth.example.com",
-        userJwksUri: "https://auth.example.com/.well-known/jwks.json",
-        authorizationYaml: VALID_YAML,
-      } as any),
     ).rejects.toThrow(/serviceIssuer/i);
   });
 
-  it("reports serviceJwksUri before roleServiceUrl", async () => {
+  it("reports serviceJwksUri before user checks", async () => {
     await expect(
       createAuthz({
-        userIssuer: "https://auth.example.com",
-        userJwksUri: "https://auth.example.com/.well-known/jwks.json",
         serviceIssuer: "https://sso.example.com",
         authorizationYaml: VALID_YAML,
       } as any),
     ).rejects.toThrow(/serviceJwksUri/i);
   });
 
-  it("reports roleServiceUrl before audience", async () => {
+  it("reports userIssuer first once user auth is enabled", async () => {
     await expect(
       createAuthz({
-        userIssuer: "https://auth.example.com",
-        userJwksUri: "https://auth.example.com/.well-known/jwks.json",
         serviceIssuer: "https://sso.example.com",
         serviceJwksUri: "https://sso.example.com/.well-known/jwks.json",
+        // any user field enables user auth; here only audience is present
+        audience: "my-app",
         authorizationYaml: VALID_YAML,
       } as any),
-    ).rejects.toThrow(/roleServiceUrl/i);
+    ).rejects.toThrow(/userIssuer/i);
   });
 
-  it("reports audience last when only audience is missing", async () => {
+  it("reports userJwksUri after userIssuer", async () => {
     await expect(
       createAuthz({
-        userIssuer: "https://auth.example.com",
-        userJwksUri: "https://auth.example.com/.well-known/jwks.json",
         serviceIssuer: "https://sso.example.com",
         serviceJwksUri: "https://sso.example.com/.well-known/jwks.json",
-        roleServiceUrl: ROLE_SERVICE_URL,
+        userIssuer: "https://auth.example.com",
+        authorizationYaml: VALID_YAML,
+      } as any),
+    ).rejects.toThrow(/userJwksUri/i);
+  });
+
+  it("reports audience after userJwksUri", async () => {
+    await expect(
+      createAuthz({
+        serviceIssuer: "https://sso.example.com",
+        serviceJwksUri: "https://sso.example.com/.well-known/jwks.json",
+        userIssuer: "https://auth.example.com",
+        userJwksUri: "https://auth.example.com/.well-known/jwks.json",
         authorizationYaml: VALID_YAML,
       } as any),
     ).rejects.toThrow(/audience/i);
+  });
+
+  it("reports roleServiceUrl last when only it is missing", async () => {
+    await expect(
+      createAuthz({
+        serviceIssuer: "https://sso.example.com",
+        serviceJwksUri: "https://sso.example.com/.well-known/jwks.json",
+        userIssuer: "https://auth.example.com",
+        userJwksUri: "https://auth.example.com/.well-known/jwks.json",
+        audience: "my-app",
+        authorizationYaml: VALID_YAML,
+      } as any),
+    ).rejects.toThrow(/roleServiceUrl/i);
   });
 });
 

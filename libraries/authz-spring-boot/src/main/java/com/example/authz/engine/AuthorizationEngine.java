@@ -27,7 +27,7 @@ public final class AuthorizationEngine {
         List<String> segs = Scoring.splitPath(path);
         CompiledRule best = null;
         for (CompiledRule rule : rules) {
-            if (!rule.methods().contains(upper)) continue;
+            if (!rule.matchesMethod(upper)) continue;
             if (!Scoring.matchPath(rule.segments(), segs)) continue;
             if (best == null || Scoring.compareSpecificity(rule, best) > 0) best = rule;
         }

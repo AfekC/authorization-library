@@ -46,7 +46,7 @@ function ensureAuthzEnv() {
   set("AUTHZ_USER_JWKS_URI", `${MOCK}/auth/jwks`);
   set("AUTHZ_SERVICE_ISSUER", `${MOCK}/sso`);
   set("AUTHZ_SERVICE_JWKS_URI", `${MOCK}/sso/jwks`);
-  set("AUTHZ_AUDIENCE", process.env.API_AUDIENCE || "orders-api");
+  set("AUTHZ_USER_AUDIENCE", process.env.API_AUDIENCE || "orders-api");
   set("AUTHZ_ROLE_SERVICE_URL", MOCK);
   set("AUTHZ_AUTHORIZATION_YAML_PATH", path.join(__dirname, "..", "authorization.yaml"));
   set("AUTHZ_DISK_CACHE_PATH", process.env.AUTHZ_DISK_CACHE_PATH || "/tmp/authorization-cache.json");

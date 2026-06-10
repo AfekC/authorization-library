@@ -129,7 +129,7 @@ principles with TypeScript/NestJS idioms where relevant; no reference to any spe
 ### In-memory caching & immutable state
 - For read-hot, write-rare data, hold an **immutable snapshot** and replace it by reassigning the reference. Reads are synchronous and always see a consistent version.
 - Never mutate a live cache object in place; build the new state (freeze it), then swap.
-- Expose cache **version and age** for observability and staleness detection.
+- Expose cache **age** for observability and staleness detection.
 - Define the lookup-miss semantics explicitly and safely (e.g., unknown key → empty/denied, not a permissive default).
 
 ### Configuration-driven policy
@@ -163,8 +163,8 @@ principles with TypeScript/NestJS idioms where relevant; no reference to any spe
 
 ### Observability (audit, metrics, health)
 - **Audit every security decision** (allow and deny) with structured context including the governing reason; route through a pluggable sink and a structured logger, never `console.log`.
-- Publish **stable, well-named metrics** for successes, failures by category, cache version/age, refresh failures, and skipped events. Metric names are a contract — don't rename casually.
-- Expose a **health check** (`@nestjs/terminus`) reporting cache status/version/age, mode, last successful sync, and dependency connectivity.
+- Publish **stable, well-named metrics** for successes, failures by category, cache age, refresh failures, and skipped events. Metric names are a contract — don't rename casually.
+- Expose a **health check** (`@nestjs/terminus`) reporting cache status/age, mode, last successful sync, and dependency connectivity.
 - Never log secrets, tokens, or PII. Use correlation IDs (via `AsyncLocalStorage`) to trace a request across services.
 
 ### Extensibility (SPI / plugin interfaces)

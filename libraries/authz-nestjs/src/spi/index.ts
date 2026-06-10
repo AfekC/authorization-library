@@ -63,7 +63,7 @@ export interface CacheEventHandler {
 export interface AuditEvent {
   timestamp: string;
   userId: string | null;
-  role: string | null;
+  roleId: string | null;
   serviceName: string | null;
   path: string;
   method: string;
@@ -72,7 +72,6 @@ export interface AuditEvent {
   authenticationType: string;
   requestId: string;
   correlationId: string;
-  policyVersion: number;
 }
 
 export interface AuditSink {

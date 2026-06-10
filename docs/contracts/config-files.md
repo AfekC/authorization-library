@@ -39,8 +39,8 @@ rules:
 |-------|----------|------|-------------|
 | `path` | yes | string | Route pattern: exact, `*` (one segment), `**` (any depth, final segment only) |
 | `methods` | yes | string[] | HTTP methods (e.g. GET, POST, PUT, DELETE) |
-| `permissions` | no | string[] | Required permissions (omit for service-only rules) |
-| `decision` | no | `"ANY"` or `"ALL"` | Default `"ANY"`. `ANY` = at least one permission required; `ALL` = every permission required |
+| `permissions` | no | string[] | Required permissions. **Only evaluated when user auth is enabled.** In service-only mode the field is silently ignored — the rule behaves as if `permissions` were absent. |
+| `decision` | no | `"ANY"` or `"ALL"` | Default `"ANY"`. `ANY` = at least one permission required; `ALL` = every permission required. **Only effective when user auth is enabled.** |
 | `allowedServices` | no | string[] | Services permitted to call; `"*"` means any authenticated service |
 
 ### Wildcard semantics
@@ -81,7 +81,9 @@ Patterns scored segment-by-segment: literal = 2, `*` = 1, `**` = 0. Compare segm
 
 ## authorization-cache.json
 
-Written to disk every time the in-memory cache changes (after full Role Service sync or after each Kafka event). Loaded at startup **only if the Role Service is unreachable** (seed mode). The path defaults to `authorization-cache.json` (current working directory) in both libraries and is configurable (Spring `authz.disk-cache-path`, NestJS `diskCachePath`).
+*This file is only created and loaded when user auth is enabled (§0.5 of the architecture doc). In service-only mode the file is never written.*
+
+Written to disk every time the in-memory cache changes (after full Role Service sync or after each Kafka event). Loaded at startup **only if the Role Service is unreachable** (seed mode). The path defaults to `authorization-cache.json` (current working directory) in both libraries and is configurable.
 
 ```jsonc
 {
@@ -100,6 +102,7 @@ Written to disk every time the in-memory cache changes (after full Role Service 
 
 ### Behaviour
 
+- Only exists when user auth is enabled
 - Written on every cache change (sync or Kafka event)
 - Loaded at startup **only** as a fallback when Role Service is unreachable
 - Seeds the in-memory cache so the service can become READY in degraded mode

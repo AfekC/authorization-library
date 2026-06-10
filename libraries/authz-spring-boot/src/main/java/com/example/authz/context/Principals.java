@@ -4,7 +4,7 @@ package com.example.authz.context;
 public final class Principals {
     private Principals() {}
 
-    public record User(String userId, String role, String tenant, String jwtId) {}
+    public record User(String userId, String roleId) {}
 
-    public record Service(String serviceName, String serviceId) {}
+    public record Service(String serviceName) {}
 }

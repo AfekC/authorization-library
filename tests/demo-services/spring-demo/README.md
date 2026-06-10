@@ -23,12 +23,14 @@ all. The only Java files are the application class and the business controller.
 ([`application.properties`](src/main/resources/application.properties)):
 
 ```properties
-# Required: trust roots + Role Service
-authz.user-issuer=${MOCK_URL}/auth
-authz.user-jwks-uri=${MOCK_URL}/auth/jwks
+# Required: service auth (always active)
 authz.service-issuer=${MOCK_URL}/sso
 authz.service-jwks-uri=${MOCK_URL}/sso/jwks
-authz.audience=orders-api
+
+# User auth + role-permission machinery (optional; all-or-nothing block)
+authz.user.issuer=${MOCK_URL}/auth
+authz.user.jwks-uri=${MOCK_URL}/auth/jwks
+authz.user.audience=orders-api
 authz.role-service-url=${MOCK_URL}
 
 # Optional: live Kafka role events (omit to use snapshot + reconciler only)
@@ -61,9 +63,10 @@ That's it. The auto-configuration (`AuthzAutoConfiguration`) creates and wires, 
 
 - the decision engine (compiled from `authorization.yaml`, fail-fast);
 - the permission cache + `CacheBootstrap` — Role Service snapshot, disk-seed fallback,
-  **Kafka consumer** (when `authz.kafka-brokers` is set), and a periodic **reconciler**;
+  **Kafka consumer** (when `authz.kafka-brokers` is set), and a periodic **reconciler**
+  *(only activated when user auth is configured)*;
 - the JWKS `TokenValidator` — user-JWT signature/issuer/**audience**, service-token `token_use`;
-- `Metrics` and an `AuthzHealth` indicator;
+- `Metrics` and an `AuthzHealth` indicator *(cache-related health fields only present when user auth is configured)*;
 - an optional outbound `ServiceIdentityProvider` (when `authz.client-id` is set), plus
   `RestClientCustomizer`/`RestTemplateCustomizer` beans that **auto-attach** propagation headers
   (user JWT, service token, correlation/request ids) to any app-built `RestClient`/`RestTemplate`;

@@ -13,10 +13,17 @@ public final class CompiledRule {
     private final List<Segment> segments;
     private final int[] scores;
     private final int literalCount;
+    private final boolean isPublic; // public:true -> no validation, always ALLOW
 
     public CompiledRule(String path, Set<String> methods, List<String> permissions,
                         DecisionMode decision, List<String> allowedServices,
                         List<Segment> segments, int[] scores, int literalCount) {
+        this(path, methods, permissions, decision, allowedServices, segments, scores, literalCount, false);
+    }
+
+    public CompiledRule(String path, Set<String> methods, List<String> permissions,
+                        DecisionMode decision, List<String> allowedServices,
+                        List<Segment> segments, int[] scores, int literalCount, boolean isPublic) {
         this.path = path;
         this.methods = methods;
         this.permissions = permissions;
@@ -25,6 +32,7 @@ public final class CompiledRule {
         this.segments = segments;
         this.scores = scores;
         this.literalCount = literalCount;
+        this.isPublic = isPublic;
     }
 
     public String path() { return path; }
@@ -35,6 +43,16 @@ public final class CompiledRule {
     public List<Segment> segments() { return segments; }
     public int[] scores() { return scores; }
     public int literalCount() { return literalCount; }
+
+    public boolean isPublic() { return isPublic; }
+
+    /** True when this rule's methods set matches any HTTP method (methods: ["*"]). */
+    public boolean matchesAnyMethod() { return methods.contains("*"); }
+
+    /** True when this rule applies to the given (already upper-cased) HTTP method. */
+    public boolean matchesMethod(String upperMethod) {
+        return methods.contains("*") || methods.contains(upperMethod);
+    }
 
     public boolean hasPermissions() { return permissions != null && !permissions.isEmpty(); }
     public boolean hasAllowedServices() { return allowedServices != null && !allowedServices.isEmpty(); }

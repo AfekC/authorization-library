@@ -35,37 +35,27 @@ class AuthzAutoConfigurationTest {
         }
     }
 
-    @Test
-    void configValidator_throwsWhenUserIssuerMissing() {
+    /** Service auth (always required) on a fresh props object. */
+    private static AuthzProperties serviceAuthValid() {
         AuthzProperties props = new AuthzProperties();
-        props.setUserIssuer(null);
-        ConfigException ex = assertThrows(ConfigException.class, () -> validate(props));
-        assertEquals("authz.user-issuer must be configured", ex.getMessage());
+        props.setServiceIssuer("https://sso.example.com");
+        props.setServiceJwksUri("https://sso.example.com/.well-known/jwks.json");
+        return props;
     }
 
-    @Test
-    void configValidator_throwsWhenUserIssuerBlank() {
-        AuthzProperties props = new AuthzProperties();
-        props.setUserIssuer(" ");
-        ConfigException ex = assertThrows(ConfigException.class, () -> validate(props));
-        assertEquals("authz.user-issuer must be configured", ex.getMessage());
-    }
-
-    @Test
-    void configValidator_throwsWhenUserJwksUriMissing() {
-        AuthzProperties props = new AuthzProperties();
+    /** Add a complete, valid user-auth block (FULL mode). */
+    private static void withUserAuth(AuthzProperties props) {
         props.setUserIssuer("https://auth.example.com");
-        props.setUserJwksUri(null);
-        ConfigException ex = assertThrows(ConfigException.class, () -> validate(props));
-        assertEquals("authz.user-jwks-uri must be configured", ex.getMessage());
+        props.setUserJwksUri("https://auth.example.com/.well-known/jwks.json");
+        props.setAudience("my-service");
+        props.setRoleServiceUrl("http://role-service:8080");
     }
+
+    // ---- Service auth is always required (both modes) -----------------------
 
     @Test
     void configValidator_throwsWhenServiceIssuerMissing() {
-        AuthzProperties props = new AuthzProperties();
-        props.setUserIssuer("https://auth.example.com");
-        props.setUserJwksUri("https://auth.example.com/.well-known/jwks.json");
-        props.setServiceIssuer(null);
+        AuthzProperties props = new AuthzProperties(); // nothing set
         ConfigException ex = assertThrows(ConfigException.class, () -> validate(props));
         assertEquals("authz.service-issuer must be configured", ex.getMessage());
     }
@@ -73,61 +63,63 @@ class AuthzAutoConfigurationTest {
     @Test
     void configValidator_throwsWhenServiceJwksUriMissing() {
         AuthzProperties props = new AuthzProperties();
-        props.setUserIssuer("https://auth.example.com");
-        props.setUserJwksUri("https://auth.example.com/.well-known/jwks.json");
         props.setServiceIssuer("https://sso.example.com");
-        props.setServiceJwksUri(null);
         ConfigException ex = assertThrows(ConfigException.class, () -> validate(props));
         assertEquals("authz.service-jwks-uri must be configured", ex.getMessage());
     }
 
+    // ---- SERVICE-ONLY mode: no user-auth block is valid (§0.5) --------------
+
     @Test
-    void configValidator_throwsWhenRoleServiceUrlMissing() {
-        AuthzProperties props = new AuthzProperties();
-        props.setUserIssuer("https://auth.example.com");
+    void configValidator_passesInServiceOnlyMode() {
+        AuthzProperties props = serviceAuthValid(); // no user-auth fields
+        assertFalse(props.isUserAuthEnabled());
+        assertDoesNotThrow(() -> validate(props));
+    }
+
+    // ---- FULL mode: user auth is all-or-nothing (§3.3) ----------------------
+
+    @Test
+    void configValidator_throwsWhenUserIssuerMissing() {
+        AuthzProperties props = serviceAuthValid();
+        // user auth implied by jwks-uri but issuer missing
         props.setUserJwksUri("https://auth.example.com/.well-known/jwks.json");
-        props.setServiceIssuer("https://sso.example.com");
-        props.setServiceJwksUri("https://sso.example.com/.well-known/jwks.json");
-        props.setRoleServiceUrl(null);
         ConfigException ex = assertThrows(ConfigException.class, () -> validate(props));
-        assertEquals("authz.role-service-url must be configured", ex.getMessage());
+        assertEquals("authz.user.issuer must be configured when user auth is enabled", ex.getMessage());
+    }
+
+    @Test
+    void configValidator_throwsWhenUserJwksUriMissing() {
+        AuthzProperties props = serviceAuthValid();
+        props.setUserIssuer("https://auth.example.com");
+        ConfigException ex = assertThrows(ConfigException.class, () -> validate(props));
+        assertEquals("authz.user.jwks-uri must be configured when user auth is enabled", ex.getMessage());
     }
 
     @Test
     void configValidator_throwsWhenAudienceMissing() {
-        AuthzProperties props = new AuthzProperties();
+        AuthzProperties props = serviceAuthValid();
         props.setUserIssuer("https://auth.example.com");
         props.setUserJwksUri("https://auth.example.com/.well-known/jwks.json");
-        props.setServiceIssuer("https://sso.example.com");
-        props.setServiceJwksUri("https://sso.example.com/.well-known/jwks.json");
-        props.setRoleServiceUrl("http://role-service:8080");
-        props.setAudience(null);
         ConfigException ex = assertThrows(ConfigException.class, () -> validate(props));
-        assertEquals("authz.audience must be configured", ex.getMessage());
+        assertEquals("authz.user.audience must be configured when user auth is enabled", ex.getMessage());
     }
 
     @Test
-    void configValidator_throwsWhenAudienceBlank() {
-        AuthzProperties props = new AuthzProperties();
+    void configValidator_throwsWhenRoleServiceUrlMissing() {
+        AuthzProperties props = serviceAuthValid();
         props.setUserIssuer("https://auth.example.com");
         props.setUserJwksUri("https://auth.example.com/.well-known/jwks.json");
-        props.setServiceIssuer("https://sso.example.com");
-        props.setServiceJwksUri("https://sso.example.com/.well-known/jwks.json");
-        props.setRoleServiceUrl("http://role-service:8080");
-        props.setAudience(" ");
+        props.setAudience("my-service");
         ConfigException ex = assertThrows(ConfigException.class, () -> validate(props));
-        assertEquals("authz.audience must be configured", ex.getMessage());
+        assertEquals("authz.role-service-url must be configured when user auth is enabled", ex.getMessage());
     }
 
     @Test
     void configValidator_passesWhenAllPropertiesValid() {
-        AuthzProperties props = new AuthzProperties();
-        props.setUserIssuer("https://auth.example.com");
-        props.setUserJwksUri("https://auth.example.com/.well-known/jwks.json");
-        props.setServiceIssuer("https://sso.example.com");
-        props.setServiceJwksUri("https://sso.example.com/.well-known/jwks.json");
-        props.setRoleServiceUrl("http://role-service:8080");
-        props.setAudience("my-service");
+        AuthzProperties props = serviceAuthValid();
+        withUserAuth(props);
+        assertTrue(props.isUserAuthEnabled());
         assertDoesNotThrow(() -> validate(props));
     }
 

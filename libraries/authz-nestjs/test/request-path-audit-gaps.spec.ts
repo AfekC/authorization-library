@@ -1,11 +1,11 @@
-/**
+﻿/**
  * Tests for gaps B9, B10/E4, A3, C10, D6 in the NestJS authz library.
  *
- * B9  — Path extraction must strip query strings and be stable.
- * B10/E4 — Header sanitizer set must be configurable (accept custom set).
- * A3  — Audit `permission` field is comma-joined governing permissions (multi-perm rule).
- * C10 — No-credentials error message in create-authz middleware is exactly "no credentials".
- * D6  — DEBUG structured audit JSON matches architecture §10.1 schema.
+ * B9  â€” Path extraction must strip query strings and be stable.
+ * B10/E4 â€” Header sanitizer set must be configurable (accept custom set).
+ * A3  â€” Audit `permission` field is comma-joined governing permissions (multi-perm rule).
+ * C10 â€” No-credentials error message in create-authz middleware is exactly "no credentials".
+ * D6  â€” DEBUG structured audit JSON matches architecture Â§10.1 schema.
  */
 
 import { buildAuditEvent, formatInfoLine, LoggingAuditSink } from "../src/audit/audit";
@@ -20,7 +20,7 @@ import { PermissionCache } from "../src/permission-cache/cache";
 
 function makeCtx(overrides: Partial<Parameters<typeof buildRequestContext>[0]> = {}) {
   return buildRequestContext({
-    user: { userId: "u-123", role: "MANAGER", tenant: null, jwtId: null },
+    user: { userId: "u-123", roleId: "MANAGER" },
     service: null,
     correlationId: "c-xyz",
     requestId: "r-abc",
@@ -29,10 +29,10 @@ function makeCtx(overrides: Partial<Parameters<typeof buildRequestContext>[0]> =
 }
 
 // ---------------------------------------------------------------------------
-// B9 — Path extraction: query strings must be stripped before matching/audit
+// B9 â€” Path extraction: query strings must be stripped before matching/audit
 // ---------------------------------------------------------------------------
 
-describe("B9 — path extraction strips query strings and is stable", () => {
+describe("B9 â€” path extraction strips query strings and is stable", () => {
   /**
    * The middleware uses `req.path ?? req.url` as the path fed to the engine
    * and the audit event. `req.url` can include a query string (e.g.
@@ -74,7 +74,7 @@ rules:
   });
 
   it("path with hash fragment is also stripped (URL safety)", () => {
-    // split on ? only — hash fragments are a client-side concern, but
+    // split on ? only â€” hash fragments are a client-side concern, but
     // defensive stripping is still correct.
     const raw = "/orders?id=1#anchor";
     const clean = raw.split("?")[0];
@@ -92,7 +92,6 @@ rules:
       path: auditPath,
       permission: "READ_ORDER",
       result: "ALLOW",
-      policyVersion: 1,
     });
     expect(evt.path).toBe("/orders/7");
     expect(evt.path).not.toContain("?");
@@ -100,10 +99,10 @@ rules:
 });
 
 // ---------------------------------------------------------------------------
-// B10 / E4 — Header sanitizer accepts a configurable set of prefixes/names
+// B10 / E4 â€” Header sanitizer accepts a configurable set of prefixes/names
 // ---------------------------------------------------------------------------
 
-describe("B10/E4 — stripUntrustedHeaders accepts a custom header set", () => {
+describe("B10/E4 â€” stripUntrustedHeaders accepts a custom header set", () => {
   /**
    * The current implementation uses a hardcoded set of prefixes/names.
    * The fix: `stripUntrustedHeaders` must accept an optional second argument
@@ -181,18 +180,18 @@ describe("B10/E4 — stripUntrustedHeaders accepts a custom header set", () => {
 });
 
 // ---------------------------------------------------------------------------
-// A3 — Audit `permission` field semantics match Java (comma-joined)
+// A3 â€” Audit `permission` field semantics match Java (comma-joined)
 // ---------------------------------------------------------------------------
 
-describe("A3 — audit permission field is comma-joined governing permissions", () => {
+describe("A3 â€” audit permission field is comma-joined governing permissions", () => {
   /**
    * Java's `DecisionResult.auditPermission()` is `String.join(",", matchedRule.permissions())`.
    * NestJS must produce the identical representation.
    *
-   * Single permission  → "READ_ORDER"          (no comma)
-   * Multi-permission   → "WRITE_ORDER,ADMIN"   (comma-joined, no spaces)
-   * Service-only rule  → null
-   * No matched rule    → null
+   * Single permission  â†’ "READ_ORDER"          (no comma)
+   * Multi-permission   â†’ "WRITE_ORDER,ADMIN"   (comma-joined, no spaces)
+   * Service-only rule  â†’ null
+   * No matched rule    â†’ null
    */
 
   const engine = loadAuthorizationConfig(`
@@ -209,7 +208,7 @@ rules:
     allowedServices: [scheduler]
 `);
 
-  it("single-permission rule → bare permission name (no comma)", () => {
+  it("single-permission rule â†’ bare permission name (no comma)", () => {
     const r = engine.evaluate(
       { method: "GET", path: "/orders", authType: "USER", role: "M" },
       new PermissionCache({ M: ["READ_ORDER"] }),
@@ -218,17 +217,17 @@ rules:
     expect(auditPermission(r.matchedRule)).toBe("READ_ORDER");
   });
 
-  it("multi-permission rule → comma-joined string (matches Java String.join)", () => {
+  it("multi-permission rule â†’ comma-joined string (matches Java String.join)", () => {
     const r = engine.evaluate(
       { method: "POST", path: "/orders", authType: "USER", role: "M" },
       new PermissionCache({ M: ["WRITE_ORDER"] }),
     );
     expect(r.decision).toBe("ALLOW");
-    // Must be exactly "WRITE_ORDER,ADMIN" — no spaces, same as Java
+    // Must be exactly "WRITE_ORDER,ADMIN" â€” no spaces, same as Java
     expect(auditPermission(r.matchedRule)).toBe("WRITE_ORDER,ADMIN");
   });
 
-  it("service-only rule → null (no permission dimension)", () => {
+  it("service-only rule â†’ null (no permission dimension)", () => {
     const r = engine.evaluate(
       { method: "POST", path: "/internal/jobs", authType: "SERVICE", serviceName: "scheduler" },
       new PermissionCache(),
@@ -237,7 +236,7 @@ rules:
     expect(auditPermission(r.matchedRule)).toBeNull();
   });
 
-  it("no matching rule → null", () => {
+  it("no matching rule â†’ null", () => {
     const r = engine.evaluate(
       { method: "DELETE", path: "/nonexistent", authType: "USER", role: "M" },
       new PermissionCache(),
@@ -259,7 +258,6 @@ rules:
       path: "/orders",
       permission: perm,
       result: r.decision,
-      policyVersion: 7,
     });
     expect(evt.permission).toBe("WRITE_ORDER,ADMIN");
 
@@ -270,16 +268,16 @@ rules:
 });
 
 // ---------------------------------------------------------------------------
-// C10 — No-credentials error message in the Express middleware
+// C10 â€” No-credentials error message in the Express middleware
 // ---------------------------------------------------------------------------
 
-describe("C10 — middleware 'no credentials' error message is exact", () => {
+describe("C10 â€” middleware 'no credentials' error message is exact", () => {
   /**
    * The architecture gap table says Java uses "no credentials presented" and
    * NestJS uses "no credentials". Java is being aligned to match NestJS.
    * This test pins the NestJS message so it cannot drift.
    *
-   * We test the Express middleware path (create-authz.ts) directly — the
+   * We test the Express middleware path (create-authz.ts) directly â€” the
    * guard path (authz.guard.ts) is tested in inbound-gaps.spec.ts.
    */
 
@@ -344,12 +342,12 @@ rules:
 });
 
 // ---------------------------------------------------------------------------
-// D6 — DEBUG structured audit JSON matches architecture §10.1 schema
+// D6 â€” DEBUG structured audit JSON matches architecture Â§10.1 schema
 // ---------------------------------------------------------------------------
 
-describe("D6 — DEBUG audit JSON matches architecture §10.1 schema", () => {
+describe("D6 â€” DEBUG audit JSON matches architecture Â§10.1 schema", () => {
   /**
-   * Architecture §10.1 specifies the exact fields that must be present in the
+   * Architecture Â§10.1 specifies the exact fields that must be present in the
    * DEBUG-level structured event. This test verifies that:
    *   1. All required fields are present.
    *   2. The `permission` field carries the correct value (including
@@ -360,7 +358,7 @@ describe("D6 — DEBUG audit JSON matches architecture §10.1 schema", () => {
   const REQUIRED_FIELDS: Array<keyof import("../src/spi").AuditEvent> = [
     "timestamp",
     "userId",
-    "role",
+    "roleId",
     "serviceName",
     "path",
     "method",
@@ -369,10 +367,9 @@ describe("D6 — DEBUG audit JSON matches architecture §10.1 schema", () => {
     "authenticationType",
     "requestId",
     "correlationId",
-    "policyVersion",
   ];
 
-  it("emits all required fields from §10.1 schema", () => {
+  it("emits all required fields from Â§10.1 schema", () => {
     const ctx = makeCtx();
     const evt = buildAuditEvent({
       ctx,
@@ -380,7 +377,6 @@ describe("D6 — DEBUG audit JSON matches architecture §10.1 schema", () => {
       path: "/orders/7",
       permission: "READ_ORDER",
       result: "ALLOW",
-      policyVersion: 42,
     });
 
     for (const field of REQUIRED_FIELDS) {
@@ -402,7 +398,6 @@ describe("D6 — DEBUG audit JSON matches architecture §10.1 schema", () => {
       path: "/orders/7",
       permission: "READ_ORDER",
       result: "ALLOW",
-      policyVersion: 42,
     });
 
     sink.emit(evt);
@@ -417,14 +412,13 @@ describe("D6 — DEBUG audit JSON matches architecture §10.1 schema", () => {
       expect(parsed).toHaveProperty(field);
     }
 
-    // Spot-check values from the §10.1 example
+    // Spot-check values from the Â§10.1 example
     expect(parsed.userId).toBe("u-123");
-    expect(parsed.role).toBe("MANAGER");
+    expect(parsed.roleId).toBe("MANAGER");
     expect(parsed.path).toBe("/orders/7");
     expect(parsed.method).toBe("GET");
     expect(parsed.result).toBe("ALLOW");
     expect(parsed.authenticationType).toBe("USER");
-    expect(parsed.policyVersion).toBe(42);
     expect(parsed.correlationId).toBe("c-xyz");
     expect(parsed.requestId).toBe("r-abc");
     expect(typeof parsed.timestamp).toBe("string");
@@ -459,7 +453,6 @@ rules:
       path: "/orders",
       permission: perm,
       result: r.decision,
-      policyVersion: 5,
     });
 
     sink.emit(evt);
@@ -488,7 +481,7 @@ rules:
     );
     const ctx = buildRequestContext({
       user: null,
-      service: { serviceName: "scheduler", serviceId: "sched-1" },
+      service: { serviceName: "scheduler" },
       correlationId: "c-svc",
       requestId: "r-svc",
     });
@@ -498,7 +491,6 @@ rules:
       path: "/internal/jobs",
       permission: auditPermission(r.matchedRule),
       result: r.decision,
-      policyVersion: 1,
     });
 
     sink.emit(evt);
@@ -514,7 +506,6 @@ rules:
       path: "/orders",
       permission: "WRITE_ORDER,ADMIN",
       result: "ALLOW",
-      policyVersion: 5,
     });
     const line = formatInfoLine(evt);
     expect(line).toContain("perm=WRITE_ORDER,ADMIN");

@@ -69,7 +69,7 @@ function baseEvent(result: "ALLOW" | "DENY"): AuditEvent {
   return {
     timestamp: new Date().toISOString(),
     userId: "u1",
-    role: "viewer",
+    roleId: "viewer",
     serviceName: null,
     path: "/api/test",
     method: "GET",
@@ -78,7 +78,6 @@ function baseEvent(result: "ALLOW" | "DENY"): AuditEvent {
     authenticationType: "USER",
     requestId: "req-1",
     correlationId: "corr-1",
-    policyVersion: 1,
   };
 }
 
@@ -116,7 +115,7 @@ describe("bridgeMetricsToOtel", () => {
     const metrics = new Metrics();
     metrics.inc(METRIC.authzSuccess);
     metrics.inc(METRIC.authzSuccess);
-    metrics.setGauge(GAUGE.cacheVersion, 7);
+    metrics.setGauge(GAUGE.cacheAgeSeconds, 7);
 
     bridgeMetricsToOtel(metrics);
 

@@ -9,19 +9,39 @@ import java.util.List;
 public class AuthzProperties {
     /** Location of authorization.yaml (Spring resource string). */
     private String configLocation = "classpath:authorization.yaml";
-    /** Auth Service issuer + JWKS (user JWTs). */
-    private String userIssuer;
-    private String userJwksUri;
+    /**
+     * Optional user-auth block (Auth Service issuer/JWKS + audience). When any
+     * field here (or {@link #roleServiceUrl}) is set, the library runs in FULL
+     * mode and all user-auth fields are required (all-or-nothing, validated at
+     * startup). When the whole block is absent, the library runs in
+     * SERVICE-ONLY mode (§0.5): user JWTs are ignored and the role-permission
+     * machinery is disabled.
+     */
+    private final User user = new User();
     /** SSO/OIDC issuer + JWKS (service tokens). */
     private String serviceIssuer;
     private String serviceJwksUri;
-    /**
-     * Expected audience for user JWTs. REQUIRED — must be a non-blank string matching
-     * the {@code aud} claim in user JWTs. Audience validation is mandatory and cannot
-     * be disabled; a blank value causes a {@link com.example.authz.config.ConfigException}
-     * at startup (fail-fast). Matches NestJS behavior where {@code audience} is required.
-     */
-    private String audience = "";
+
+    /** Nested user-auth configuration, bound under {@code authz.user.*}. */
+    public static class User {
+        /** Auth Service issuer (user JWTs). */
+        private String issuer;
+        /** Auth Service JWKS URI (user JWTs). */
+        private String jwksUri;
+        /**
+         * Expected audience for user JWTs. REQUIRED when user auth is enabled —
+         * a blank value with user auth otherwise configured is a fail-fast
+         * startup error. Matches NestJS behaviour where audience is mandatory.
+         */
+        private String audience = "";
+
+        public String getIssuer() { return issuer; }
+        public void setIssuer(String v) { this.issuer = v; }
+        public String getJwksUri() { return jwksUri; }
+        public void setJwksUri(String v) { this.jwksUri = v; }
+        public String getAudience() { return audience; }
+        public void setAudience(String v) { this.audience = v; }
+    }
     /** Claim + value that marks a service token (§2.3). */
     private String serviceTokenUseClaim = "token_use";
     private String serviceTokenUseValue = "service";
@@ -75,16 +95,32 @@ public class AuthzProperties {
 
     public String getConfigLocation() { return configLocation; }
     public void setConfigLocation(String v) { this.configLocation = v; }
-    public String getUserIssuer() { return userIssuer; }
-    public void setUserIssuer(String v) { this.userIssuer = v; }
-    public String getUserJwksUri() { return userJwksUri; }
-    public void setUserJwksUri(String v) { this.userJwksUri = v; }
+    public User getUser() { return user; }
+    // Flat aliases (relaxed-binding convenience + programmatic ergonomics) that
+    // delegate to the nested authz.user.* block.
+    public String getUserIssuer() { return user.getIssuer(); }
+    public void setUserIssuer(String v) { user.setIssuer(v); }
+    public String getUserJwksUri() { return user.getJwksUri(); }
+    public void setUserJwksUri(String v) { user.setJwksUri(v); }
     public String getServiceIssuer() { return serviceIssuer; }
     public void setServiceIssuer(String v) { this.serviceIssuer = v; }
     public String getServiceJwksUri() { return serviceJwksUri; }
     public void setServiceJwksUri(String v) { this.serviceJwksUri = v; }
-    public String getAudience() { return audience; }
-    public void setAudience(String v) { this.audience = v; }
+    public String getAudience() { return user.getAudience(); }
+    public void setAudience(String v) { user.setAudience(v); }
+
+    /**
+     * True when user auth is configured (FULL mode, §0.5). Detected by the
+     * presence of any user-auth field; the {@code ConfigValidator} then enforces
+     * that all required user-auth fields are present (all-or-nothing). When this
+     * is false the library runs in SERVICE-ONLY mode.
+     */
+    public boolean isUserAuthEnabled() {
+        return notBlank(user.getIssuer()) || notBlank(user.getJwksUri())
+                || notBlank(user.getAudience()) || notBlank(roleServiceUrl);
+    }
+
+    private static boolean notBlank(String s) { return s != null && !s.isBlank(); }
     public String getServiceTokenUseClaim() { return serviceTokenUseClaim; }
     public void setServiceTokenUseClaim(String v) { this.serviceTokenUseClaim = v; }
     public String getServiceTokenUseValue() { return serviceTokenUseValue; }

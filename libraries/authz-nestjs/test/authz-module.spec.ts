@@ -41,7 +41,7 @@ const MINIMAL_OPTIONS = {
   authorizationYaml: VALID_YAML,
   // Stub out token validation so no real JWKS calls are made.
   validator: {
-    validateUserToken: async () => ({ sub: "u1", role: "viewer" }),
+    validateUserToken: async () => ({ userId: "u1", roleId: "viewer" }),
     validateServiceToken: async () => ({ service_name: "svc" }),
   },
   // Prevent background reconciler from firing during tests.

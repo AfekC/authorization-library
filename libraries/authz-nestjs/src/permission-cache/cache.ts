@@ -5,13 +5,11 @@
  */
 export class PermissionCache {
   private active: ReadonlyMap<string, ReadonlySet<string>>;
-  private _version: number;
   private _lastUpdatedAt: Date;
   private _writeLock: Promise<void> = Promise.resolve();
 
   constructor(initial?: Record<string, string[]>) {
     this.active = PermissionCache.build(initial ?? {});
-    this._version = 0;
     this._lastUpdatedAt = new Date();
   }
 
@@ -40,24 +38,15 @@ export class PermissionCache {
     return this.active.get(role) ?? new Set();
   }
 
-  version(): number {
-    return this._version;
-  }
-
   lastUpdatedAt(): Date {
     return this._lastUpdatedAt;
   }
 
-  /**
-   * Replace the whole map atomically (e.g. after a Role Service snapshot).
-   * Bumps an internal generation counter for observability — the Role Service
-   * no longer supplies a version.
-   */
+  /** Replace the whole map atomically (e.g. after a Role Service snapshot). */
   async replaceAll(roles: Record<string, string[]>): Promise<void> {
     const release = await this.acquireLock();
     try {
       this.active = PermissionCache.build(roles);
-      this._version += 1;
       this._lastUpdatedAt = new Date();
     } finally {
       release();
@@ -71,7 +60,6 @@ export class PermissionCache {
       const next = new Map(this.active);
       next.set(role, new Set(permissions));
       this.active = next;
-      this._version += 1;
       this._lastUpdatedAt = new Date();
     } finally {
       release();
@@ -85,7 +73,6 @@ export class PermissionCache {
       const next = new Map(this.active);
       next.delete(role);
       this.active = next;
-      this._version += 1;
       this._lastUpdatedAt = new Date();
     } finally {
       release();

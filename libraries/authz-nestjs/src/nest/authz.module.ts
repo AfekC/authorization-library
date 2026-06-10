@@ -93,6 +93,7 @@ export class AuthzModule implements OnModuleDestroy {
               audit: authz.audit,
               policyEngine: options.policyEngine,
               roleResolver: options.roleResolver,
+              userAuthEnabled: authz.userAuthEnabled,
             };
             return new AuthzGuard(deps);
           },
@@ -113,6 +114,7 @@ export class AuthzModule implements OnModuleDestroy {
               audit: authz.audit,
               policyEngine: options.policyEngine,
               roleResolver: options.roleResolver,
+              userAuthEnabled: authz.userAuthEnabled,
             };
             return new AuthzGuard(deps);
           },

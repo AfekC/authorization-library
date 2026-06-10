@@ -6,7 +6,7 @@ import com.example.authz.engine.Decision;
 public record AuditEvent(
         String timestamp,
         String userId,
-        String role,
+        String roleId,
         String serviceName,
         String path,
         String method,
@@ -14,6 +14,5 @@ public record AuditEvent(
         Decision result,
         String authenticationType,
         String requestId,
-        String correlationId,
-        long policyVersion) {
+        String correlationId) {
 }

@@ -14,7 +14,7 @@ import java.util.Set;
  */
 public final class RuleCompiler {
     private static final Set<String> ALLOWED_KEYS =
-            Set.of("path", "methods", "permissions", "decision", "allowedServices");
+            Set.of("path", "methods", "permissions", "decision", "allowedServices", "public");
 
     private RuleCompiler() {}
 
@@ -53,8 +53,27 @@ public final class RuleCompiler {
         if (!(methodsObj instanceof List<?> methodsList) || methodsList.isEmpty()) {
             throw new ConfigException("rule \"" + path + "\" must list at least one method");
         }
+        // methods: ["*"] matches any HTTP method; "*" upper-cases to itself.
         Set<String> methods = new LinkedHashSet<>();
         for (Object m : methodsList) methods.add(String.valueOf(m).toUpperCase());
+
+        // public:true is a no-validation route — mutually exclusive with the
+        // permission/service dimensions. Fail fast if combined (§3.1).
+        boolean isPublic = false;
+        Object publicObj = raw.get("public");
+        if (publicObj != null) {
+            if (!(publicObj instanceof Boolean b)) {
+                throw new ConfigException("rule \"" + path + "\" field \"public\" must be a boolean");
+            }
+            isPublic = b;
+        }
+        if (isPublic) {
+            if (raw.get("permissions") != null || raw.get("decision") != null
+                    || raw.get("allowedServices") != null) {
+                throw new ConfigException("rule \"" + path + "\" is public: \"permissions\", "
+                        + "\"decision\", and \"allowedServices\" are not allowed on a public rule");
+            }
+        }
 
         DecisionMode decision = DecisionMode.ANY;
         Object decisionObj = raw.get("decision");
@@ -77,7 +96,7 @@ public final class RuleCompiler {
             if (segments.get(i).kind() == SegmentKind.LITERAL) literalCount++;
         }
         return new CompiledRule(path, methods, permissions, decision, allowedServices,
-                segments, scores, literalCount);
+                segments, scores, literalCount, isPublic);
     }
 
     private static List<String> toStringListOrNull(Object obj, String path, String field) {
@@ -119,6 +138,8 @@ public final class RuleCompiler {
     }
 
     private static boolean methodsIntersect(CompiledRule a, CompiledRule b) {
+        // methods: ["*"] matches any method, so a wildcard on either side always intersects.
+        if (a.matchesAnyMethod() || b.matchesAnyMethod()) return true;
         for (String m : a.methods()) if (b.methods().contains(m)) return true;
         return false;
     }
