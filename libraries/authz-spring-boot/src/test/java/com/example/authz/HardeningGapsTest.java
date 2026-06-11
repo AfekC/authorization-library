@@ -1,7 +1,6 @@
 package com.example.authz;
 
-import com.example.authz.boot.AuthzAutoConfiguration;
-import com.example.authz.boot.AuthzProperties;
+import com.example.authz.autoconfigure.AuthzProperties;
 import com.example.authz.cache.PermissionCache;
 import com.example.authz.config.ConfigException;
 import com.example.authz.observability.Metrics;
@@ -38,7 +37,7 @@ class HardeningGapsTest {
 
     private static void validate(AuthzProperties props) {
         try {
-            Class<?> clazz = Class.forName("com.example.authz.boot.AuthzAutoConfiguration$ConfigValidator");
+            Class<?> clazz = Class.forName("com.example.authz.autoconfigure.AuthzCoreAutoConfiguration$ConfigValidator");
             Constructor<?> ctor = clazz.getDeclaredConstructor(AuthzProperties.class);
             ctor.setAccessible(true);
             ctor.newInstance(props);

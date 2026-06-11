@@ -1,1 +1,6 @@
-com.example.authz.boot.AuthzAutoConfiguration
+com.example.authz.autoconfigure.AuthzCoreAutoConfiguration
+com.example.authz.autoconfigure.InboundAuthAutoConfiguration
+com.example.authz.autoconfigure.CacheSyncAutoConfiguration
+com.example.authz.autoconfigure.ObservabilityAutoConfiguration
+com.example.authz.autoconfigure.OutboundAutoConfiguration
+com.example.authz.autoconfigure.WebSecurityAutoConfiguration

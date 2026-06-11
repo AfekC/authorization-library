@@ -1,7 +1,8 @@
 package com.example.authz;
 
-import com.example.authz.boot.AuthzAutoConfiguration;
-import com.example.authz.boot.AuthzProperties;
+import com.example.authz.autoconfigure.AuthzCoreAutoConfiguration;
+import com.example.authz.autoconfigure.ObservabilityAutoConfiguration;
+import com.example.authz.autoconfigure.AuthzProperties;
 import com.example.authz.cache.PermissionCache;
 import com.example.authz.config.ConfigException;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -23,7 +24,7 @@ class AuthzAutoConfigurationTest {
 
     private static void validate(AuthzProperties props) {
         try {
-            Class<?> clazz = Class.forName("com.example.authz.boot.AuthzAutoConfiguration$ConfigValidator");
+            Class<?> clazz = Class.forName("com.example.authz.autoconfigure.AuthzCoreAutoConfiguration$ConfigValidator");
             Constructor<?> ctor = clazz.getDeclaredConstructor(AuthzProperties.class);
             ctor.setAccessible(true);
             ctor.newInstance(props);
@@ -125,32 +126,32 @@ class AuthzAutoConfigurationTest {
 
     @Test
     void metricsBeanHasConditionalOnMissingBean() throws Exception {
-        Method method = AuthzAutoConfiguration.class.getDeclaredMethod("authzMetrics");
+        Method method = ObservabilityAutoConfiguration.class.getDeclaredMethod("authzMetrics");
         assertNotNull(method.getAnnotation(ConditionalOnMissingBean.class));
     }
 
     @Test
     void permissionCacheBeanHasConditionalOnMissingBean() throws Exception {
-        Method method = AuthzAutoConfiguration.class.getDeclaredMethod("permissionCache");
+        Method method = AuthzCoreAutoConfiguration.class.getDeclaredMethod("permissionCache");
         assertNotNull(method.getAnnotation(ConditionalOnMissingBean.class));
     }
 
     @Test
     void authorizationEngineBeanHasConditionalOnMissingBean() throws Exception {
-        Method method = AuthzAutoConfiguration.class.getDeclaredMethod(
+        Method method = AuthzCoreAutoConfiguration.class.getDeclaredMethod(
                 "authorizationEngine", AuthzProperties.class, ApplicationContext.class);
         assertNotNull(method.getAnnotation(ConditionalOnMissingBean.class));
     }
 
     @Test
     void permissionCacheBeanIsCreated() {
-        PermissionCache cache = new AuthzAutoConfiguration().permissionCache();
+        PermissionCache cache = new AuthzCoreAutoConfiguration().permissionCache();
         assertNotNull(cache);
     }
 
     @Test
     void authzO11yCompatibilityBindingIsConfigured() throws Exception {
-        Class<?> bindingClass = Class.forName("com.example.authz.boot.AuthzAutoConfiguration$O11yCompatibilityBinding");
+        Class<?> bindingClass = Class.forName("com.example.authz.autoconfigure.ObservabilityAutoConfiguration$O11yCompatibilityBinding");
         assertNotNull(bindingClass.getAnnotation(org.springframework.context.annotation.Configuration.class));
         assertNotNull(bindingClass.getAnnotation(org.springframework.boot.autoconfigure.condition.ConditionalOnClass.class));
 
@@ -163,7 +164,7 @@ class AuthzAutoConfigurationTest {
      * Mimics o11y-lib's {@code ObservabilityAutoConfiguration}, which field-injects
      * an {@code idf.hatraa.util.ConfigurationUtil}. o11y-lib declares that type as a
      * {@code @Component} outside the consuming app's component-scan path, so it is
-     * only available when {@link AuthzAutoConfiguration.O11yCompatibilityBinding}
+     * only available when {@link ObservabilityAutoConfiguration.O11yCompatibilityBinding}
      * contributes it. This consumer fails to wire if the bean is absent.
      */
     @Configuration(proxyBeanMethods = false)
@@ -177,7 +178,7 @@ class AuthzAutoConfigurationTest {
     @Test
     void o11yCompatibilityBinding_suppliesConfigurationUtilForO11yConsumer() throws Exception {
         Class<?> binding = Class.forName(
-                "com.example.authz.boot.AuthzAutoConfiguration$O11yCompatibilityBinding");
+                "com.example.authz.autoconfigure.ObservabilityAutoConfiguration$O11yCompatibilityBinding");
         new ApplicationContextRunner()
                 .withBean(SimpleMeterRegistry.class) // ConfigurationUtil @Autowires a MeterRegistry
                 .withUserConfiguration(binding, O11yConsumerConfig.class)
