@@ -1,34 +1,29 @@
 import * as fs from "fs";
-import { AuthorizationEngine, auditPermission } from "../decision-engine/engine";
-import { Decision, CompiledRule } from "../rule-config/types";
+import { AuthorizationEngine } from "../decision-engine/engine";
 import { loadAuthorizationConfig } from "../rule-config/loader";
 import { PermissionCache } from "../permission-cache/cache";
 import {
   JwksTokenValidator,
-  servicePrincipalFromClaims,
-  userPrincipalFromClaims,
 } from "../inbound-auth/token-validator";
 import {
-  buildRequestContext,
-  stripUntrustedHeaders,
   RequestContext,
 } from "../inbound-auth/context";
 import { HttpRoleServiceClient } from "../role-service-client/client";
 import { DiskCache } from "../cache-sync/disk";
 import { KafkaCacheEventHandler } from "../cache-sync/kafka";
 import { CacheBootstrap, CacheMode } from "../cache-sync/bootstrap";
-import { LoggingAuditSink, buildAuditEvent } from "../audit/audit";
-import { Metrics, METRIC, buildHealth, TokenFailureMode, classifyTokenFailure } from "../observability/metrics";
+import { Metrics, METRIC, buildHealth } from "../observability/metrics";
 import { ObservabilityConfig, initObservability, createAuthzTracer, AuthzTracer, AuthzSpan } from "../observability/otel";
 import { bridgeMetricsToOtel } from "../observability/otel-bridge";
 import { OtelAuditSink } from "../observability/otel-audit-sink";
+import { LoggingAuditSink } from "../audit/audit";
 import { AuditSink, ServiceIdentityProvider, TokenValidator, RoleResolver, PolicyEngine, AttributeProvider } from "../spi";
-import { extractBearer } from "../inbound-auth/bearer";
 import { ClientCredentialsProvider } from "../service-token/provider";
 import { runWithOutboundContext } from "../outbound/context-store";
 import { attachOutboundPropagation, AxiosLike } from "../outbound/propagation";
 import { ConfigError } from "../rule-config/types";
 import { optionsFromEnv } from "./env-config";
+import { decideRequest } from "../decision-engine/decide";
 
 /**
  * Everything needed to stand up authorization in one call. Most fields have
@@ -292,129 +287,25 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
   }
 
   const runAuthz = async (req: any, res: any, next: () => void, span?: AuthzSpan) => {
-    const headers = stripUntrustedHeaders(req.headers ?? {});
-    // §0.5 — in SERVICE-ONLY mode the Authorization/Bearer header is ignored.
-    const bearer = userAuthEnabled ? (extractBearer(headers["authorization"]) ?? null) : null;
-    const serviceToken = (headers["x-service-token"] as string) ?? null;
-
-    // B9: strip any query string so the matched/audited path is the bare path.
-    const requestPath = (req.path ?? req.url ?? "").split("?")[0];
-
-    // §3.1 — public:true routes need no validation and are allowed even without
-    // credentials (built-in engine only; a custom PolicyEngine owns decisions).
-    if (!opts.policyEngine) {
-      const pre = engine.matchRule(req.method, requestPath);
-      if (pre && pre.isPublic) {
-        const anon = buildRequestContext({
-          user: null,
-          service: null,
-          correlationId: headers["x-correlation-id"] as string,
-          requestId: headers["x-request-id"] as string,
-        });
-        req.authz = anon;
-        audit.emit(
-          buildAuditEvent({ ctx: anon, method: req.method, path: requestPath,
-            permission: null, result: "ALLOW" }),
-        );
-        metrics.inc(METRIC.authzSuccess);
-        runWithOutboundContext(anon, null, next);
-        return;
-      }
-    }
-
-    if (!bearer && !serviceToken) {
-      metrics.inc(METRIC.authzFailure);
-      res.status(401).json({ error: "no credentials" });
-      return;
-    }
-
-    let user = null;
-    let service = null;
-    if (bearer) {
-      try {
-        user = userPrincipalFromClaims(await validator.validateUserToken(bearer));
-      } catch (err) {
-        metrics.incTokenFailure(METRIC.jwtValidationFailures, classifyTokenFailure(err));
-        res.status(401).json({ error: "user token validation failed" });
-        return;
-      }
-    }
-    if (serviceToken) {
-      try {
-        service = servicePrincipalFromClaims(
-          await validator.validateServiceToken(serviceToken),
-        );
-      } catch (err) {
-        metrics.incTokenFailure(METRIC.serviceTokenFailures, classifyTokenFailure(err));
-        res.status(401).json({ error: "service token validation failed" });
-        return;
-      }
-    }
-
-    const ctx = buildRequestContext({
-      user,
-      service,
-      correlationId: headers["x-correlation-id"] as string,
-      requestId: headers["x-request-id"] as string,
-    });
-    req.authz = ctx;
-
-    let decision: Decision;
-    let matchedRule: CompiledRule | null = null;
-
-    if (opts.policyEngine) {
-      decision = opts.policyEngine.authorize({
-        method: req.method,
-        path: requestPath,
-        authType: ctx.authenticationType,
-        role: ctx.roleId,
-        serviceName: ctx.serviceName,
-      });
-    } else if (opts.roleResolver) {
-      decision = engine.authorizeWithResolver(
-        { method: req.method, path: requestPath,
-          authType: ctx.authenticationType,
-          role: ctx.roleId, serviceName: ctx.serviceName },
-        opts.roleResolver,
-      );
-      const rule = engine.matchRule(req.method, requestPath);
-      if (rule) matchedRule = rule;
-    } else {
-      const result = engine.evaluate(
-        { method: req.method, path: requestPath,
-          authType: ctx.authenticationType,
-          role: ctx.roleId, serviceName: ctx.serviceName },
-        cache,
-      );
-      decision = result.decision;
-      matchedRule = result.matchedRule;
-    }
-    if (span) {
-      span.setAttribute("authz.decision", decision);
-      span.setAttribute("authz.method", req.method);
-      span.setAttribute("authz.path", requestPath);
-      span.setAttribute("authz.authType", ctx.authenticationType);
-      if (ctx.roleId) span.setAttribute("authz.role", ctx.roleId);
-      if (ctx.serviceName) span.setAttribute("authz.service", ctx.serviceName);
-    }
-    audit.emit(
-      buildAuditEvent({
-        ctx,
-        method: req.method,
-        path: requestPath,
-        permission: auditPermission(matchedRule),
-        result: decision,
-      }),
+    const out = await decideRequest(
+      { method: req.method, rawPath: req.path ?? req.url ?? "", headers: req.headers ?? {} },
+      { engine, cache, validator, audit, metrics,
+        policyEngine: opts.policyEngine, roleResolver: opts.roleResolver, userAuthEnabled },
     );
-
-    if (decision === "ALLOW") {
-      metrics.inc(METRIC.authzSuccess);
-      if (bearer) (req as AuthorizedRequest).authzUserJwt = bearer; // expose for outbound propagation
-      runWithOutboundContext(ctx, bearer ?? null, next);
+    if (span && out.kind === "allow") {
+      span.setAttribute("authz.path", (req.path ?? req.url ?? "").split("?")[0]);
+      span.setAttribute("authz.method", req.method);
+      span.setAttribute("authz.authType", out.ctx.authenticationType);
+      if (out.ctx.roleId) span.setAttribute("authz.role", out.ctx.roleId);
+      if (out.ctx.serviceName) span.setAttribute("authz.service", out.ctx.serviceName);
+    }
+    if (out.kind === "deny") {
+      res.status(out.status).json({ error: out.error });
       return;
     }
-    metrics.inc(METRIC.permissionDenied);
-    res.status(403).json({ error: "authorization denied" });
+    req.authz = out.ctx;
+    if (out.bearer) (req as AuthorizedRequest).authzUserJwt = out.bearer;
+    runWithOutboundContext(out.ctx, out.bearer, next);
   };
 
   // When tracing is on, wrap each decision in an "authz.decision" span; otherwise
