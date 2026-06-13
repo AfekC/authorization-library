@@ -84,5 +84,13 @@ export { AuthzOutboundInterceptor } from "./nest/outbound.interceptor";
 export { AuthzContext, REQUEST_CONTEXT_KEY } from "./nest/request-context.decorator";
 export { AuthzModule, AUTHZ } from "./nest/authz.module";
 
+// NestJS feature modules + options token (idiomatic adoption)
+export {
+  AUTHZ_OPTIONS, AUTHZ_ENGINE, AUTHZ_CACHE, AUTHZ_METRICS, AUTHZ_AUDIT,
+  AUTHZ_VALIDATOR, AUTHZ_BOOTSTRAP, AUTHZ_SERVICE_IDENTITY, AUTHZ_USER_AUTH_ENABLED,
+  AuthzModuleAsyncOptions,
+} from "./nest/authz-options";
+export { decideRequest, DecideDeps, DecideInput, DecideOutcome } from "./decision-engine/decide";
+
 // SPI
 export * from "./spi";
