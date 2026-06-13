@@ -1,4 +1,4 @@
-package com.example.authz.boot;
+package com.example.authz.autoconfigure;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
