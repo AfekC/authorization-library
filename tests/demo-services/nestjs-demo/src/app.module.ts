@@ -4,6 +4,7 @@ import * as path from "path";
 import { HealthController } from "./health.controller";
 import { OrdersController } from "./orders.controller";
 import { InternalController } from "./internal.controller";
+import { FallbackController } from "./fallback.controller";
 
 const MOCK = process.env.MOCK_URL || "http://localhost:4000";
 
@@ -43,6 +44,7 @@ const MOCK = process.env.MOCK_URL || "http://localhost:4000";
       },
     }),
   ],
-  controllers: [HealthController, OrdersController, InternalController],
+  // FallbackController must be last so real routes take precedence.
+  controllers: [HealthController, OrdersController, InternalController, FallbackController],
 })
 export class AppModule {}
