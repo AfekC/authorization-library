@@ -3,17 +3,21 @@ FROM node:22-alpine
 WORKDIR /app/demo
 COPY libraries/authz-nestjs/vendor/hatraa-otel-ts-7.0.11.tgz /tmp/hatraa-otel-ts-7.0.11.tgz
 # Clean package (the demo's own package.json references the workspace lib, which
-# is not on the registry). Install only the real third-party deps + the library's
-# runtime deps so the library (copied as a real package below) resolves them.
+# is not on the registry). Install the real third-party deps + the library's
+# runtime deps + the NestJS HTTP platform, plus TypeScript to compile the demo.
 RUN npm init -y >/dev/null && \
-    npm install --omit=dev --no-audit --no-fund express js-yaml jose axios kafkajs \
+    npm install --no-audit --no-fund express js-yaml jose axios kafkajs \
       simple-oauth2 p-retry@^4 @nestjs/common@^11 @nestjs/core@^11 \
-      reflect-metadata rxjs /tmp/hatraa-otel-ts-7.0.11.tgz
+      @nestjs/platform-express@^11 reflect-metadata rxjs \
+      typescript@^5.5.4 @types/node@^20 /tmp/hatraa-otel-ts-7.0.11.tgz
 # Place the prebuilt library as a real package (not a symlink) so its internal
 # requires resolve against the node_modules above.
 COPY libraries/authz-nestjs/package.json node_modules/authz-nestjs/package.json
 COPY libraries/authz-nestjs/dist node_modules/authz-nestjs/dist
+COPY tests/demo-services/nestjs-demo/tsconfig.json ./
 COPY tests/demo-services/nestjs-demo/src ./src
 COPY tests/demo-services/nestjs-demo/authorization.yaml ./
+# Compile the NestJS app (decorators + metadata) to dist/.
+RUN npx tsc -p tsconfig.json
 EXPOSE 5001
-CMD ["node", "src/main.js"]
+CMD ["node", "dist/main.js"]

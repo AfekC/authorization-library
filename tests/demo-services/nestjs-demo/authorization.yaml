@@ -1,4 +1,9 @@
 rules:
+  # Public liveness endpoint — no credentials required (the global guard allows it).
+  - path: /health
+    methods: [GET]
+    public: true
+
   - path: /orders/**
     methods: [GET]
     permissions: [READ_ORDER]
