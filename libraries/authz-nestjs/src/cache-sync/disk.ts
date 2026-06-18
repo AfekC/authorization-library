@@ -1,5 +1,5 @@
-import * as fs from "fs";
-import { PermissionCache } from "../permission-cache/cache";
+﻿import * as fs from "fs";
+import { PermissionCache } from "../permission-cache/cache.js";
 
 export interface DiskSnapshot {
   timestamp: string;

@@ -1,18 +1,18 @@
-import { DynamicModule, Global, Module, OnModuleDestroy, Provider } from "@nestjs/common";
+﻿import { DynamicModule, Global, Module, OnModuleDestroy, Provider } from "@nestjs/common";
 import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
-import { createAuthzFromOptions, CreateAuthzOptions, Authz } from "../bootstrap/create-authz";
-import { AuthzGuard, AuthzGuardDeps } from "./authz.guard";
-import { AuthzOutboundInterceptor } from "./outbound.interceptor";
+import { createAuthzFromOptions, CreateAuthzOptions, Authz } from "../bootstrap/create-authz.js";
+import { AuthzGuard, AuthzGuardDeps } from "./authz.guard.js";
+import { AuthzOutboundInterceptor } from "./outbound.interceptor.js";
 import {
   AUTHZ_OPTIONS, AUTHZ_ENGINE, AUTHZ_CACHE, AUTHZ_METRICS, AUTHZ_AUDIT,
   AUTHZ_VALIDATOR, AUTHZ_USER_AUTH_ENABLED, AuthzModuleAsyncOptions,
-} from "./authz-options";
-import { ObservabilityModule } from "./modules/observability.module";
-import { DecisionEngineModule } from "./modules/decision-engine.module";
-import { PermissionCacheModule } from "./modules/permission-cache.module";
-import { InboundAuthModule } from "./modules/inbound-auth.module";
-import { CacheSyncModule } from "./modules/cache-sync.module";
-import { OutboundModule } from "./modules/outbound.module";
+} from "./authz-options.js";
+import { ObservabilityModule } from "./modules/observability.module.js";
+import { DecisionEngineModule } from "./modules/decision-engine.module.js";
+import { PermissionCacheModule } from "./modules/permission-cache.module.js";
+import { InboundAuthModule } from "./modules/inbound-auth.module.js";
+import { CacheSyncModule } from "./modules/cache-sync.module.js";
+import { OutboundModule } from "./modules/outbound.module.js";
 
 /**
  * Injection token for the full `Authz` runtime object returned by createAuthz().

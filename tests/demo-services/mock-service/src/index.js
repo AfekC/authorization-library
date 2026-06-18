@@ -94,8 +94,9 @@
  *       "malformed"      — literal string "not.a.jwt" (not even a JWT)
  */
 
-const express = require("express");
-const { createIssuer } = require("./keys");
+import express from "express";
+import { Kafka } from "kafkajs";
+import { createIssuer } from "./keys.js";
 
 const PORT = process.env.PORT || 4000;
 const AUTH_ISSUER = process.env.AUTH_ISSUER || `http://localhost:${PORT}/auth`;
@@ -187,7 +188,6 @@ async function main() {
 
   let producer = null;
   if (KAFKA_BROKERS.length) {
-    const { Kafka } = require("kafkajs");
     const kafka = new Kafka({ clientId: "mock-service", brokers: KAFKA_BROKERS });
     producer = kafka.producer();
     await producer.connect().catch((e) => {

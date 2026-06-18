@@ -1,11 +1,11 @@
-import {
+﻿import {
   createRemoteJWKSet,
   jwtVerify,
   JWTVerifyGetKey,
   JWTPayload,
 } from "jose";
-import { TokenClaims, TokenValidator } from "../spi";
-import { ServicePrincipal, UserPrincipal } from "./context";
+import { TokenClaims, TokenValidator } from "../spi/index.js";
+import { ServicePrincipal, UserPrincipal } from "./context.js";
 
 /** Attach the original error as `.cause` on a new Error (G12 — preserve cause).
  *  Uses property assignment for ES2021 compat (Error({ cause }) is ES2022+). */

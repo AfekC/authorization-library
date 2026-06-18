@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests for AuthzModule — NestJS DI auto-wiring module (Gap N8).
  *
  * Covers:
@@ -10,12 +10,13 @@
  */
 
 import "reflect-metadata";
+import { jest } from "@jest/globals";
 import nock from "nock";
 import { Test, TestingModule } from "@nestjs/testing";
 import { APP_GUARD } from "@nestjs/core";
-import { AuthzModule, AUTHZ } from "../src/nest/authz.module";
-import { AuthzGuard } from "../src/nest/authz.guard";
-import { Authz } from "../src/bootstrap/create-authz";
+import { AuthzModule, AUTHZ } from "../src/nest/authz.module.js";
+import { AuthzGuard } from "../src/nest/authz.guard.js";
+import { Authz } from "../src/bootstrap/create-authz.js";
 
 // ---------------------------------------------------------------------------
 // Shared test fixtures

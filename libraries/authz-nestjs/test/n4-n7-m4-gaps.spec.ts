@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests for gaps N4, N7, and M4:
  *
  *   N4  — sanitizeHeadersInPlace: in-place removal of untrusted identity headers
@@ -13,8 +13,9 @@
 import {
   sanitizeHeadersInPlace,
   stripUntrustedHeaders,
-} from "../src/inbound-auth/context";
-import { loadAuthorizationConfig } from "../src/rule-config/loader";
+} from "../src/inbound-auth/context.js";
+import { loadAuthorizationConfig } from "../src/rule-config/loader.js";
+import { PermissionCache } from "../src/permission-cache/cache.js";
 import * as http from "http";
 import { AddressInfo } from "net";
 import {
@@ -27,7 +28,7 @@ import {
 import {
   JwksTokenValidator,
   JwksValidatorConfig,
-} from "../src/inbound-auth/token-validator";
+} from "../src/inbound-auth/token-validator.js";
 
 describe("N4 — sanitizeHeadersInPlace", () => {
   it("mutates the SAME object reference (in-place)", () => {
@@ -158,7 +159,7 @@ rules:
     allowedServices: [*]
 `);
     // Any service name must be allowed (the '*' wildcard)
-    const cache = require("../src/permission-cache/cache").PermissionCache;
+    const cache = PermissionCache;
     const result = engine.authorize(
       { method: "GET", path: "/public", authType: "SERVICE", serviceName: "any-svc" },
       new cache({}),
@@ -184,7 +185,6 @@ rules:
     methods: [POST]
     allowedServices: [*, "named-svc"]
 `);
-    const { PermissionCache } = require("../src/permission-cache/cache");
     const c = new PermissionCache({});
     // Wildcard → any service allowed
     expect(engine.authorize({ method: "POST", path: "/mixed", authType: "SERVICE", serviceName: "anything" }, c)).toBe("ALLOW");
@@ -336,7 +336,6 @@ describe("M4 — nbf boundary parity (jose ≡ Java Nimbus)", () => {
    * This mirrors the strict clockSkewSeconds=0 used in the token-validator suite.
    */
   it("M4 — zero-tolerance validator rejects nbf 1 second in future", async () => {
-    const { PermissionCache: _pc } = require("../src/permission-cache/cache");
     const strictCfg: JwksValidatorConfig = {
       userIssuer: USER_ISSUER,
       userJwksUri: server.url,

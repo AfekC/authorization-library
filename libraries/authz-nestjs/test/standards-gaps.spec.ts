@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests for standards-audit gap fixes (general best-practice alignment):
  *   GAP-1  — DiskCache.write() is atomic (temp file + rename); no partial file on failure
  *   GAP-3  — Kafka unparseable events: logged + counted via injected hooks (not console)
@@ -13,17 +13,17 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-import { DiskCache } from "../src/cache-sync/disk";
-import { CacheBootstrap } from "../src/cache-sync/bootstrap";
-import { KafkaCacheEventHandler } from "../src/cache-sync/kafka";
-import { PermissionCache } from "../src/permission-cache/cache";
-import { HttpRoleServiceClient } from "../src/role-service-client/client";
-import { ClientCredentialsProvider } from "../src/service-token/provider";
-import { buildOutboundHeaders } from "../src/outbound/propagation";
-import { RequestContext } from "../src/inbound-auth/context";
-import { RoleServiceClient, CacheEventHandler, ServiceIdentityProvider } from "../src/spi";
-import { createAuthzFromOptions as createAuthz } from "../src/bootstrap/create-authz";
-import { ConfigError } from "../src/rule-config/types";
+import { DiskCache } from "../src/cache-sync/disk.js";
+import { CacheBootstrap } from "../src/cache-sync/bootstrap.js";
+import { KafkaCacheEventHandler } from "../src/cache-sync/kafka.js";
+import { PermissionCache } from "../src/permission-cache/cache.js";
+import { HttpRoleServiceClient } from "../src/role-service-client/client.js";
+import { ClientCredentialsProvider } from "../src/service-token/provider.js";
+import { buildOutboundHeaders } from "../src/outbound/propagation.js";
+import { RequestContext } from "../src/inbound-auth/context.js";
+import { RoleServiceClient, CacheEventHandler, ServiceIdentityProvider } from "../src/spi.js";
+import { createAuthzFromOptions as createAuthz } from "../src/bootstrap/create-authz.js";
+import { ConfigError } from "../src/rule-config/types.js";
 import nock from "nock";
 
 // ---------------------------------------------------------------------------

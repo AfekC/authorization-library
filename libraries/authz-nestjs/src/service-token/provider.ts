@@ -1,7 +1,7 @@
-import { AccessToken, ClientCredentials } from "simple-oauth2";
+﻿import { AccessToken, ClientCredentials } from "simple-oauth2";
 import pRetry from "p-retry";
-import { ServiceIdentityProvider } from "../spi";
-import { Metrics, METRIC } from "../observability/metrics";
+import { ServiceIdentityProvider } from "../spi/index.js";
+import { Metrics, METRIC } from "../observability/metrics.js";
 
 /** Mirrors Java's PROACTIVE_REFRESH_FRACTION = 0.70 (§A1). */
 const DEFAULT_PROACTIVE_REFRESH_FRACTION = 0.7;

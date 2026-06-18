@@ -1,19 +1,19 @@
-import { AuthorizationEngine, auditPermission } from "./engine";
-import { PermissionCache } from "../permission-cache/cache";
+﻿import { AuthorizationEngine, auditPermission } from "./engine.js";
+import { PermissionCache } from "../permission-cache/cache.js";
 import {
   buildRequestContext,
   stripUntrustedHeaders,
   RequestContext,
-} from "../inbound-auth/context";
+} from "../inbound-auth/context.js";
 import {
   servicePrincipalFromClaims,
   userPrincipalFromClaims,
-} from "../inbound-auth/token-validator";
-import { extractBearer } from "../inbound-auth/bearer";
-import { buildAuditEvent } from "../audit/audit";
-import { Metrics, METRIC, classifyTokenFailure } from "../observability/metrics";
-import { AuditSink, TokenValidator, PolicyEngine, RoleResolver } from "../spi";
-import { Decision, CompiledRule } from "../rule-config/types";
+} from "../inbound-auth/token-validator.js";
+import { extractBearer } from "../inbound-auth/bearer.js";
+import { buildAuditEvent } from "../audit/audit.js";
+import { Metrics, METRIC, classifyTokenFailure } from "../observability/metrics.js";
+import { AuditSink, TokenValidator, PolicyEngine, RoleResolver } from "../spi/index.js";
+import { Decision, CompiledRule } from "../rule-config/types.js";
 
 /** Everything the core decision needs — no framework types. */
 export interface DecideDeps {

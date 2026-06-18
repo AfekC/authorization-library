@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests for NestJS guard + middleware parity gaps M1, M2, N1, N2, N3.
  *
  * Covers:
@@ -11,14 +11,14 @@
  */
 
 import nock from "nock";
-import { AuthzGuard } from "../src/nest/authz.guard";
-import { PermissionCache } from "../src/permission-cache/cache";
-import { loadAuthorizationConfig } from "../src/rule-config/loader";
-import { LoggingAuditSink } from "../src/audit/audit";
-import { Metrics, METRIC } from "../src/observability/metrics";
-import { TokenValidator, PolicyEngine, RoleResolver } from "../src/spi";
-import { extractBearer } from "../src/inbound-auth/bearer";
-import { createAuthzFromOptions as createAuthz } from "../src/bootstrap/create-authz";
+import { AuthzGuard } from "../src/nest/authz.guard.js";
+import { PermissionCache } from "../src/permission-cache/cache.js";
+import { loadAuthorizationConfig } from "../src/rule-config/loader.js";
+import { LoggingAuditSink } from "../src/audit/audit.js";
+import { Metrics, METRIC } from "../src/observability/metrics.js";
+import { TokenValidator, PolicyEngine, RoleResolver } from "../src/spi.js";
+import { extractBearer } from "../src/inbound-auth/bearer.js";
+import { createAuthzFromOptions as createAuthz } from "../src/bootstrap/create-authz.js";
 
 // ---------------------------------------------------------------------------
 // Shared helpers

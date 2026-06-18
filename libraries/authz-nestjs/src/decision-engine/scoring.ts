@@ -1,4 +1,4 @@
-import { CompiledRule, Segment } from "../rule-config/types";
+﻿import { CompiledRule, Segment } from "../rule-config/types.js";
 
 /** Split a request path into segments, ignoring leading/trailing slashes. */
 export function splitPath(path: string): string[] {

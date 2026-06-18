@@ -1,8 +1,8 @@
-import { decideRequest, DecideDeps } from "../src/decision-engine/decide";
-import { loadAuthorizationConfig } from "../src/rule-config/loader";
-import { PermissionCache } from "../src/permission-cache/cache";
-import { Metrics } from "../src/observability/metrics";
-import { LoggingAuditSink } from "../src/audit/audit";
+﻿import { decideRequest, DecideDeps } from "../src/decision-engine/decide.js";
+import { loadAuthorizationConfig } from "../src/rule-config/loader.js";
+import { PermissionCache } from "../src/permission-cache/cache.js";
+import { Metrics } from "../src/observability/metrics.js";
+import { LoggingAuditSink } from "../src/audit/audit.js";
 
 const yaml = `
 rules:

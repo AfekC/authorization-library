@@ -1,5 +1,6 @@
-import { AuditEvent, AuditSink } from "../spi";
-import { formatInfoLine } from "../audit/audit";
+﻿import { createRequire } from "module";
+import { AuditEvent, AuditSink } from "../spi/index.js";
+import { formatInfoLine } from "../audit/audit.js";
 
 /**
  * Audit sink that emits each decision as a structured JSON log through
@@ -15,7 +16,7 @@ export class OtelAuditSink implements AuditSink {
   private readonly emitLog: (log: Record<string, unknown> & { message: string; level: string }) => void;
 
   constructor() {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const require = createRequire(import.meta.url);
     const { otelLogger } = require("@hatraa/otel-ts") as typeof import("@hatraa/otel-ts");
     this.emitLog = otelLogger as unknown as typeof this.emitLog;
   }

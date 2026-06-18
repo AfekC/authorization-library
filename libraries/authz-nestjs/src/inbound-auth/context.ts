@@ -1,5 +1,5 @@
-import { randomUUID } from "crypto";
-import { AuthType } from "../rule-config/types";
+﻿import { randomUUID } from "crypto";
+import { AuthType } from "../rule-config/types.js";
 
 /**
  * Immutable identity for a request, built ONLY from validated token claims.

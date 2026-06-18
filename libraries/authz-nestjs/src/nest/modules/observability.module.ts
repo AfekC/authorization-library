@@ -1,12 +1,12 @@
 import { Module } from "@nestjs/common";
-import { Metrics } from "../../observability/metrics";
-import { LoggingAuditSink } from "../../audit/audit";
-import { OtelAuditSink } from "../../observability/otel-audit-sink";
-import { initObservability, createAuthzTracer } from "../../observability/otel";
-import { bridgeMetricsToOtel } from "../../observability/otel-bridge";
-import { AuditSink } from "../../spi";
-import { CreateAuthzOptions } from "../../bootstrap/create-authz";
-import { AUTHZ_OPTIONS, AUTHZ_METRICS, AUTHZ_AUDIT } from "../authz-options";
+import { Metrics } from "../../observability/metrics.js";
+import { LoggingAuditSink } from "../../audit/audit.js";
+import { OtelAuditSink } from "../../observability/otel-audit-sink.js";
+import { initObservability, createAuthzTracer } from "../../observability/otel.js";
+import { bridgeMetricsToOtel } from "../../observability/otel-bridge.js";
+import { AuditSink } from "../../spi/index.js";
+import { CreateAuthzOptions } from "../../bootstrap/create-authz.js";
+import { AUTHZ_OPTIONS, AUTHZ_METRICS, AUTHZ_AUDIT } from "../authz-options.js";
 
 @Module({
   providers: [

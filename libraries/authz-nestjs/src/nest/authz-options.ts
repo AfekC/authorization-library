@@ -1,5 +1,5 @@
-import { ModuleMetadata } from "@nestjs/common";
-import { CreateAuthzOptions } from "../bootstrap/create-authz";
+﻿import { ModuleMetadata } from "@nestjs/common";
+import { CreateAuthzOptions } from "../bootstrap/create-authz.js";
 
 /** Injection token carrying the resolved CreateAuthzOptions to every feature module. */
 export const AUTHZ_OPTIONS = "AUTHZ_OPTIONS";

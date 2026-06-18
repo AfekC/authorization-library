@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Direct unit tests for JwksTokenValidator (D1/G8).
  *
  * Uses `jose` to generate ephemeral RSA keys and mint JWTs in-process.
@@ -19,7 +19,7 @@ import {
   JwksValidatorConfig,
   userPrincipalFromClaims,
   servicePrincipalFromClaims,
-} from "../src/inbound-auth/token-validator";
+} from "../src/inbound-auth/token-validator.js";
 
 // ---------------------------------------------------------------------------
 // Key + JWKS server helpers

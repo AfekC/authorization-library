@@ -1,18 +1,18 @@
-import * as fs from "fs";
+﻿import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import {
   buildRequestContext,
   stripUntrustedHeaders,
-} from "../src/inbound-auth/context";
-import { PermissionCache } from "../src/permission-cache/cache";
-import { applyRoleEvent, parseRoleEvent } from "../src/cache-sync/events";
-import { DiskCache } from "../src/cache-sync/disk";
-import { CacheBootstrap } from "../src/cache-sync/bootstrap";
-import { loadAuthorizationConfig } from "../src/rule-config/loader";
-import { buildAuditEvent, formatInfoLine } from "../src/audit/audit";
-import { RoleServiceClient, RoleMap } from "../src/spi";
-import { Metrics, METRIC } from "../src/observability/metrics";
+} from "../src/inbound-auth/context.js";
+import { PermissionCache } from "../src/permission-cache/cache.js";
+import { applyRoleEvent, parseRoleEvent } from "../src/cache-sync/events.js";
+import { DiskCache } from "../src/cache-sync/disk.js";
+import { CacheBootstrap } from "../src/cache-sync/bootstrap.js";
+import { loadAuthorizationConfig } from "../src/rule-config/loader.js";
+import { buildAuditEvent, formatInfoLine } from "../src/audit/audit.js";
+import { RoleServiceClient, RoleMap } from "../src/spi.js";
+import { Metrics, METRIC } from "../src/observability/metrics.js";
 
 describe("stripUntrustedHeaders", () => {
   it("drops identity headers but keeps tokens and trace ids", () => {

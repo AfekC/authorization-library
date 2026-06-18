@@ -1,5 +1,5 @@
-import { CompiledRule, ConfigError, DecisionMode, RuleInput, Segment } from "./types";
-import { compareSpecificity, scoreSegment } from "../decision-engine/scoring";
+﻿import { CompiledRule, ConfigError, DecisionMode, RuleInput, Segment } from "./types.js";
+import { compareSpecificity, scoreSegment } from "../decision-engine/scoring.js";
 
 const ALLOWED_KEYS = new Set([
   "path",

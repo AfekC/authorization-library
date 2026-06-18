@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests for error-handling / data-validation gaps:
  *   Q1 — DiskCache.write() unguarded: EACCES/ENOSPC errors must be caught and surfaced (log + metric)
  *   Q2 — Role Service snapshot value-validation: non-string[] values must be rejected
@@ -10,14 +10,14 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-import { DiskCache } from "../src/cache-sync/disk";
-import { CacheBootstrap } from "../src/cache-sync/bootstrap";
-import { applyRoleEvent } from "../src/cache-sync/events";
-import { PermissionCache } from "../src/permission-cache/cache";
-import { Metrics, METRIC } from "../src/observability/metrics";
-import { HttpRoleServiceClient } from "../src/role-service-client/client";
-import { JwksTokenValidator, JwksValidatorConfig } from "../src/inbound-auth/token-validator";
-import { RoleServiceClient } from "../src/spi";
+import { DiskCache } from "../src/cache-sync/disk.js";
+import { CacheBootstrap } from "../src/cache-sync/bootstrap.js";
+import { applyRoleEvent } from "../src/cache-sync/events.js";
+import { PermissionCache } from "../src/permission-cache/cache.js";
+import { Metrics, METRIC } from "../src/observability/metrics.js";
+import { HttpRoleServiceClient } from "../src/role-service-client/client.js";
+import { JwksTokenValidator, JwksValidatorConfig } from "../src/inbound-auth/token-validator.js";
+import { RoleServiceClient } from "../src/spi.js";
 import nock from "nock";
 
 // ---------------------------------------------------------------------------
@@ -253,10 +253,13 @@ describe("Q3 — JwksTokenValidator passes timeoutDuration to createRemoteJWKSet
   });
 
   it("a slow JWKS endpoint times out within jwksTimeoutMs and throws", async () => {
-    // Use nock to simulate a JWKS endpoint that delays longer than timeout
+    // Delay the CONNECTION (not the body): jose aborts at jwksTimeoutMs (50ms),
+    // so the connection never completes and nock never schedules a response. This
+    // avoids nock 14's InterceptorError, which fires when a body-delayed reply
+    // (`.delay`) lands on a separate timer tick after the request was aborted.
     nock("http://slow-jwks.test")
       .get("/.well-known/jwks.json")
-      .delay(500)  // 500ms delay
+      .delayConnection(30_000) // never elapses — the client aborts first
       .reply(200, { keys: [] });
 
     const cfg: JwksValidatorConfig = {

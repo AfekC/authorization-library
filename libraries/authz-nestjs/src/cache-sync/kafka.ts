@@ -1,7 +1,7 @@
-import { randomUUID } from "crypto";
+﻿import { randomUUID } from "crypto";
 import { Consumer, Kafka } from "kafkajs";
-import { CacheEventHandler, RoleEvent } from "../spi";
-import { parseRoleEvent } from "./events";
+import { CacheEventHandler, RoleEvent } from "../spi/index.js";
+import { parseRoleEvent } from "./events.js";
 
 export interface KafkaSyncConfig {
   brokers: string[];

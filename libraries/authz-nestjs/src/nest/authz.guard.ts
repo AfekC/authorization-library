@@ -1,16 +1,16 @@
-import {
+﻿import {
   CanActivate,
   ExecutionContext,
   HttpException,
   HttpStatus,
   Injectable,
 } from "@nestjs/common";
-import { AuthorizationEngine } from "../decision-engine/engine";
-import { PermissionCache } from "../permission-cache/cache";
-import { TokenValidator, AuditSink, PolicyEngine, RoleResolver } from "../spi";
-import { Metrics } from "../observability/metrics";
-import { REQUEST_CONTEXT_KEY } from "./request-context.decorator";
-import { decideRequest } from "../decision-engine/decide";
+import { AuthorizationEngine } from "../decision-engine/engine.js";
+import { PermissionCache } from "../permission-cache/cache.js";
+import { TokenValidator, AuditSink, PolicyEngine, RoleResolver } from "../spi/index.js";
+import { Metrics } from "../observability/metrics.js";
+import { REQUEST_CONTEXT_KEY } from "./request-context.decorator.js";
+import { decideRequest } from "../decision-engine/decide.js";
 
 export interface AuthzGuardDeps {
   engine: AuthorizationEngine;

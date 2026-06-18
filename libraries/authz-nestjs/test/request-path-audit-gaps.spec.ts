@@ -8,11 +8,11 @@
  * D6  â€” DEBUG structured audit JSON matches architecture Â§10.1 schema.
  */
 
-import { buildAuditEvent, formatInfoLine, LoggingAuditSink } from "../src/audit/audit";
-import { buildRequestContext, stripUntrustedHeaders } from "../src/inbound-auth/context";
-import { auditPermission } from "../src/decision-engine/engine";
-import { loadAuthorizationConfig } from "../src/rule-config/loader";
-import { PermissionCache } from "../src/permission-cache/cache";
+import { buildAuditEvent, formatInfoLine, LoggingAuditSink } from "../src/audit/audit.js";
+import { buildRequestContext, stripUntrustedHeaders } from "../src/inbound-auth/context.js";
+import { auditPermission } from "../src/decision-engine/engine.js";
+import { loadAuthorizationConfig } from "../src/rule-config/loader.js";
+import { PermissionCache } from "../src/permission-cache/cache.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

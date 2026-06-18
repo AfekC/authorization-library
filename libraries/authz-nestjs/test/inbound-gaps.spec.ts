@@ -1,17 +1,17 @@
-/**
+﻿/**
  * Tests for inbound-auth gaps:
  *   B1  — whitespace-only trace IDs must be treated as absent (generate UUID)
  *   C13 — duplicate Authorization headers (array) must not cause false 401
  *   F1  — RequestContext must be frozen (immutable)
  *   G12 — validation errors must preserve the cause error
  */
-import { buildRequestContext } from "../src/inbound-auth/context";
-import { AuthzGuard } from "../src/nest/authz.guard";
-import { PermissionCache } from "../src/permission-cache/cache";
-import { loadAuthorizationConfig } from "../src/rule-config/loader";
-import { LoggingAuditSink } from "../src/audit/audit";
-import { Metrics } from "../src/observability/metrics";
-import { TokenValidator } from "../src/spi";
+import { buildRequestContext } from "../src/inbound-auth/context.js";
+import { AuthzGuard } from "../src/nest/authz.guard.js";
+import { PermissionCache } from "../src/permission-cache/cache.js";
+import { loadAuthorizationConfig } from "../src/rule-config/loader.js";
+import { LoggingAuditSink } from "../src/audit/audit.js";
+import { Metrics } from "../src/observability/metrics.js";
+import { TokenValidator } from "../src/spi.js";
 
 const silentAudit = new LoggingAuditSink({ info: () => {}, debug: () => {} });
 

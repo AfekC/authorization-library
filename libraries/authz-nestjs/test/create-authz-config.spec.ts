@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Config/validation parity gaps for createAuthz() — aligns NestJS with Java
  * AuthzAutoConfiguration / AuthzProperties behaviour.
  *
@@ -8,9 +8,10 @@
  * Q4 — URL fields must be validated for well-formedness (http/https only)
  */
 
+import { jest } from "@jest/globals";
 import nock from "nock";
-import { createAuthzFromOptions as createAuthz } from "../src/bootstrap/create-authz";
-import { ConfigError } from "../src/rule-config/types";
+import { createAuthzFromOptions as createAuthz } from "../src/bootstrap/create-authz.js";
+import { ConfigError } from "../src/rule-config/types.js";
 
 const ROLE_SERVICE_URL = "http://localhost:18151";
 

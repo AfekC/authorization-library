@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests for observability and role-service-client gaps.
  *
  * Covers:
@@ -11,17 +11,17 @@
  */
 
 import nock from "nock";
-import { PermissionCache } from "../src/permission-cache/cache";
+import { PermissionCache } from "../src/permission-cache/cache.js";
 import {
   Metrics,
   METRIC,
   GAUGE,
   buildHealth,
-} from "../src/observability/metrics";
+} from "../src/observability/metrics.js";
 import {
   HttpRoleServiceClient,
   DEFAULT_ROLE_SERVICE_TIMEOUT_MS,
-} from "../src/role-service-client/client";
+} from "../src/role-service-client/client.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

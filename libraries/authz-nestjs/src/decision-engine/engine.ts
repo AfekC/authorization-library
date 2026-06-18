@@ -1,15 +1,15 @@
-import { compileRules } from "../rule-config/compile";
-import { PermissionCache } from "../permission-cache/cache";
+﻿import { compileRules } from "../rule-config/compile.js";
+import { PermissionCache } from "../permission-cache/cache.js";
 import {
   AuthorizationRequest,
   CompiledRule,
   Decision,
   RuleInput,
-} from "../rule-config/types";
-import { compareSpecificity, matchPath, splitPath } from "./scoring";
-import { decide, decideWithResolver } from "./decision";
-import { PolicyEngine, RoleResolver, AttributeProvider } from "../spi";
-import { RequestContext } from "../inbound-auth/context";
+} from "../rule-config/types.js";
+import { compareSpecificity, matchPath, splitPath } from "./scoring.js";
+import { decide, decideWithResolver } from "./decision.js";
+import { PolicyEngine, RoleResolver, AttributeProvider } from "../spi/index.js";
+import { RequestContext } from "../inbound-auth/context.js";
 
 /**
  * Outcome of a single evaluation: the decision plus the matched rule (null when

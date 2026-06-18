@@ -1,5 +1,5 @@
-﻿const { generateKeyPair, exportJWK, SignJWT } = require("jose");
-const crypto = require("crypto");
+﻿import { generateKeyPair, exportJWK, SignJWT } from "jose";
+import crypto from "node:crypto";
 
 /**
  * One RSA keypair for the Auth Service (user JWTs) and one for the SSO provider
@@ -29,7 +29,10 @@ async function createIssuer(issuer, initialKid) {
   const keyring = new Map();
 
   async function _generateKey(kid) {
-    const { publicKey, privateKey } = await generateKeyPair("RS256");
+    // jose v6 returns non-extractable WebCrypto CryptoKeys by default; request
+    // extractable keys so the private key bridges cleanly to a Node KeyObject in
+    // _signRaw (the raw "expired" signing path) and the public key exports to JWK.
+    const { publicKey, privateKey } = await generateKeyPair("RS256", { extractable: true });
     const jwk = await exportJWK(publicKey);
     jwk.kid = kid;
     jwk.use = "sig";
@@ -49,8 +52,10 @@ async function createIssuer(issuer, initialKid) {
   // Returns base64url-encoded signature. Used only for the "expired" path where
   // jose's SignJWT enforces a future exp and would reject a backdated one.
   function _signRaw(privateKey, data) {
+    // jose v6 gives a WebCrypto CryptoKey; Node's crypto.sign needs a KeyObject.
+    const keyObject = crypto.KeyObject.from(privateKey);
     const sig = crypto.sign("sha256", Buffer.from(data), {
-      key: privateKey,
+      key: keyObject,
       padding: crypto.constants.RSA_PKCS1_PADDING,
     });
     return sig.toString("base64url");
@@ -185,5 +190,5 @@ async function createIssuer(issuer, initialKid) {
   };
 }
 
-module.exports = { createIssuer };
+export { createIssuer };
 

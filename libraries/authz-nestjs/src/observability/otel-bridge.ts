@@ -1,5 +1,6 @@
-import { Metrics, METRIC, GAUGE } from "./metrics";
-import { isObservabilityEnabled } from "./otel";
+import { createRequire } from "module";
+import { Metrics, METRIC, GAUGE } from "./metrics.js";
+import { isObservabilityEnabled } from "./otel.js";
 
 /**
  * Mirror the in-process {@link Metrics} counters/gauges onto an OpenTelemetry
@@ -16,7 +17,7 @@ import { isObservabilityEnabled } from "./otel";
  */
 export function bridgeMetricsToOtel(metrics: Metrics, meterName = "authz"): void {
   if (!isObservabilityEnabled()) return;
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const require = createRequire(import.meta.url);
   const { createMeter } = require("@hatraa/otel-ts") as typeof import("@hatraa/otel-ts");
   const meter = createMeter(meterName);
 

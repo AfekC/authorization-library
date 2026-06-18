@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests for O4 — StripHeadersOptions extension parameters:
  *   - additionalPrefixes: custom header prefixes stripped in addition to defaults
  *   - additionalExactNames: custom exact header names stripped in addition to defaults
@@ -13,7 +13,7 @@
 import {
   sanitizeHeadersInPlace,
   stripUntrustedHeaders,
-} from "../src/inbound-auth/context";
+} from "../src/inbound-auth/context.js";
 
 // ---------------------------------------------------------------------------
 // O4 — StripHeadersOptions extension: additionalPrefixes

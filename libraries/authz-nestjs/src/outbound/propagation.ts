@@ -1,6 +1,6 @@
-import { ServiceIdentityProvider } from "../spi";
-import { RequestContext } from "../inbound-auth/context";
-import { currentOutboundContext } from "./context-store";
+﻿import { ServiceIdentityProvider } from "../spi/index.js";
+import { RequestContext } from "../inbound-auth/context.js";
+import { currentOutboundContext } from "./context-store.js";
 
 export interface OutboundHeaders {
   [name: string]: string;

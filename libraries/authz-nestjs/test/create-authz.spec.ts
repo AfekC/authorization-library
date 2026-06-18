@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests for createAuthz() orchestrator — config validation, wiring, and
  * conditional feature gating (Kafka / service identity).
  *
@@ -11,8 +11,8 @@
  */
 
 import nock from "nock";
-import { createAuthz, createAuthzFromOptions as createAuthzWithOptions } from "../src/bootstrap/create-authz";
-import { ConfigError } from "../src/rule-config/types";
+import { createAuthz, createAuthzFromOptions as createAuthzWithOptions } from "../src/bootstrap/create-authz.js";
+import { ConfigError } from "../src/rule-config/types.js";
 
 const ROLE_SERVICE_URL = "http://localhost:18150";
 

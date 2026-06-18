@@ -1,6 +1,6 @@
-import { AuditEvent, AuditSink } from "../spi";
-import { RequestContext } from "../inbound-auth/context";
-import { Decision } from "../rule-config/types";
+﻿import { AuditEvent, AuditSink } from "../spi/index.js";
+import { RequestContext } from "../inbound-auth/context.js";
+import { Decision } from "../rule-config/types.js";
 
 /** Default sink: INFO one-liner + DEBUG structured event via console. */
 export class LoggingAuditSink implements AuditSink {

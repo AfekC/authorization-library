@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests for KafkaCacheEventHandler topic defaults, routing, and parseRoleEvent.
  *
  * Covers:
@@ -9,8 +9,8 @@
  *   K3e — parseRoleEvent returns null for unparseable input
  */
 
-import { KafkaCacheEventHandler } from "../src/cache-sync/kafka";
-import { parseRoleEvent } from "../src/cache-sync/events";
+import { KafkaCacheEventHandler } from "../src/cache-sync/kafka.js";
+import { parseRoleEvent } from "../src/cache-sync/events.js";
 
 // ---------------------------------------------------------------------------
 // K3a + K3b — topic defaulting

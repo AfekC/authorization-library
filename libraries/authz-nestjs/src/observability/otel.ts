@@ -1,3 +1,4 @@
+import { createRequire } from "module";
 import type { Environment } from "@hatraa/otel-ts";
 
 /**
@@ -5,8 +6,8 @@ import type { Environment } from "@hatraa/otel-ts";
  * Prometheus metrics on :9464, structured JSON logs, HTTP + NestJS
  * auto-instrumentation). Disabled by default.
  *
- * The SDK is loaded with a lazy `require()` (see {@link loadO11y}) so that — when
- * observability is off — neither the heavy OpenTelemetry tree nor the native
+ * The SDK is loaded with a lazy `createRequire()` (see {@link loadO11y}) so that —
+ * when observability is off — neither the heavy OpenTelemetry tree nor the native
  * `@datadog/pprof` addon that `@hatraa/otel-ts` pulls in at import are touched.
  */
 export interface ObservabilityConfig {
@@ -25,7 +26,7 @@ let initialized = false;
 
 /** Lazily resolve the o11y SDK so it only loads when observability is enabled. */
 function loadO11y(): typeof import("@hatraa/otel-ts") {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const require = createRequire(import.meta.url);
   return require("@hatraa/otel-ts") as typeof import("@hatraa/otel-ts");
 }
 

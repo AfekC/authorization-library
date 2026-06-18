@@ -1,8 +1,11 @@
-import * as fs from "fs";
+﻿import * as fs from "fs";
 import * as path from "path";
-import { AuthorizationEngine } from "../src/decision-engine/engine";
-import { PermissionCache } from "../src/permission-cache/cache";
-import { AuthType, RuleInput } from "../src/rule-config/types";
+import { fileURLToPath } from "url";
+import { AuthorizationEngine } from "../src/decision-engine/engine.js";
+import { PermissionCache } from "../src/permission-cache/cache.js";
+import { AuthType, RuleInput } from "../src/rule-config/types.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 interface DecisionVector {
   name: string;

@@ -10,52 +10,53 @@
  *   - createAuthz({observability:{enabled}}) inits the SDK, selects OtelAuditSink,
  *     and wraps the decision path in a span
  */
-
-jest.mock("@hatraa/otel-ts", () => {
-  const observables: Array<{ _cb?: (res: { observe: (v: number) => void }) => void }> = [];
-  const makeObservable = () => {
-    const inst: any = {};
-    inst.addCallback = jest.fn((cb: any) => {
-      inst._cb = cb;
-    });
-    observables.push(inst);
-    return inst;
-  };
-  const meter = {
-    createObservableCounter: jest.fn(() => makeObservable()),
-    createObservableGauge: jest.fn(() => makeObservable()),
-  };
-  const span = {
-    setAttribute: jest.fn(),
-    recordException: jest.fn(),
-    end: jest.fn(),
-  };
-  const tracer = {
-    startActiveSpan: jest.fn((_name: string, fn: any) => fn(span)),
-  };
-  return {
-    __esModule: true,
-    otelConfig: jest.fn(),
-    createMeter: jest.fn(() => meter),
-    createTracer: jest.fn(() => tracer),
-    otelLogger: jest.fn(),
-    __mock: { meter, tracer, span, observables },
-  };
-});
-
+import { jest, type Mock } from "@jest/globals";
 import nock from "nock";
-import * as o11y from "@hatraa/otel-ts";
+
+// Build a shared mock state so we can inspect calls from the test bodies.
+const observables: Array<{ _cb?: (res: { observe: (v: number) => void }) => void; addCallback: Mock<any> }> = [];
+const makeObservable = () => {
+  const inst: any = {};
+  inst.addCallback = jest.fn((cb: any) => {
+    inst._cb = cb;
+  });
+  observables.push(inst);
+  return inst;
+};
+const meter = {
+  createObservableCounter: jest.fn(() => makeObservable()),
+  createObservableGauge: jest.fn(() => makeObservable()),
+};
+const span = {
+  setAttribute: jest.fn(),
+  recordException: jest.fn(),
+  end: jest.fn(),
+};
+const tracer = {
+  startActiveSpan: jest.fn((_name: string, fn: any) => fn(span)),
+};
+const otelConfigMock = jest.fn();
+const createMeterMock = jest.fn(() => meter);
+const createTracerMock = jest.fn(() => tracer);
+const otelLoggerMock = jest.fn();
+
+jest.mock("@hatraa/otel-ts", () => ({
+  __esModule: true,
+  otelConfig: otelConfigMock,
+  createMeter: createMeterMock,
+  createTracer: createTracerMock,
+  otelLogger: otelLoggerMock,
+}));
+
 import {
   initObservability,
   isObservabilityEnabled,
-} from "../src/observability/otel";
-import { bridgeMetricsToOtel } from "../src/observability/otel-bridge";
-import { OtelAuditSink } from "../src/observability/otel-audit-sink";
-import { Metrics, METRIC, GAUGE } from "../src/observability/metrics";
-import { AuditEvent } from "../src/spi";
-import { createAuthzFromOptions } from "../src/bootstrap/create-authz";
-
-const mock = (o11y as any).__mock;
+} from "../src/observability/otel.js";
+import { bridgeMetricsToOtel } from "../src/observability/otel-bridge.js";
+import { OtelAuditSink } from "../src/observability/otel-audit-sink.js";
+import { Metrics, METRIC, GAUGE } from "../src/observability/metrics.js";
+import { AuditEvent } from "../src/spi.js";
+import { createAuthzFromOptions } from "../src/bootstrap/create-authz.js";
 
 const ROLE_SERVICE_URL = "http://localhost:18170";
 const VALID_YAML = `
@@ -83,6 +84,8 @@ function baseEvent(result: "ALLOW" | "DENY"): AuditEvent {
 
 afterEach(() => {
   jest.clearAllMocks();
+  // Reset observables array after each test
+  observables.length = 0;
   nock.cleanAll();
 });
 
@@ -97,7 +100,7 @@ describe("initObservability", () => {
     });
     expect(active).toBe(true);
     expect(isObservabilityEnabled()).toBe(true);
-    expect(o11y.otelConfig).toHaveBeenCalledWith({
+    expect(otelConfigMock).toHaveBeenCalledWith({
       serviceName: "svc",
       systemName: "sys",
       envName: "drill",
@@ -106,7 +109,7 @@ describe("initObservability", () => {
 
     // Second call is a no-op (already initialized).
     initObservability({ enabled: true, serviceName: "other" });
-    expect(o11y.otelConfig).toHaveBeenCalledTimes(1);
+    expect(otelConfigMock).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -119,19 +122,20 @@ describe("bridgeMetricsToOtel", () => {
 
     bridgeMetricsToOtel(metrics);
 
-    expect(mock.meter.createObservableCounter).toHaveBeenCalledTimes(
+    expect(createMeterMock).toHaveBeenCalled();
+    expect(meter.createObservableCounter).toHaveBeenCalledTimes(
       Object.keys(METRIC).length,
     );
-    expect(mock.meter.createObservableGauge).toHaveBeenCalledTimes(
+    expect(meter.createObservableGauge).toHaveBeenCalledTimes(
       Object.keys(GAUGE).length,
     );
 
     // Every instrument's callback observes the current in-process value.
     let observed = -1;
-    const successInst = mock.observables.find((i: any) => i.addCallback.mock.calls.length);
+    const successInst = observables.find((i: any) => i.addCallback.mock.calls.length);
     // Drive all callbacks; assert at least one reports the success counter (2).
     const seen: number[] = [];
-    for (const inst of mock.observables) {
+    for (const inst of observables) {
       inst._cb?.({ observe: (v: number) => seen.push(v) });
     }
     observed = Math.max(...seen);
@@ -143,14 +147,14 @@ describe("bridgeMetricsToOtel", () => {
 });
 
 describe("OtelAuditSink", () => {
-  it("emits ALLOW at INFO and DENY at WARN through otelLogger", () => {
+  it("emits ALLOW at INFO and WARN through otelLogger", () => {
     const sink = new OtelAuditSink();
     sink.emit(baseEvent("ALLOW"));
     sink.emit(baseEvent("DENY"));
 
-    expect(o11y.otelLogger).toHaveBeenCalledTimes(2);
-    const first = (o11y.otelLogger as jest.Mock).mock.calls[0][0];
-    const second = (o11y.otelLogger as jest.Mock).mock.calls[1][0];
+    expect(otelLoggerMock).toHaveBeenCalledTimes(2);
+    const first = (otelLoggerMock as Mock<any>).mock.calls[0][0];
+    const second = (otelLoggerMock as Mock<any>).mock.calls[1][0];
     expect(first.level).toBe("INFO");
     expect(first.message).toContain("ALLOW");
     expect(first.path).toBe("/api/test");
@@ -175,8 +179,8 @@ describe("createAuthz with observability enabled", () => {
     });
 
     try {
-      expect(o11y.createMeter).toHaveBeenCalled();
-      expect(o11y.createTracer).toHaveBeenCalledWith("authz");
+      expect(createMeterMock).toHaveBeenCalled();
+      expect(createTracerMock).toHaveBeenCalledWith("authz");
       expect(authz.audit).toBeInstanceOf(OtelAuditSink);
 
       // Drive the middleware (no creds → 401) and confirm it ran inside a span.
@@ -193,8 +197,8 @@ describe("createAuthz with observability enabled", () => {
         },
       };
       await authz.middleware({ headers: {}, method: "GET", url: "/api/test" }, res, () => {});
-      expect(mock.tracer.startActiveSpan).toHaveBeenCalledWith("authz.decision", expect.any(Function));
-      expect(mock.span.end).toHaveBeenCalled();
+      expect(tracer.startActiveSpan).toHaveBeenCalledWith("authz.decision", expect.any(Function));
+      expect(span.end).toHaveBeenCalled();
       expect(res.statusCode).toBe(401);
     } finally {
       await authz.stop();

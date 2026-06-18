@@ -1,8 +1,8 @@
-import * as fs from "fs";
+﻿import * as fs from "fs";
 import * as yaml from "js-yaml";
-import { ConfigError, RuleInput } from "./types";
-import { compileRules } from "./compile";
-import { AuthorizationEngine } from "../decision-engine/engine";
+import { ConfigError, RuleInput } from "./types.js";
+import { compileRules } from "./compile.js";
+import { AuthorizationEngine } from "../decision-engine/engine.js";
 
 interface RawConfig {
   rules?: RuleInput[];

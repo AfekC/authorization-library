@@ -1,5 +1,5 @@
-import axios, { AxiosInstance } from "axios";
-import { RoleMap, RoleServiceClient } from "../spi";
+﻿import axios, { AxiosInstance } from "axios";
+import { RoleMap, RoleServiceClient } from "../spi/index.js";
 
 /**
  * Default connect + read timeout for the Role Service HTTP client (ms).

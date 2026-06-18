@@ -1,10 +1,10 @@
-import { PermissionCache } from "../permission-cache/cache";
+﻿import { PermissionCache } from "../permission-cache/cache.js";
 import {
   AuthorizationRequest,
   CompiledRule,
   Decision,
-} from "../rule-config/types";
-import { RoleResolver } from "../spi";
+} from "../rule-config/types.js";
+import { RoleResolver } from "../spi/index.js";
 
 /** Anything with a permissionsForRole method — both PermissionCache and RoleResolver. */
 type PermissionSource = {

@@ -1,29 +1,30 @@
-import * as fs from "fs";
-import { AuthorizationEngine } from "../decision-engine/engine";
-import { loadAuthorizationConfig } from "../rule-config/loader";
-import { PermissionCache } from "../permission-cache/cache";
+﻿import * as fs from "fs";
+import axios from "axios";
+import { AuthorizationEngine } from "../decision-engine/engine.js";
+import { loadAuthorizationConfig } from "../rule-config/loader.js";
+import { PermissionCache } from "../permission-cache/cache.js";
 import {
   JwksTokenValidator,
-} from "../inbound-auth/token-validator";
+} from "../inbound-auth/token-validator.js";
 import {
   RequestContext,
-} from "../inbound-auth/context";
-import { HttpRoleServiceClient } from "../role-service-client/client";
-import { DiskCache } from "../cache-sync/disk";
-import { KafkaCacheEventHandler } from "../cache-sync/kafka";
-import { CacheBootstrap, CacheMode } from "../cache-sync/bootstrap";
-import { Metrics, METRIC, buildHealth } from "../observability/metrics";
-import { ObservabilityConfig, initObservability, createAuthzTracer, AuthzTracer, AuthzSpan } from "../observability/otel";
-import { bridgeMetricsToOtel } from "../observability/otel-bridge";
-import { OtelAuditSink } from "../observability/otel-audit-sink";
-import { LoggingAuditSink } from "../audit/audit";
-import { AuditSink, ServiceIdentityProvider, TokenValidator, RoleResolver, PolicyEngine, AttributeProvider } from "../spi";
-import { ClientCredentialsProvider } from "../service-token/provider";
-import { runWithOutboundContext } from "../outbound/context-store";
-import { attachOutboundPropagation, AxiosLike } from "../outbound/propagation";
-import { ConfigError } from "../rule-config/types";
-import { optionsFromEnv } from "./env-config";
-import { decideRequest } from "../decision-engine/decide";
+} from "../inbound-auth/context.js";
+import { HttpRoleServiceClient } from "../role-service-client/client.js";
+import { DiskCache } from "../cache-sync/disk.js";
+import { KafkaCacheEventHandler } from "../cache-sync/kafka.js";
+import { CacheBootstrap, CacheMode } from "../cache-sync/bootstrap.js";
+import { Metrics, METRIC, buildHealth } from "../observability/metrics.js";
+import { ObservabilityConfig, initObservability, createAuthzTracer, AuthzTracer, AuthzSpan } from "../observability/otel.js";
+import { bridgeMetricsToOtel } from "../observability/otel-bridge.js";
+import { OtelAuditSink } from "../observability/otel-audit-sink.js";
+import { LoggingAuditSink } from "../audit/audit.js";
+import { AuditSink, ServiceIdentityProvider, TokenValidator, RoleResolver, PolicyEngine, AttributeProvider } from "../spi/index.js";
+import { ClientCredentialsProvider } from "../service-token/provider.js";
+import { runWithOutboundContext } from "../outbound/context-store.js";
+import { attachOutboundPropagation, AxiosLike } from "../outbound/propagation.js";
+import { ConfigError } from "../rule-config/types.js";
+import { optionsFromEnv } from "./env-config.js";
+import { decideRequest } from "../decision-engine/decide.js";
 
 /**
  * Everything needed to stand up authorization in one call. Most fields have
@@ -353,8 +354,7 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
       attachOutboundPropagation(axiosInstance, { serviceIdentity });
     },
     createClient: (config?: Record<string, unknown>) => {
-      const axiosLib = require("axios");
-      const instance = axiosLib.create(config ?? {}) as AxiosLike;
+      const instance = axios.create(config ?? {}) as AxiosLike;
       attachOutboundPropagation(instance, { serviceIdentity });
       return instance;
     },

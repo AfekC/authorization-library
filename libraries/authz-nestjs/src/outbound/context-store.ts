@@ -1,5 +1,5 @@
-import { AsyncLocalStorage } from "async_hooks";
-import { RequestContext } from "../inbound-auth/context";
+﻿import { AsyncLocalStorage } from "async_hooks";
+import { RequestContext } from "../inbound-auth/context.js";
 
 /** What an outbound call needs to propagate the inbound identity downstream. */
 export interface OutboundContext {

@@ -1,5 +1,5 @@
-import { createParamDecorator, ExecutionContext } from "@nestjs/common";
-import { RequestContext } from "../inbound-auth/context";
+﻿import { createParamDecorator, ExecutionContext } from "@nestjs/common";
+import { RequestContext } from "../inbound-auth/context.js";
 
 export const REQUEST_CONTEXT_KEY = "authzRequestContext";
 

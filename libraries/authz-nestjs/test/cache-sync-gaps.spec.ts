@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests for cache-sync correctness and crash gaps.
  *
  * Covers:
@@ -15,12 +15,12 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-import { DiskCache } from "../src/cache-sync/disk";
-import { applyRoleEvent } from "../src/cache-sync/events";
-import { CacheBootstrap } from "../src/cache-sync/bootstrap";
-import { PermissionCache } from "../src/permission-cache/cache";
-import { Metrics, METRIC } from "../src/observability/metrics";
-import { RoleServiceClient, CacheEventHandler, RoleEvent } from "../src/spi";
+import { DiskCache } from "../src/cache-sync/disk.js";
+import { applyRoleEvent } from "../src/cache-sync/events.js";
+import { CacheBootstrap } from "../src/cache-sync/bootstrap.js";
+import { PermissionCache } from "../src/permission-cache/cache.js";
+import { Metrics, METRIC } from "../src/observability/metrics.js";
+import { RoleServiceClient, CacheEventHandler, RoleEvent } from "../src/spi.js";
 
 // ---------------------------------------------------------------------------
 // Helper: write raw JSON to a temp file

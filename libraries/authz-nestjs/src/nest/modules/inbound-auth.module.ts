@@ -1,8 +1,8 @@
 import { Module } from "@nestjs/common";
-import { JwksTokenValidator } from "../../inbound-auth/token-validator";
-import { TokenValidator } from "../../spi";
-import { CreateAuthzOptions } from "../../bootstrap/create-authz";
-import { AUTHZ_OPTIONS, AUTHZ_VALIDATOR, AUTHZ_USER_AUTH_ENABLED } from "../authz-options";
+import { JwksTokenValidator } from "../../inbound-auth/token-validator.js";
+import { TokenValidator } from "../../spi/index.js";
+import { CreateAuthzOptions } from "../../bootstrap/create-authz.js";
+import { AUTHZ_OPTIONS, AUTHZ_VALIDATOR, AUTHZ_USER_AUTH_ENABLED } from "../authz-options.js";
 
 function userAuthEnabled(opts: CreateAuthzOptions): boolean {
   return Boolean(opts.userIssuer || opts.userJwksUri || opts.audience || opts.roleServiceUrl);

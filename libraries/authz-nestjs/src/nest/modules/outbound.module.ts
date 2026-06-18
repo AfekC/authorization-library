@@ -1,10 +1,10 @@
 import { Module, Injectable, OnModuleDestroy } from "@nestjs/common";
-import { ClientCredentialsProvider } from "../../service-token/provider";
-import { Metrics, METRIC } from "../../observability/metrics";
-import { ServiceIdentityProvider } from "../../spi";
-import { AuthzOutboundInterceptor } from "../outbound.interceptor";
-import { CreateAuthzOptions } from "../../bootstrap/create-authz";
-import { AUTHZ_OPTIONS, AUTHZ_METRICS, AUTHZ_SERVICE_IDENTITY } from "../authz-options";
+import { ClientCredentialsProvider } from "../../service-token/provider.js";
+import { Metrics, METRIC } from "../../observability/metrics.js";
+import { ServiceIdentityProvider } from "../../spi/index.js";
+import { AuthzOutboundInterceptor } from "../outbound.interceptor.js";
+import { CreateAuthzOptions } from "../../bootstrap/create-authz.js";
+import { AUTHZ_OPTIONS, AUTHZ_METRICS, AUTHZ_SERVICE_IDENTITY } from "../authz-options.js";
 
 @Injectable()
 export class OutboundLifecycle implements OnModuleDestroy {

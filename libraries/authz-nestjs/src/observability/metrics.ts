@@ -1,5 +1,5 @@
-import { PermissionCache } from "../permission-cache/cache";
-import { CacheMode } from "../cache-sync/bootstrap";
+﻿import { PermissionCache } from "../permission-cache/cache.js";
+import { CacheMode } from "../cache-sync/bootstrap.js";
 
 /** Simple in-process counters/gauges (architecture §10.2). */
 export class Metrics {

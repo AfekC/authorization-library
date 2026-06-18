@@ -1,12 +1,12 @@
-import {
+﻿import {
   CallHandler,
   ExecutionContext,
   Injectable,
   NestInterceptor,
 } from "@nestjs/common";
 import { Observable } from "rxjs";
-import { runWithOutboundContext } from "../outbound/context-store";
-import { REQUEST_CONTEXT_KEY } from "./request-context.decorator";
+import { runWithOutboundContext } from "../outbound/context-store.js";
+import { REQUEST_CONTEXT_KEY } from "./request-context.decorator.js";
 
 /**
  * Binds the inbound RequestContext (built by AuthzGuard) into the outbound

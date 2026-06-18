@@ -1,10 +1,11 @@
-import { AuthorizationEngine, auditPermission } from "../src/decision-engine/engine";
-import { PermissionCache } from "../src/permission-cache/cache";
-import { ConfigError, RuleInput } from "../src/rule-config/types";
-import { compileRules } from "../src/rule-config/compile";
-import { ConfigError as ConfigErrorClass } from "../src/rule-config/types";
-import { RequestContext } from "../src/inbound-auth/context";
-import { PolicyEngine, RoleResolver, AttributeProvider } from "../src/spi";
+﻿import * as jsYaml from "js-yaml";
+import { AuthorizationEngine, auditPermission } from "../src/decision-engine/engine.js";
+import { PermissionCache } from "../src/permission-cache/cache.js";
+import { ConfigError, RuleInput } from "../src/rule-config/types.js";
+import { compileRules } from "../src/rule-config/compile.js";
+import { ConfigError as ConfigErrorClass } from "../src/rule-config/types.js";
+import { RequestContext } from "../src/inbound-auth/context.js";
+import { PolicyEngine, RoleResolver, AttributeProvider } from "../src/spi.js";
 
 function engine(rules: RuleInput[]): AuthorizationEngine {
   return AuthorizationEngine.compile(rules);
@@ -12,7 +13,6 @@ function engine(rules: RuleInput[]): AuthorizationEngine {
 
 function yamlEngine(yaml: string): AuthorizationEngine {
   // Simulate what loadAuthorizationConfig does
-  const jsYaml = require("js-yaml");
   const parsed = jsYaml.load(yaml) as any;
   return engine(parsed.rules);
 }

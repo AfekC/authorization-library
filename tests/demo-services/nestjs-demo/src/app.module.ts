@@ -1,10 +1,10 @@
-import { Module } from "@nestjs/common";
+﻿import { Module } from "@nestjs/common";
 import { AuthzModule } from "authz-nestjs";
 import * as path from "path";
-import { HealthController } from "./health.controller";
-import { OrdersController } from "./orders.controller";
-import { InternalController } from "./internal.controller";
-import { FallbackController } from "./fallback.controller";
+import { HealthController } from "./health.controller.js";
+import { OrdersController } from "./orders.controller.js";
+import { InternalController } from "./internal.controller.js";
+import { FallbackController } from "./fallback.controller.js";
 
 const MOCK = process.env.MOCK_URL || "http://localhost:4000";
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Env-driven configuration: optionsFromEnv.
  *
  * Brings the NestJS library to parity with Spring's @ConfigurationProperties,
@@ -6,8 +6,8 @@
  * CreateAuthzOptions.
  */
 
-import { optionsFromEnv } from "../src/bootstrap/env-config";
-import { ConfigError } from "../src/rule-config/types";
+import { optionsFromEnv } from "../src/bootstrap/env-config.js";
+import { ConfigError } from "../src/rule-config/types.js";
 
 describe("optionsFromEnv — required trust roots", () => {
   it("maps the six required fields", () => {

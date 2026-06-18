@@ -1,18 +1,18 @@
-import * as fs from "fs";
+﻿import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { AuthorizationEngine, auditPermission } from "../src/decision-engine/engine";
-import { loadAuthorizationConfig } from "../src/rule-config/loader";
-import { PermissionCache } from "../src/permission-cache/cache";
-import { AuthzGuard } from "../src/nest/authz.guard";
-import { Metrics, METRIC } from "../src/observability/metrics";
-import { LoggingAuditSink } from "../src/audit/audit";
-import { CacheBootstrap } from "../src/cache-sync/bootstrap";
-import { DiskCache } from "../src/cache-sync/disk";
-import { CacheEventHandler, RoleMap, RoleServiceClient, TokenValidator } from "../src/spi";
-import { runWithOutboundContext } from "../src/outbound/context-store";
-import { attachOutboundPropagation } from "../src/outbound/propagation";
-import { buildRequestContext } from "../src/inbound-auth/context";
+import { AuthorizationEngine, auditPermission } from "../src/decision-engine/engine.js";
+import { loadAuthorizationConfig } from "../src/rule-config/loader.js";
+import { PermissionCache } from "../src/permission-cache/cache.js";
+import { AuthzGuard } from "../src/nest/authz.guard.js";
+import { Metrics, METRIC } from "../src/observability/metrics.js";
+import { LoggingAuditSink } from "../src/audit/audit.js";
+import { CacheBootstrap } from "../src/cache-sync/bootstrap.js";
+import { DiskCache } from "../src/cache-sync/disk.js";
+import { CacheEventHandler, RoleMap, RoleServiceClient, TokenValidator } from "../src/spi.js";
+import { runWithOutboundContext } from "../src/outbound/context-store.js";
+import { attachOutboundPropagation } from "../src/outbound/propagation.js";
+import { buildRequestContext } from "../src/inbound-auth/context.js";
 
 const silentAudit = new LoggingAuditSink({ info: () => {}, debug: () => {} });
 

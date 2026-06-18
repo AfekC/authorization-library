@@ -1,5 +1,5 @@
-import type { CreateAuthzOptions } from "./create-authz";
-import { ConfigError } from "../rule-config/types";
+﻿import type { CreateAuthzOptions } from "./create-authz.js";
+import { ConfigError } from "../rule-config/types.js";
 
 /**
  * Environment-variable-driven configuration for the authorization library.

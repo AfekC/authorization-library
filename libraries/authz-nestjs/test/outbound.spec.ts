@@ -1,8 +1,8 @@
-import nock from "nock";
-import { ClientCredentialsProvider } from "../src/service-token/provider";
-import { buildOutboundHeaders, attachOutboundPropagation } from "../src/outbound/propagation";
-import { buildRequestContext } from "../src/inbound-auth/context";
-import { runWithOutboundContext } from "../src/outbound/context-store";
+﻿import nock from "nock";
+import { ClientCredentialsProvider } from "../src/service-token/provider.js";
+import { buildOutboundHeaders, attachOutboundPropagation } from "../src/outbound/propagation.js";
+import { buildRequestContext } from "../src/inbound-auth/context.js";
+import { runWithOutboundContext } from "../src/outbound/context-store.js";
 
 const TOKEN_HOST = "http://sso";
 const TOKEN_PATH = "/token";

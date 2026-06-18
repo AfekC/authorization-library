@@ -1,8 +1,8 @@
-import { PermissionCache } from "../permission-cache/cache";
-import { CacheEventHandler, RoleServiceClient } from "../spi";
-import { Metrics, METRIC, GAUGE } from "../observability/metrics";
-import { DiskCache } from "./disk";
-import { applyRoleEvent } from "./events";
+﻿import { PermissionCache } from "../permission-cache/cache.js";
+import { CacheEventHandler, RoleServiceClient } from "../spi/index.js";
+import { Metrics, METRIC, GAUGE } from "../observability/metrics.js";
+import { DiskCache } from "./disk.js";
+import { applyRoleEvent } from "./events.js";
 
 /** Seed-retry backoff sequence: 2s → 4s → 8s → 8s… */
 const SEED_RETRY_DELAYS_MS = [2000, 4000, 8000, 8000];

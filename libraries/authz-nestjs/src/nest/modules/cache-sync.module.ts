@@ -1,14 +1,14 @@
-import { Module, OnApplicationBootstrap, OnModuleDestroy, Injectable } from "@nestjs/common";
-import { HttpRoleServiceClient } from "../../role-service-client/client";
-import { DiskCache } from "../../cache-sync/disk";
-import { KafkaCacheEventHandler } from "../../cache-sync/kafka";
-import { CacheBootstrap } from "../../cache-sync/bootstrap";
-import { PermissionCache } from "../../permission-cache/cache";
-import { Metrics, METRIC } from "../../observability/metrics";
-import { CreateAuthzOptions } from "../../bootstrap/create-authz";
+﻿import { Module, OnApplicationBootstrap, OnModuleDestroy, Injectable } from "@nestjs/common";
+import { HttpRoleServiceClient } from "../../role-service-client/client.js";
+import { DiskCache } from "../../cache-sync/disk.js";
+import { KafkaCacheEventHandler } from "../../cache-sync/kafka.js";
+import { CacheBootstrap } from "../../cache-sync/bootstrap.js";
+import { PermissionCache } from "../../permission-cache/cache.js";
+import { Metrics, METRIC } from "../../observability/metrics.js";
+import { CreateAuthzOptions } from "../../bootstrap/create-authz.js";
 import {
   AUTHZ_OPTIONS, AUTHZ_CACHE, AUTHZ_METRICS, AUTHZ_BOOTSTRAP,
-} from "../authz-options";
+} from "../authz-options.js";
 
 /** Runs the startup state machine after the DI graph is built, and stops it on shutdown. */
 @Injectable()

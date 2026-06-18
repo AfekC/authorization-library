@@ -1,5 +1,5 @@
-import { AuthorizationRequest, Decision, RuleInput } from "../rule-config/types";
-import { RequestContext } from "../inbound-auth/context";
+﻿import { AuthorizationRequest, Decision, RuleInput } from "../rule-config/types.js";
+import { RequestContext } from "../inbound-auth/context.js";
 
 /** Parsed claims from a validated token. */
 export interface TokenClaims {

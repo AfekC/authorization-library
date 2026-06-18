@@ -1,5 +1,5 @@
-import { PermissionCache } from "../permission-cache/cache";
-import { RoleEvent } from "../spi";
+﻿import { PermissionCache } from "../permission-cache/cache.js";
+import { RoleEvent } from "../spi/index.js";
 
 export interface ApplyResult {
   applied: boolean;

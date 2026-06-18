@@ -1,8 +1,8 @@
-import * as fs from "fs";
+﻿import * as fs from "fs";
 import { Module } from "@nestjs/common";
-import { loadAuthorizationConfig } from "../../rule-config/loader";
-import { CreateAuthzOptions } from "../../bootstrap/create-authz";
-import { AUTHZ_OPTIONS, AUTHZ_ENGINE } from "../authz-options";
+import { loadAuthorizationConfig } from "../../rule-config/loader.js";
+import { CreateAuthzOptions } from "../../bootstrap/create-authz.js";
+import { AUTHZ_OPTIONS, AUTHZ_ENGINE } from "../authz-options.js";
 
 @Module({
   providers: [
