@@ -108,6 +108,20 @@ describe("external permission source (§0.5b)", () => {
     await authz.stop();
   });
 
+  it("ignores roleServiceUrl entirely (not validated, not used) in external mode", async () => {
+    // A bogus roleServiceUrl would fail URL validation in full mode; external mode
+    // skips that branch and never constructs the Role Service client.
+    const resolver: RoleResolver = { permissionsForRole: () => new Set(["READ_ORDER"]) };
+    const authz = await createAuthzFromOptions({
+      ...baseOpts("M"),
+      roleServiceUrl: "not-a-valid-url",
+      roleResolver: resolver,
+    });
+    expect(authz.health().roleServiceLastSync).toBeNull();
+    expect(await run(authz)).toBe(200);
+    await authz.stop();
+  });
+
   it("fails fast when external mode is set without a resolver or policy engine", async () => {
     await expect(createAuthzFromOptions(baseOpts("M"))).rejects.toThrow(ConfigError);
   });

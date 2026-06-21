@@ -154,6 +154,22 @@ class AuthzAutoConfigurationTest {
         assertThrows(ConfigException.class, () -> validate(props));
     }
 
+    @Test
+    void configValidator_throwsWhenServiceOnlyCombinedWithRoleServiceUrl() {
+        AuthzProperties props = serviceAuthValid();
+        props.setServiceOnly(true);
+        props.setRoleServiceUrl("http://role-service:8080");
+        assertThrows(ConfigException.class, () -> validate(props));
+    }
+
+    @Test
+    void configValidator_throwsWhenServiceOnlyCombinedWithAudience() {
+        AuthzProperties props = serviceAuthValid();
+        props.setServiceOnly(true);
+        props.setAudience("my-service");
+        assertThrows(ConfigException.class, () -> validate(props));
+    }
+
     // ---- External permission source mode (§0.5b) ----------------------------
 
     @Test

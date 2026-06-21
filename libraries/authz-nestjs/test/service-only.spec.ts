@@ -67,9 +67,26 @@ describe("explicit service-only mode (§0.5)", () => {
     await authz.stop();
   });
 
-  it("rejects serviceOnly combined with a user-auth field", async () => {
+  it("strips the user identity even when a bearer rides alongside a service token", async () => {
+    const authz = await createAuthzFromOptions(serviceOnlyOpts());
+    // Both credentials present: the bearer is ignored, so the request is SERVICE,
+    // not USER_AND_SERVICE. A service-only /jobs rule still allows it...
+    expect(
+      await run(authz, { method: "POST", url: "/jobs", headers: { authorization: "Bearer x", "x-service-token": "svc" } }),
+    ).toBe(200);
+    // ...but a user-permission rule (/orders) can never match a SERVICE request -> DENY.
+    expect(
+      await run(authz, { url: "/orders", headers: { authorization: "Bearer x", "x-service-token": "svc" } }),
+    ).toBe(403);
+    await authz.stop();
+  });
+
+  it.each([
+    ["userIssuer", { userIssuer: "https://auth.example" }],
+    ["roleServiceUrl", { roleServiceUrl: "http://role-service:8080" }],
+  ])("rejects serviceOnly combined with %s", async (_label, extra) => {
     await expect(
-      createAuthzFromOptions({ ...serviceOnlyOpts(), userIssuer: "https://auth.example" }),
+      createAuthzFromOptions({ ...serviceOnlyOpts(), ...extra }),
     ).rejects.toThrow(ConfigError);
   });
 

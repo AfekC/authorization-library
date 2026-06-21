@@ -41,6 +41,22 @@ describe("optionsFromEnv — required trust roots", () => {
   });
 });
 
+describe("optionsFromEnv — service-only flag (AUTHZ_SERVICE_ONLY)", () => {
+  it.each(["true", "TRUE", "True", "1"])("maps %p to serviceOnly=true", (v) => {
+    expect(optionsFromEnv({ AUTHZ_SERVICE_ONLY: v }).serviceOnly).toBe(true);
+  });
+
+  it.each(["false", "0", "no", "off", "anything-else"])("maps %p to serviceOnly=false", (v) => {
+    expect(optionsFromEnv({ AUTHZ_SERVICE_ONLY: v }).serviceOnly).toBe(false);
+  });
+
+  it("omits serviceOnly entirely when absent or blank (library default applies)", () => {
+    expect("serviceOnly" in optionsFromEnv({})).toBe(false);
+    expect("serviceOnly" in optionsFromEnv({ AUTHZ_SERVICE_ONLY: "" })).toBe(false);
+    expect("serviceOnly" in optionsFromEnv({ AUTHZ_SERVICE_ONLY: "   " })).toBe(false);
+  });
+});
+
 describe("optionsFromEnv — rules source", () => {
   it("maps inline YAML and a YAML path", () => {
     expect(optionsFromEnv({ AUTHZ_AUTHORIZATION_YAML: "rules: []" })).toEqual({
