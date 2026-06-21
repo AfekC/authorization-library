@@ -53,6 +53,16 @@ public class AuthzCoreAutoConfiguration {
                 throw new com.example.authz.config.ConfigException("authz.service-jwks-uri must be configured");
             requireHttpUrl(props.getServiceJwksUri(), "authz.service-jwks-uri");
 
+            // Explicit SERVICE-ONLY mode is mutually exclusive with any user-auth config.
+            if (props.isServiceOnly()) {
+                boolean anyUserAuth = notBlank(props.getUserIssuer()) || notBlank(props.getUserJwksUri())
+                        || notBlank(props.getAudience()) || notBlank(props.getRoleServiceUrl())
+                        || props.isExternalPermissionSource();
+                if (anyUserAuth)
+                    throw new com.example.authz.config.ConfigException(
+                            "authz.service-only cannot be combined with user-auth properties or authz.external-permission-source");
+            }
+
             if (props.isUserAuthEnabled()) {
                 if (props.getUserIssuer() == null || props.getUserIssuer().isBlank())
                     throw new com.example.authz.config.ConfigException(
@@ -68,16 +78,22 @@ public class AuthzCoreAutoConfiguration {
                     throw new com.example.authz.config.ConfigException(
                             "authz.user.audience must be configured when user auth is enabled");
 
-                if (props.getRoleServiceUrl() == null || props.getRoleServiceUrl().isBlank())
-                    throw new com.example.authz.config.ConfigException(
-                            "authz.role-service-url must be configured when user auth is enabled");
-                requireHttpUrl(props.getRoleServiceUrl(), "authz.role-service-url");
+                // External-source mode (§0.5b) owns its own permission lookups, so
+                // the Role Service URL is unused and not required.
+                if (!props.isExternalPermissionSource()) {
+                    if (props.getRoleServiceUrl() == null || props.getRoleServiceUrl().isBlank())
+                        throw new com.example.authz.config.ConfigException(
+                                "authz.role-service-url must be configured when user auth is enabled");
+                    requireHttpUrl(props.getRoleServiceUrl(), "authz.role-service-url");
+                }
             }
 
             if (props.getTokenUrl() != null && !props.getTokenUrl().isBlank()) {
                 requireHttpUrl(props.getTokenUrl(), "authz.token-url");
             }
         }
+
+        private static boolean notBlank(String s) { return s != null && !s.isBlank(); }
 
         private static void requireHttpUrl(String value, String propertyName) {
             try {

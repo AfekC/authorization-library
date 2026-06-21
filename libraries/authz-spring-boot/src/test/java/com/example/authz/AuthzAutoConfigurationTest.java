@@ -1,12 +1,18 @@
 package com.example.authz;
 
 import com.example.authz.autoconfigure.AuthzCoreAutoConfiguration;
+import com.example.authz.autoconfigure.CacheSyncAutoConfiguration;
 import com.example.authz.autoconfigure.ObservabilityAutoConfiguration;
 import com.example.authz.autoconfigure.AuthzProperties;
 import com.example.authz.cache.PermissionCache;
 import com.example.authz.config.ConfigException;
+import com.example.authz.observability.AuthzHealth;
+import com.example.authz.observability.Metrics;
+import com.example.authz.sync.CacheBootstrap;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 
 import java.lang.reflect.Constructor;
@@ -117,6 +123,111 @@ class AuthzAutoConfigurationTest {
         withUserAuth(props);
         assertTrue(props.isUserAuthEnabled());
         assertDoesNotThrow(() -> validate(props));
+    }
+
+    // ---- Explicit service-only mode (§0.5) ----------------------------------
+
+    @Test
+    void serviceOnlyFlag_disablesUserAuth() {
+        AuthzProperties props = serviceAuthValid();
+        props.setServiceOnly(true);
+        assertFalse(props.isUserAuthEnabled());
+        assertDoesNotThrow(() -> validate(props));
+    }
+
+    @Test
+    void configValidator_throwsWhenServiceOnlyCombinedWithUserAuth() {
+        AuthzProperties props = serviceAuthValid();
+        props.setServiceOnly(true);
+        props.setUserIssuer("https://auth.example.com");
+        ConfigException ex = assertThrows(ConfigException.class, () -> validate(props));
+        assertEquals(
+                "authz.service-only cannot be combined with user-auth properties or authz.external-permission-source",
+                ex.getMessage());
+    }
+
+    @Test
+    void configValidator_throwsWhenServiceOnlyCombinedWithExternalSource() {
+        AuthzProperties props = serviceAuthValid();
+        props.setServiceOnly(true);
+        props.setExternalPermissionSource(true);
+        assertThrows(ConfigException.class, () -> validate(props));
+    }
+
+    // ---- External permission source mode (§0.5b) ----------------------------
+
+    @Test
+    void configValidator_passesInExternalModeWithoutRoleServiceUrl() {
+        AuthzProperties props = serviceAuthValid();
+        props.setUserIssuer("https://auth.example.com");
+        props.setUserJwksUri("https://auth.example.com/.well-known/jwks.json");
+        props.setAudience("my-service");
+        props.setExternalPermissionSource(true); // no role-service-url required
+        assertTrue(props.isUserAuthEnabled());
+        assertDoesNotThrow(() -> validate(props));
+    }
+
+    @Test
+    void authzHealth_worksWithoutBootstrap() {
+        // External mode: no CacheBootstrap bean — health must report cache-only.
+        AuthzHealth.Report report = new AuthzHealth(new PermissionCache(), null).report();
+        assertEquals("empty", report.cacheStatus());
+        assertEquals(CacheBootstrap.Mode.NORMAL.name(), report.mode());
+        assertNull(report.roleServiceLastSync());
+        assertFalse(report.kafkaConsumerConnected());
+    }
+
+    @Test
+    void configValidator_stillRequiresUserAuthFieldsInExternalMode() {
+        // External mode disables role distribution but keeps user-JWT validation,
+        // so the user-auth block is still all-or-nothing.
+        AuthzProperties props = serviceAuthValid();
+        props.setUserIssuer("https://auth.example.com");
+        props.setUserJwksUri("https://auth.example.com/.well-known/jwks.json");
+        props.setExternalPermissionSource(true); // audience still missing
+        ConfigException ex = assertThrows(ConfigException.class, () -> validate(props));
+        assertEquals("authz.user.audience must be configured when user auth is enabled", ex.getMessage());
+    }
+
+    @Test
+    void authzHealthFactoryToleratesAbsentBootstrap() {
+        // Mirrors external mode, where no CacheBootstrap bean exists.
+        ObjectProvider<CacheBootstrap> noBootstrap = new ObjectProvider<>() {
+            @Override public CacheBootstrap getObject() { throw new UnsupportedOperationException(); }
+            @Override public CacheBootstrap getObject(Object... args) { throw new UnsupportedOperationException(); }
+            @Override public CacheBootstrap getIfAvailable() { return null; }
+            @Override public CacheBootstrap getIfUnique() { return null; }
+        };
+        AuthzHealth health = new CacheSyncAutoConfiguration().authzHealth(new PermissionCache(), noBootstrap);
+        assertEquals(CacheBootstrap.Mode.NORMAL.name(), health.report().mode());
+        assertNull(health.report().roleServiceLastSync());
+    }
+
+    @Test
+    void cacheBootstrapBeanIsGatedOnExternalPermissionSource() throws Exception {
+        Method method = CacheSyncAutoConfiguration.class.getDeclaredMethod(
+                "cacheBootstrap", PermissionCache.class, Metrics.class, AuthzProperties.class);
+        ConditionalOnProperty cond = method.getAnnotation(ConditionalOnProperty.class);
+        assertNotNull(cond);
+        assertEquals("false", cond.havingValue());
+        assertTrue(cond.matchIfMissing());
+    }
+
+    @Test
+    void kafkaListenerAndDefaultResolverGatedOnExternalPermissionSource() throws Exception {
+        Method listener = CacheSyncAutoConfiguration.class.getDeclaredMethod(
+                "roleEventKafkaListener", CacheBootstrap.class);
+        assertNotNull(listener.getAnnotation(ConditionalOnProperty.class));
+        Method resolver = CacheSyncAutoConfiguration.class.getDeclaredMethod(
+                "authzRoleResolver", PermissionCache.class);
+        assertNotNull(resolver.getAnnotation(ConditionalOnProperty.class));
+    }
+
+    @Test
+    void authzHealthBeanInjectsBootstrapViaObjectProvider() throws Exception {
+        // Tolerates the absent CacheBootstrap in external mode.
+        assertNotNull(CacheSyncAutoConfiguration.class.getDeclaredMethod(
+                "authzHealth", PermissionCache.class, ObjectProvider.class));
     }
 
     @Test

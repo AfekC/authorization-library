@@ -40,9 +40,11 @@ Spring Boot auto-configuration library for config-driven authorization.
      role-service-url: http://role-service:8080
    ```
 
-   When user auth is omitted, the library runs in **service-only mode**: only
-   `X-Service-Token` is accepted, only `allowedServices` rules are evaluated,
-   and no role-permission machinery (Role Service, cache, Kafka) is activated.
+   When the user-auth block is omitted, the user check is fully disabled and the
+   library runs in **service-only mode** (see [Operating modes](#operating-modes)):
+   `Authorization` bearer tokens are ignored, only `X-Service-Token` is accepted,
+   only `allowedServices` rules can match, and no role-permission machinery (Role
+   Service, cache, reconciler, Kafka, disk) is activated.
 
 4. **Tune optional properties** *(only if defaults don't fit)* — see the
    [Configuration](#configuration) table for defaults.
@@ -69,6 +71,30 @@ concern. It exposes two framework-agnostic seams:
 Configure tracing/metrics/log export (OTLP, Prometheus, etc.) in your **service**
 using Spring Boot Actuator / your chosen observability starter.
 
+## Operating modes
+
+Service auth is always on. What varies is **whether user JWTs are checked** and
+**where role→permission data comes from**:
+
+| Mode | How to select | User JWTs | Role→permission source | Built-in distribution (Role Service + Kafka + disk) |
+|---|---|---|---|---|
+| **Full** (default) | set `authz.user.*` + `authz.role-service-url` | validated | library's Role Service + Kafka + disk pipeline | **on** |
+| **Service-only** (user check disabled) | omit the whole `authz.user` block (and `role-service-url`), or set `authz.service-only=true` to make it explicit | **ignored** — `Authorization` bearer tokens are never read | n/a (no roles) | **off** |
+| **External source** | set `authz.user.*` + `authz.external-permission-source=true` + a `Spi.RoleResolver` bean | validated | **your** resolver, backed by your store (Redis/Infinispan/Postgres) | **off** |
+
+- **Service-only mode** = the user check is fully disabled. With no user-auth
+  block, only `X-Service-Token` is accepted and only rules with `allowedServices`
+  can ever match; any rule requiring user `permissions` always denies. The
+  `@Conditional(OnUserAuthEnabled)` machinery (`CacheBootstrap`, Kafka listener,
+  health, cache-backed resolver) is not created at all. Set
+  `authz.service-only=true` to select this mode **explicitly** — a stray
+  user-auth property then fails fast at startup instead of silently switching to
+  full mode. It cannot be combined with any `authz.user.*` property,
+  `authz.role-service-url`, or `authz.external-permission-source`.
+- **External source mode** keeps the user check **on** but replaces the built-in
+  role distribution — see [External permission source](#external-permission-source).
+  `authz.role-service-url` is not required.
+
 ## Configuration
 
 All properties go in `application.yaml` under the `authz.*` namespace. They are
@@ -85,19 +111,23 @@ also bindable as `AUTHZ_*` environment variables (Spring relaxed binding).
 | `authz.jwks-timeout-ms` | no | `5000` | HTTP timeout (ms) for JWKS fetches during token validation |
 | `authz.service-token-use-claim` | no | `token_use` | JWT claim inspected to identify a service token |
 | `authz.service-token-use-value` | no | `service` | Expected value of the service-token-use claim |
+| `authz.service-only` | no | `false` | `true` selects [service-only mode](#operating-modes) explicitly; rejects any user-auth property at startup |
 | `authz.untrusted-header-prefixes` | no | *(empty)* | Extra inbound header-name prefixes to strip |
 | `authz.untrusted-header-exact` | no | *(empty)* | Extra exact inbound header names to strip |
 
 ### User auth (optional; all-or-nothing)
 
-When user auth is configured, **all** fields below must be set. When absent, the role-permission machinery is entirely disabled and the library runs in service-only mode — only `X-Service-Token` is accepted and only `allowedServices` rules are evaluated.
+User auth is **all-or-nothing**. Setting any field below means **all** of them must be set (validated at startup). Omitting the whole `authz.user` block disables the user check entirely — the library runs in **service-only mode** (see [Operating modes](#operating-modes)): `Authorization` bearer tokens are ignored, only `X-Service-Token` is accepted, and only `allowedServices` rules can match.
+
+> To keep the user check **on** but feed permissions from your own store instead of the Role Service, set `authz.external-permission-source=true`, provide a `Spi.RoleResolver` bean, and omit `authz.role-service-url` — see [External permission source](#external-permission-source).
 
 | Property | Required | Default | Description |
 |---|---|---|---|
 | `authz.user.issuer` | when configured | — | Issuer (`iss`) your user JWTs must carry |
 | `authz.user.jwks-uri` | when configured | — | JWKS endpoint for user-JWT signature verification |
 | `authz.user.audience` | when configured | — | Expected JWT audience (`aud`) for user JWTs |
-| `authz.role-service-url` | when configured | — | Authoritative Role Service base URL |
+| `authz.role-service-url` | when user auth on, **unless** external source | — | Authoritative Role Service base URL |
+| `authz.external-permission-source` | no | `false` | Disable built-in role distribution; supply a `Spi.RoleResolver` bean instead (see [External permission source](#external-permission-source)) |
 | `authz.role-service-connect-timeout` | no | `5000` | Role Service HTTP connect timeout (ms) |
 | `authz.role-service-read-timeout` | no | `5000` | Role Service HTTP read timeout (ms) |
 | `authz.reconcile-interval-ms` | no | `300000` | Periodic reconciler interval (ms). Seed-retry uses a separate 2s/4s/8s backoff. |
@@ -130,6 +160,25 @@ The auto-configuration registers:
 - **`RoleServiceClient`** — HTTP client for the Role Service
 - **`DiskCache`** — local file fallback for the role cache
 - **`AuditSink`** — logging audit event handler
+
+### External permission source
+
+To source permissions from your own store (Redis/Infinispan/Postgres) instead of
+the built-in Role Service + Kafka + disk pipeline, set
+`authz.external-permission-source=true` and supply a `Spi.RoleResolver` bean:
+
+```java
+@Bean
+Spi.RoleResolver roleResolver() {
+    return role -> mySnapshot.getOrDefault(role, Set.of());
+}
+```
+
+User-JWT validation stays enabled; the `CacheBootstrap` (Role Service fetch,
+reconciler, seed-retry, disk cache) and the Kafka role-event listener are not
+created, and `authz.role-service-url` is not required. Keep the resolver backed
+by an **in-memory** snapshot you refresh yourself — the request path must not
+make a remote call.
 
 ## Testing
 

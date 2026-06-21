@@ -29,6 +29,8 @@ auth-library/
 
 - **Config-driven authorization** — `authorization.yaml` per service, no annotations in business code
 - **Permission distribution** — Role Service (authoritative) + Kafka (incremental events) + disk cache (fallback)
+- **Service-only mode (§0.5)** — user JWTs ignored, role machinery off; selected by omitting all user-auth fields, or **explicitly** via NestJS `serviceOnly: true` / Spring `authz.service-only=true` (fail-fast if combined with any user-auth field or external-source flag).
+- **External permission source (§0.5b)** — a service may opt out of the built-in distribution and supply role→permissions from its own store (Redis/Infinispan/Postgres) by providing a custom `RoleResolver`. Toggle: NestJS `externalPermissionSource: true` (with `roleResolver`/`policyEngine`); Spring `authz.external-permission-source=true` (with a `Spi.RoleResolver` bean). User-JWT validation stays on; Role Service fetch, reconciler, seed-retry, disk cache, and Kafka role events are all disabled; `roleServiceUrl` is not required. The resolver must serve from an in-memory snapshot the service refreshes itself (no remote call on the request path).
 - **Combined auth** — user JWT AND service token must both pass when both are present
 - **Local decisions** — all authorization is in-memory, no remote calls on the request path
 - **Global enforcement** — Spring: global filter; NestJS: global guard; no per-route opt-in

@@ -37,6 +37,16 @@ export interface CreateAuthzOptions {
   clockSkewSeconds?: number;
 
   /**
+   * Explicit SERVICE-ONLY mode (§0.5). When true, user JWTs are ignored and the
+   * role-permission machinery (Role Service, cache sync, Kafka) is disabled —
+   * the same effect as omitting the user-auth fields, but stated explicitly so a
+   * stray user-auth value can't silently flip the service into full mode. It is
+   * a config error to combine `serviceOnly` with any user-auth field or
+   * `externalPermissionSource`.
+   */
+  serviceOnly?: boolean;
+
+  /**
    * User trust roots (optional, all-or-nothing). Omit all three to run in
    * SERVICE-ONLY mode (§0.5): user JWTs are ignored and the role-permission
    * machinery (Role Service, cache sync, Kafka) is disabled.
@@ -45,7 +55,17 @@ export interface CreateAuthzOptions {
   userJwksUri?: string;
   audience?: string;
 
-  /** Permission distribution (required only when user auth is enabled). */
+  /**
+   * External permission source (§0.5b). When true, the built-in role-permission
+   * distribution machinery (Role Service snapshot, reconciler, seed-retry, disk
+   * cache, Kafka role events) is disabled and the service supplies permissions
+   * via an injected {@link roleResolver} (or {@link policyEngine}) backed by its
+   * own store (Redis/Postgres/Infinispan). User-JWT validation stays enabled;
+   * `roleServiceUrl` is not required in this mode.
+   */
+  externalPermissionSource?: boolean;
+
+  /** Permission distribution (required only when user auth is enabled AND not external). */
   roleServiceUrl?: string;
   diskCachePath?: string;
   /** Claim that marks a service token (default "token_use"). */
@@ -170,9 +190,21 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
   requireHttpUrl(opts.serviceIssuer, "serviceIssuer");
   requireHttpUrl(opts.serviceJwksUri, "serviceJwksUri");
 
+  // Explicit SERVICE-ONLY mode (§0.5): mutually exclusive with any user-auth
+  // config — fail fast rather than silently ignore a contradictory value.
+  if (
+    opts.serviceOnly &&
+    (opts.userIssuer || opts.userJwksUri || opts.audience || opts.roleServiceUrl || opts.externalPermissionSource)
+  ) {
+    throw new ConfigError(
+      "serviceOnly cannot be combined with user-auth options (userIssuer/userJwksUri/audience/roleServiceUrl) or externalPermissionSource",
+    );
+  }
+
   // User auth is OPTIONAL and all-or-nothing (§0.5, §3.3). Enabled when any
-  // user-auth field is present; then every required field must be present.
-  const userAuthEnabled = Boolean(
+  // user-auth field is present (and not explicitly service-only); then every
+  // required field must be present.
+  const userAuthEnabled = !opts.serviceOnly && Boolean(
     opts.userIssuer || opts.userJwksUri || opts.audience || opts.roleServiceUrl,
   );
   if (userAuthEnabled) {
@@ -182,11 +214,21 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
       throw new ConfigError("Missing required option when user auth is enabled: userJwksUri");
     if (!opts.audience || opts.audience.trim().length === 0)
       throw new ConfigError("Missing required option when user auth is enabled: audience");
-    if (!opts.roleServiceUrl)
-      throw new ConfigError("Missing required option when user auth is enabled: roleServiceUrl");
     requireHttpUrl(opts.userIssuer, "userIssuer");
     requireHttpUrl(opts.userJwksUri, "userJwksUri");
-    requireHttpUrl(opts.roleServiceUrl, "roleServiceUrl");
+    if (opts.externalPermissionSource) {
+      // External-source mode: the service owns permission lookups, so a resolver
+      // (or policy engine) is mandatory — otherwise every decision falls through
+      // to an empty built-in cache and silently denies. roleServiceUrl is unused.
+      if (!opts.roleResolver && !opts.policyEngine)
+        throw new ConfigError(
+          "externalPermissionSource requires a roleResolver or policyEngine to be provided",
+        );
+    } else {
+      if (!opts.roleServiceUrl)
+        throw new ConfigError("Missing required option when user auth is enabled: roleServiceUrl");
+      requireHttpUrl(opts.roleServiceUrl, "roleServiceUrl");
+    }
   }
   if (opts.serviceToken?.tokenUrl) {
     requireHttpUrl(opts.serviceToken.tokenUrl, "serviceToken.tokenUrl");
@@ -242,7 +284,7 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
   // wired by the host through authzKafkaOptions() + connectMicroservice().
   let boot: CacheBootstrap | undefined;
   let mode: CacheMode = "normal";
-  if (userAuthEnabled) {
+  if (userAuthEnabled && !opts.externalPermissionSource) {
     boot = new CacheBootstrap(
       cache,
       new HttpRoleServiceClient({

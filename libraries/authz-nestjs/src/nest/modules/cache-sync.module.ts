@@ -39,7 +39,8 @@ export class CacheSyncLifecycle implements OnApplicationBootstrap, OnModuleDestr
       provide: AUTHZ_BOOTSTRAP,
       useFactory: (opts: CreateAuthzOptions, cache: PermissionCache, metrics: Metrics): CacheBootstrap | null => {
         const enabled = Boolean(opts.userIssuer || opts.userJwksUri || opts.audience || opts.roleServiceUrl);
-        if (!enabled) return null; // SERVICE-ONLY mode
+        // SERVICE-ONLY mode, or external-source mode (§0.5b): no built-in sync.
+        if (!enabled || opts.externalPermissionSource) return null;
         return new CacheBootstrap(
           cache,
           new HttpRoleServiceClient({

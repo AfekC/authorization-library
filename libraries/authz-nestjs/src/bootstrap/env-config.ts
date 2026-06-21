@@ -21,6 +21,7 @@ import { ConfigError } from "../rule-config/types.js";
  * | `AUTHZ_USER_JWKS_URI` | `userJwksUri` | required only when user auth enabled |
  * | `AUTHZ_USER_AUDIENCE` | `audience` | required only when user auth enabled |
  * | `AUTHZ_ROLE_SERVICE_URL` | `roleServiceUrl` | required only when user auth enabled |
+ * | `AUTHZ_SERVICE_ONLY` | `serviceOnly` | `true`/`1` → explicit SERVICE-ONLY mode (§0.5); rejects user-auth fields |
  * | `AUTHZ_AUTHORIZATION_YAML` | `authorizationYaml` | one-of (rules as text) |
  * | `AUTHZ_AUTHORIZATION_YAML_PATH` | `authorizationYamlPath` | one-of (rules file path) |
  * | `AUTHZ_CLOCK_SKEW_SECONDS` | `clockSkewSeconds` | number |
@@ -54,6 +55,14 @@ function stringFromEnv(env: EnvSource, name: string): string | undefined {
   return raw === undefined || raw.length === 0 ? undefined : raw;
 }
 
+/** Parse a boolean env var ("true"/"1" → true). Absent/blank → undefined. */
+function booleanFromEnv(env: EnvSource, name: string): boolean | undefined {
+  const raw = env[name];
+  if (raw === undefined || raw.trim().length === 0) return undefined;
+  const v = raw.trim().toLowerCase();
+  return v === "true" || v === "1";
+}
+
 /**
  * Map `AUTHZ_*` environment variables onto a {@link CreateAuthzOptions} object.
  *
@@ -83,6 +92,8 @@ export function optionsFromEnv(env: EnvSource = process.env): Partial<CreateAuth
   if (audience !== undefined) opts.audience = audience;
   const roleServiceUrl = stringFromEnv(env, "AUTHZ_ROLE_SERVICE_URL");
   if (roleServiceUrl !== undefined) opts.roleServiceUrl = roleServiceUrl;
+  const serviceOnly = booleanFromEnv(env, "AUTHZ_SERVICE_ONLY");
+  if (serviceOnly !== undefined) opts.serviceOnly = serviceOnly;
 
   // --- rules source (one of) ---
   const yaml = stringFromEnv(env, "AUTHZ_AUTHORIZATION_YAML");

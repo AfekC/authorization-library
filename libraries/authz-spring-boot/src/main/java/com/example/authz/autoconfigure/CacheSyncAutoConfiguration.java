@@ -8,9 +8,11 @@ import com.example.authz.sync.CacheBootstrap;
 import com.example.authz.sync.DiskCache;
 import com.example.authz.sync.HttpRoleServiceClient;
 import com.example.authz.sync.RoleEventKafkaListener;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -31,6 +33,7 @@ public class CacheSyncAutoConfiguration {
 
     @Bean(destroyMethod = "stop")
     @Conditional(OnUserAuthEnabled.class)
+    @ConditionalOnProperty(name = "authz.external-permission-source", havingValue = "false", matchIfMissing = true)
     @ConditionalOnMissingBean
     public CacheBootstrap cacheBootstrap(PermissionCache cache, Metrics metrics, AuthzProperties props) {
         CacheBootstrap boot = new CacheBootstrap(
@@ -51,6 +54,7 @@ public class CacheSyncAutoConfiguration {
 
     @Bean
     @Conditional(OnUserAuthEnabled.class)
+    @ConditionalOnProperty(name = "authz.external-permission-source", havingValue = "false", matchIfMissing = true)
     @ConditionalOnMissingBean
     @ConditionalOnClass(KafkaListener.class)
     public RoleEventKafkaListener roleEventKafkaListener(CacheBootstrap cacheBootstrap) {
@@ -60,12 +64,19 @@ public class CacheSyncAutoConfiguration {
     @Bean
     @Conditional(OnUserAuthEnabled.class)
     @ConditionalOnMissingBean
-    public AuthzHealth authzHealth(PermissionCache cache, CacheBootstrap bootstrap) {
-        return new AuthzHealth(cache, bootstrap);
+    public AuthzHealth authzHealth(PermissionCache cache, ObjectProvider<CacheBootstrap> bootstrap) {
+        // External-source mode (§0.5b) has no CacheBootstrap — health reports cache-only.
+        return new AuthzHealth(cache, bootstrap.getIfAvailable());
     }
 
+    /**
+     * Default cache-backed resolver — NOT created in external-source mode, so a
+     * service in that mode must supply its own {@code Spi.RoleResolver} bean
+     * (a missing one then fails fast at startup rather than denying every request).
+     */
     @Bean
     @Conditional(OnUserAuthEnabled.class)
+    @ConditionalOnProperty(name = "authz.external-permission-source", havingValue = "false", matchIfMissing = true)
     @ConditionalOnMissingBean
     public Spi.RoleResolver authzRoleResolver(PermissionCache cache) {
         return cache::permissionsForRole;

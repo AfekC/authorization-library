@@ -21,6 +21,14 @@ public class AuthzProperties {
     /** SSO/OIDC issuer + JWKS (service tokens). */
     private String serviceIssuer;
     private String serviceJwksUri;
+    /**
+     * Explicit SERVICE-ONLY mode (§0.5). When true, user JWTs are ignored and
+     * the role-permission machinery is disabled — the same effect as omitting the
+     * {@code authz.user} block, but stated explicitly so a stray user-auth value
+     * can't silently flip the service into FULL mode. It is a startup error to
+     * combine this with any user-auth property or {@link #externalPermissionSource}.
+     */
+    private boolean serviceOnly = false;
 
     /** Nested user-auth configuration, bound under {@code authz.user.*}. */
     public static class User {
@@ -61,6 +69,14 @@ public class AuthzProperties {
      * validation on the request path indefinitely. Matches the NestJS default.
      */
     private long jwksTimeoutMs = 5000;
+    /**
+     * External permission source (§0.5b). When true, the built-in role-permission
+     * distribution machinery (Role Service snapshot, reconciler, seed-retry, disk
+     * cache, Kafka role events) is disabled and the service must supply its own
+     * {@code Spi.RoleResolver} bean backed by its store (Redis/Postgres/Infinispan).
+     * User-JWT validation stays enabled; {@link #roleServiceUrl} is not required.
+     */
+    private boolean externalPermissionSource = false;
     /** Authoritative Role Service base URL. */
     private String roleServiceUrl;
     /** Role Service HTTP connect timeout in ms (default 5000). */
@@ -124,11 +140,16 @@ public class AuthzProperties {
      * is false the library runs in SERVICE-ONLY mode.
      */
     public boolean isUserAuthEnabled() {
+        if (serviceOnly) return false; // explicit SERVICE-ONLY mode (§0.5)
         return notBlank(user.getIssuer()) || notBlank(user.getJwksUri())
                 || notBlank(user.getAudience()) || notBlank(roleServiceUrl);
     }
 
     private static boolean notBlank(String s) { return s != null && !s.isBlank(); }
+    public boolean isServiceOnly() { return serviceOnly; }
+    public void setServiceOnly(boolean v) { this.serviceOnly = v; }
+    public boolean isExternalPermissionSource() { return externalPermissionSource; }
+    public void setExternalPermissionSource(boolean v) { this.externalPermissionSource = v; }
     public String getServiceTokenUseClaim() { return serviceTokenUseClaim; }
     public void setServiceTokenUseClaim(String v) { this.serviceTokenUseClaim = v; }
     public String getServiceTokenUseValue() { return serviceTokenUseValue; }

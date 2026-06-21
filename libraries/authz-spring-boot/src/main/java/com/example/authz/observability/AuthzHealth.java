@@ -24,11 +24,18 @@ public class AuthzHealth {
 
     public Report report() {
         boolean empty = cache.snapshot().isEmpty();
+        long ageSeconds = Math.max(0,
+                // B7: FLOOR to whole seconds — explicit integer division truncation (1.999s → 1).
+                (System.currentTimeMillis() - cache.lastUpdatedAt().toEpochMilli()) / 1000);
+        // External-source mode (§0.5b): no CacheBootstrap — report cache-only, mirroring
+        // the NestJS no-boot health branch (mode "normal", no sync, kafka disconnected).
+        if (bootstrap == null) {
+            return new Report(empty ? "empty" : "initialized", ageSeconds, CacheBootstrap.Mode.NORMAL.name(), null, false);
+        }
         Instant sync = bootstrap.roleServiceLastSync();
         return new Report(
                 empty ? "empty" : "initialized",
-                // B7: FLOOR to whole seconds — explicit integer division truncation (1.999s → 1).
-                Math.max(0, (System.currentTimeMillis() - cache.lastUpdatedAt().toEpochMilli()) / 1000),
+                ageSeconds,
                 bootstrap.mode().name(),
                 // B8: truncate to millisecond precision to match NestJS Date.toISOString() output.
                 sync != null ? sync.truncatedTo(ChronoUnit.MILLIS).toString() : null,

@@ -5,6 +5,7 @@ import { CreateAuthzOptions } from "../../bootstrap/create-authz.js";
 import { AUTHZ_OPTIONS, AUTHZ_VALIDATOR, AUTHZ_USER_AUTH_ENABLED } from "../authz-options.js";
 
 function userAuthEnabled(opts: CreateAuthzOptions): boolean {
+  if (opts.serviceOnly) return false; // explicit SERVICE-ONLY mode (§0.5)
   return Boolean(opts.userIssuer || opts.userJwksUri || opts.audience || opts.roleServiceUrl);
 }
 
