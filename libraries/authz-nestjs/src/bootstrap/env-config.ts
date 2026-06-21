@@ -30,15 +30,10 @@ import { ConfigError } from "../rule-config/types.js";
  * | `AUTHZ_DISK_CACHE_PATH` | `diskCachePath` | |
  * | `AUTHZ_SERVICE_TOKEN_USE_CLAIM` | `serviceTokenUseClaim` | |
  * | `AUTHZ_SERVICE_TOKEN_USE_VALUE` | `serviceTokenUseValue` | |
- * | `AUTHZ_KAFKA_BROKERS` | `kafkaBrokers` | comma-separated; empty disables Kafka |
- * | `AUTHZ_ROLE_UPDATES_TOPIC` | `roleUpdatesTopic` | |
- * | `AUTHZ_ROLE_DELETE_TOPIC` | `roleDeleteTopic` | |
- * | `AUTHZ_PUBLISH_ROLES_TOPIC` | `publishRolesTopic` | |
- * | `AUTHZ_KAFKA_GROUP_ID` | `kafkaGroupId` | |
- * | `AUTHZ_KAFKA_CLIENT_ID` | `kafkaClientId` | |
  * | `AUTHZ_TOKEN_URL` | `serviceToken.tokenUrl` | outbound identity |
  * | `AUTHZ_CLIENT_ID` | `serviceToken.clientId` | presence enables outbound identity |
  * | `AUTHZ_CLIENT_SECRET` | `serviceToken.clientSecret` | inject from a secret store |
+ * | `AUTHZ_OUTBOUND_ALLOWED_HOSTS` | `outboundAllowedHosts` | comma-separated trusted downstream hosts; default empty → attach credentials to nothing (T19) |
  */
 export type EnvSource = Record<string, string | undefined>;
 
@@ -112,26 +107,6 @@ export function optionsFromEnv(env: EnvSource = process.env): Partial<CreateAuth
   if (useClaim !== undefined) opts.serviceTokenUseClaim = useClaim;
   const useValue = stringFromEnv(env, "AUTHZ_SERVICE_TOKEN_USE_VALUE");
   if (useValue !== undefined) opts.serviceTokenUseValue = useValue;
-  const updatesTopic = stringFromEnv(env, "AUTHZ_ROLE_UPDATES_TOPIC");
-  if (updatesTopic !== undefined) opts.roleUpdatesTopic = updatesTopic;
-  const deleteTopic = stringFromEnv(env, "AUTHZ_ROLE_DELETE_TOPIC");
-  if (deleteTopic !== undefined) opts.roleDeleteTopic = deleteTopic;
-  const publishTopic = stringFromEnv(env, "AUTHZ_PUBLISH_ROLES_TOPIC");
-  if (publishTopic !== undefined) opts.publishRolesTopic = publishTopic;
-  const groupId = stringFromEnv(env, "AUTHZ_KAFKA_GROUP_ID");
-  if (groupId !== undefined) opts.kafkaGroupId = groupId;
-  const clientId = stringFromEnv(env, "AUTHZ_KAFKA_CLIENT_ID");
-  if (clientId !== undefined) opts.kafkaClientId = clientId;
-
-  // --- Kafka brokers (comma-separated; present-but-empty -> [] disables Kafka) ---
-  const brokersRaw = env["AUTHZ_KAFKA_BROKERS"];
-  if (brokersRaw !== undefined) {
-    opts.kafkaBrokers = brokersRaw
-      .split(",")
-      .map((b) => b.trim())
-      .filter((b) => b.length > 0);
-  }
-
   // --- outbound identity (serviceToken): only when AUTHZ_CLIENT_ID is set ---
   const svcClientId = stringFromEnv(env, "AUTHZ_CLIENT_ID");
   if (svcClientId !== undefined) {
@@ -150,22 +125,15 @@ export function optionsFromEnv(env: EnvSource = process.env): Partial<CreateAuth
     opts.serviceToken = { tokenUrl, clientId: svcClientId, clientSecret };
   }
 
-  // --- observability (@hatraa/otel-ts): only when AUTHZ_OTEL_ENABLED is truthy ---
-  const otelEnabled = stringFromEnv(env, "AUTHZ_OTEL_ENABLED");
-  if (otelEnabled === "true" || otelEnabled === "1") {
-    opts.observability = {
-      enabled: true,
-      serviceName: stringFromEnv(env, "AUTHZ_OTEL_SERVICE_NAME"),
-      systemName: stringFromEnv(env, "AUTHZ_OTEL_SYSTEM_NAME"),
-      envName: stringFromEnv(env, "AUTHZ_OTEL_ENV_NAME") as
-        | "drill"
-        | "live"
-        | "global"
-        | undefined,
-      otelExporterOtlpEndpoint:
-        stringFromEnv(env, "AUTHZ_OTEL_EXPORTER_OTLP_ENDPOINT") ??
-        stringFromEnv(env, "OTEL_EXPORTER_OTLP_ENDPOINT"),
-    };
+  // --- outbound trusted-host allowlist (T19): comma-separated hosts ---
+  // Present-but-empty → [] (credentials attached to nothing — the safe default).
+  // Absent → field omitted entirely (library default applies, which is also []).
+  const allowedHostsRaw = env["AUTHZ_OUTBOUND_ALLOWED_HOSTS"];
+  if (allowedHostsRaw !== undefined) {
+    opts.outboundAllowedHosts = allowedHostsRaw
+      .split(",")
+      .map((h) => h.trim())
+      .filter((h) => h.length > 0);
   }
 
   return opts;

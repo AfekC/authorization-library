@@ -27,11 +27,6 @@
       <version>0.1.0</version>
     </dependency>
     <dependency>
-      <groupId>idf.hatraa</groupId>
-      <artifactId>o11y-lib</artifactId>
-      <version>1.0.1</version>
-    </dependency>
-    <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
@@ -49,12 +44,28 @@
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-config</artifactId>
     </dependency>
-    <!-- Provides kafka-clients so the library's Kafka consumer can run. -->
+    <!-- spring-kafka: activates kafkaListenerContainerFactory; required for @KafkaListener beans. -->
     <dependency>
       <groupId>org.springframework.kafka</groupId>
       <artifactId>spring-kafka</artifactId>
     </dependency>
+    <!-- Confluent Avro deserializer: KafkaAvroDeserializer decodes GenericRecord values.
+         The library's RoleEventKafkaListener receives GenericRecord; the deserializer is
+         a host runtime dep configured via spring.kafka.consumer.value-deserializer. -->
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>kafka-avro-serializer</artifactId>
+      <version>7.9.0</version>
+    </dependency>
   </dependencies>
+
+  <repositories>
+    <repository>
+      <id>confluent</id>
+      <name>Confluent Maven Repository</name>
+      <url>https://packages.confluent.io/maven/</url>
+    </repository>
+  </repositories>
 
   <build>
     <plugins>

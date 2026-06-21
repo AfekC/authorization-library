@@ -10,17 +10,17 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.js"
   },
   "dependencies": {
-    "@hatraa/otel-ts": "file:./vendor/hatraa-otel-ts-7.0.11.tgz",
+    "@kafkajs/confluent-schema-registry": "^3.3.0",
     "axios": "^1.18.0",
     "jose": "^6.2.3",
     "js-yaml": "^4.2.0",
-    "kafkajs": "^2.2.4",
     "p-retry": "^8.0.0",
     "simple-oauth2": "^5.1.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^11",
     "@nestjs/core": "^11",
+    "@nestjs/microservices": "^11",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8"
   },
@@ -29,6 +29,9 @@
       "optional": true
     },
     "@nestjs/core": {
+      "optional": true
+    },
+    "@nestjs/microservices": {
       "optional": true
     },
     "rxjs": {
@@ -41,6 +44,7 @@
   "devDependencies": {
     "@nestjs/common": "^11.1.27",
     "@nestjs/core": "^11.1.27",
+    "@nestjs/microservices": "^11.1.27",
     "@nestjs/testing": "^11.1.27",
     "@types/jest": "^30",
     "@types/js-yaml": "^4.0.9",

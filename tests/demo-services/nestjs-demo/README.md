@@ -24,10 +24,10 @@ All wiring is in [`src/main.js`](src/main.js):
 4. **Business routes** — handlers read `req.authz`; authorization logic stays in
    the yaml file only.
 
-Observability is enabled in the demo: `initObservability()` runs before
-Express/Axios are loaded, then `createAuthz()` enables the o11y bridge through
-`AUTHZ_OTEL_*`. The demo emits structured audit logs, an `authz.request` span,
-and Prometheus metrics on `http://localhost:9464/metrics`.
+The library owns no observability SDK config — that's a service concern, so this
+demo wires none. It uses the default `LoggingAuditSink` and the in-process
+`Metrics` registry. A real service would initialize its own telemetry SDK and
+optionally pass an `auditSink`.
 
 For the full `AUTHZ_*` variable list, `CreateAuthzOptions`, and library API
 (`req.authz`, `authz.health()`, SPI overrides, etc.), see

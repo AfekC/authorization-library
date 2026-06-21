@@ -96,6 +96,7 @@
 
 import express from "express";
 import { Kafka } from "kafkajs";
+import { SchemaRegistry, SchemaType } from "@kafkajs/confluent-schema-registry";
 import { createIssuer } from "./keys.js";
 
 const PORT = process.env.PORT || 4000;
@@ -103,9 +104,42 @@ const AUTH_ISSUER = process.env.AUTH_ISSUER || `http://localhost:${PORT}/auth`;
 const SSO_ISSUER = process.env.SSO_ISSUER || `http://localhost:${PORT}/sso`;
 const AUDIENCE = process.env.API_AUDIENCE || "orders-api";
 const KAFKA_BROKERS = (process.env.KAFKA_BROKERS || "").split(",").filter(Boolean);
+const SCHEMA_REGISTRY_URL = process.env.SCHEMA_REGISTRY_URL || "http://localhost:8081";
 const ROLE_UPDATES_TOPIC = process.env.ROLE_UPDATES_TOPIC || "role-updates";
 const ROLE_DELETE_TOPIC = process.env.ROLE_DELETE_TOPIC || "role-delete";
 const PUBLISH_ROLES_TOPIC = process.env.PUBLISH_ROLES_TOPIC || "publish-roles";
+
+// Confluent-Avro wire schemas the consumers expect (KafkaAvroDeserializer in Spring,
+// @kafkajs/confluent-schema-registry in NestJS). version is a nullable long. The
+// publish-roles trigger carries a trivial payload — the library ignores it, but the
+// value must still be Avro-framed because all three topics share one deserializer.
+const AVRO_SCHEMAS = {
+  [ROLE_UPDATES_TOPIC]: {
+    type: "record",
+    name: "RoleUpsertEvent",
+    namespace: "com.example.authz.events",
+    fields: [
+      { name: "roleId", type: "string" },
+      { name: "permissions", type: { type: "array", items: "string" } },
+      { name: "version", type: ["null", "long"], default: null },
+    ],
+  },
+  [ROLE_DELETE_TOPIC]: {
+    type: "record",
+    name: "RoleDeleteEvent",
+    namespace: "com.example.authz.events",
+    fields: [
+      { name: "roleId", type: "string" },
+      { name: "version", type: ["null", "long"], default: null },
+    ],
+  },
+  [PUBLISH_ROLES_TOPIC]: {
+    type: "record",
+    name: "PublishRolesTrigger",
+    namespace: "com.example.authz.events",
+    fields: [{ name: "trigger", type: "long" }],
+  },
+};
 
 // In-memory authoritative role state (mutable via /admin endpoints).
 let roleState = {
@@ -176,7 +210,9 @@ async function _applyFault(faultState, res) {
 }
 
 async function main() {
-  const auth = await createIssuer(AUTH_ISSUER, "auth-key-1");
+  // Auth Service issues user JWTs with Ed25519 (the provider was re-platformed
+  // from RS256 to EdDSA). SSO issues service tokens with RS256 (Keycloak-style).
+  const auth = await createIssuer(AUTH_ISSUER, "auth-key-1", "EdDSA");
   const sso = await createIssuer(SSO_ISSUER, "sso-key-1");
 
   // Helper: resolve "auth"|"sso" string to the issuer object.
@@ -187,6 +223,8 @@ async function main() {
   }
 
   let producer = null;
+  let registry = null;
+  const schemaIds = {}; // topic -> registered Avro schema id
   if (KAFKA_BROKERS.length) {
     const kafka = new Kafka({ clientId: "mock-service", brokers: KAFKA_BROKERS });
     producer = kafka.producer();
@@ -194,7 +232,21 @@ async function main() {
       console.error("Kafka connect failed (continuing without):", e.message);
       producer = null;
     });
+    if (producer) {
+      registry = new SchemaRegistry({ host: SCHEMA_REGISTRY_URL });
+      // Register each topic's value schema under the conventional <topic>-value subject.
+      for (const [topic, schema] of Object.entries(AVRO_SCHEMAS)) {
+        const { id } = await registry.register(
+          { type: SchemaType.AVRO, schema: JSON.stringify(schema) },
+          { subject: `${topic}-value` },
+        );
+        schemaIds[topic] = id;
+      }
+    }
   }
+
+  /** Confluent-encode a payload against the topic's registered schema. */
+  const encode = (topic, payload) => registry.encode(schemaIds[topic], payload);
 
   const app = express();
   app.use(express.json({ limit: "256kb" }));
@@ -306,16 +358,17 @@ async function main() {
     if (operation === "UPSERT_ROLE") {
       roleState.roles[roleId] = permissions;
       topic = ROLE_UPDATES_TOPIC;
-      message = { roleId, permissions };
+      // version is a nullable long in the Avro schema; omit → null.
+      message = { roleId, permissions, version: req.body?.version ?? null };
     } else if (operation === "DELETE_ROLE") {
       delete roleState.roles[roleId];
       topic = ROLE_DELETE_TOPIC;
-      message = { roleId };
+      message = { roleId, version: req.body?.version ?? null };
     } else {
       return res.status(400).json({ error: "unknown operation" });
     }
     if (producer) {
-      await producer.send({ topic, messages: [{ value: JSON.stringify(message) }] });
+      await producer.send({ topic, messages: [{ value: await encode(topic, message) }] });
     }
     res.json({ ok: true, kafka: !!producer });
   });
@@ -337,7 +390,7 @@ async function main() {
     if (producer) {
       await producer.send({
         topic: PUBLISH_ROLES_TOPIC,
-        messages: [{ value: JSON.stringify({ trigger: Date.now() }) }],
+        messages: [{ value: await encode(PUBLISH_ROLES_TOPIC, { trigger: Date.now() }) }],
       });
     }
     res.json({ ok: true, kafka: !!producer });

@@ -44,12 +44,6 @@ authz.token-url=${MOCK_URL}/sso/token
 authz.client-id=spring-demo-id
 authz.client-secret=spring-demo-secret
 
-# Optional: in-house o11y metadata
-service.name=spring-demo
-environment=drill
-system=auth-library
-management.otlp.tracing.endpoint=http://localhost:4317
-
 # Optional tuning (defaults shown)
 authz.reconcile-interval-ms=300000  # library default: 5 min
 authz.service-token-use-claim=token_use
@@ -91,10 +85,10 @@ RequestContext ctx = (RequestContext) req.getAttribute(AuthorizationFilter.CONTE
 @Autowired AuthzRequestContext authz;   // authz.context(), authz.userJwt()
 ```
 
-Observability support requires installing `idf.hatraa:o11y-lib:1.0.1` into the
-local Maven repo first with `tests\scripts\install-o11y.ps1`. The demo then
-emits JSON logs, Prometheus metrics, and OTLP traces through the in-house o11y
-starter.
+Observability SDK config is a service concern, so this demo wires none. The
+library uses the default `LoggingAuditSink` and exposes the in-process `Metrics`
+registry, which auto-mirrors to Micrometer if the service adds a `MeterRegistry`
+(e.g. `spring-boot-starter-actuator`).
 
 Every `authz.*` bean is `@ConditionalOnMissingBean`, so you can override any piece
 (e.g. supply your own `Spi.TokenValidator`) without forking the library.

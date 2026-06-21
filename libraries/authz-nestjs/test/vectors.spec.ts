@@ -9,7 +9,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 interface DecisionVector {
   name: string;
-  rules: RuleInput[];
+  /** Present on standard decision/compile-error vectors; absent on non-decision vectors (e.g. _type: "version-guard"). */
+  rules?: RuleInput[];
   roleCache?: Record<string, string[]>;
   request?: {
     method: string;
@@ -21,6 +22,8 @@ interface DecisionVector {
   expected?: "ALLOW" | "DENY";
   expectCompileError?: boolean;
   reason?: string;
+  /** Non-decision contract vectors (e.g. "version-guard") carry a _type field; skip them here. */
+  _type?: string;
 }
 
 const VECTOR_DIR = path.resolve(
@@ -51,11 +54,14 @@ describe("shared test vectors", () => {
     describe(file, () => {
       for (const v of vectors) {
         it(v.name, () => {
+          // Skip non-decision vectors (e.g. version-guard contract vectors).
+          // These carry a _type field and are validated by their own test suites.
+          if (v._type !== undefined) return;
           if (v.expectCompileError) {
-            expect(() => AuthorizationEngine.compile(v.rules)).toThrow();
+            expect(() => AuthorizationEngine.compile(v.rules!)).toThrow();
             return;
           }
-          const engine = AuthorizationEngine.compile(v.rules);
+          const engine = AuthorizationEngine.compile(v.rules!);
           const cache = new PermissionCache(v.roleCache ?? {});
           const result = engine.authorize(v.request!, cache);
           expect(result).toBe(v.expected);

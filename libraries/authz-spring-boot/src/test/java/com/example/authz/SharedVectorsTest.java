@@ -51,6 +51,10 @@ class SharedVectorsTest {
             for (Path file : vectorFiles) {
                 JsonNode arr = MAPPER.readTree(Files.readString(file));
                 for (JsonNode v : arr) {
+                    // Non-decision contract vectors (e.g. _type: "version-guard") carry a _type
+                    // field and are validated by their own test suites; skip them here. Mirrors
+                    // the NestJS vectors.spec.ts skip so both runners agree on this file.
+                    if (v.has("_type")) continue;
                     String name = file.getFileName() + " :: " + v.get("name").asText();
                     tests.add(dynamicTest(name, () -> runVector(v)));
                 }

@@ -33,9 +33,10 @@ export {
 // Distribution / cache sync
 export { HttpRoleServiceClient } from "./role-service-client/client.js";
 export { DiskCache, DiskSnapshot } from "./cache-sync/disk.js";
-export { applyRoleEvent, parseRoleEvent } from "./cache-sync/events.js";
-export { KafkaCacheEventHandler } from "./cache-sync/kafka.js";
+export { applyUpsert, applyDelete } from "./cache-sync/events.js";
 export { CacheBootstrap, CacheBootstrapError, CacheMode } from "./cache-sync/bootstrap.js";
+export { RoleEventsController } from "./cache-sync/role-events.controller.js";
+export { authzKafkaOptions } from "./cache-sync/kafka-options.js";
 
 // Outbound / service token
 export { ClientCredentialsProvider } from "./service-token/provider.js";
@@ -53,18 +54,6 @@ export {
 // Audit / observability
 export { LoggingAuditSink, buildAuditEvent, formatInfoLine } from "./audit/audit.js";
 export { Metrics, METRIC, GAUGE, buildHealth, HealthReport } from "./observability/metrics.js";
-
-// OpenTelemetry integration (@hatraa/otel-ts) — opt-in
-export {
-  initObservability,
-  isObservabilityEnabled,
-  createAuthzTracer,
-  ObservabilityConfig,
-  AuthzTracer,
-  AuthzSpan,
-} from "./observability/otel.js";
-export { bridgeMetricsToOtel } from "./observability/otel-bridge.js";
-export { OtelAuditSink } from "./observability/otel-audit-sink.js";
 
 // One-call bootstrap (simplest adoption path)
 export {

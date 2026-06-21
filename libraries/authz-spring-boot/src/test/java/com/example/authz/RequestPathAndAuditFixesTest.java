@@ -18,6 +18,7 @@ import com.example.authz.observability.Metrics;
 import com.example.authz.observability.Metrics.TokenFailureMode;
 import com.example.authz.spi.Spi;
 import com.example.authz.sync.RoleEvents;
+import com.example.authz.sync.RoleUpsertEvent;
 import com.example.authz.web.AuthorizationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -647,15 +648,16 @@ class RequestPathAndAuditFixesTest {
     }
 
     @Test
-    void d2_roleEventSkippedTotalIncrementedOnUnknownOperation() {
+    void d2_roleEventSkippedTotalIncrementedOnSkippedApply() {
         Metrics metrics = new Metrics();
         PermissionCache cache = new PermissionCache(Map.of("MANAGER", List.of("READ")));
 
-        // Apply an unknown operation — RoleEvents.apply returns !applied()
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, Map.of("operation", "FROBNICATE"));
-        assertFalse(result.applied(), "Unknown operation must not be applied");
+        // Apply a blank roleId — RoleEvents.applyUpsert returns !applied()
+        RoleEvents.ApplyResult result = RoleEvents.applyUpsert(cache,
+                new RoleUpsertEvent("", List.of("READ"), null));
+        assertFalse(result.applied(), "Blank roleId must not be applied");
 
-        // The caller (KafkaCacheEventHandler) increments ROLE_EVENT_SKIPPED when !applied.
+        // CacheBootstrap.applyUpsert increments ROLE_EVENT_SKIPPED when !applied.
         // Here we verify the metric name exists and increments correctly.
         metrics.inc(Metrics.ROLE_EVENT_SKIPPED);
         assertEquals(1, metrics.get(Metrics.ROLE_EVENT_SKIPPED),
@@ -670,10 +672,10 @@ class RequestPathAndAuditFixesTest {
     void d2_roleEventSkippedNotIncrementedOnSuccessfulApply() {
         Metrics metrics = new Metrics();
         PermissionCache cache = new PermissionCache();
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache,
-                Map.of("operation", "UPSERT_ROLE", "roleId", "R", "permissions", List.of("READ")));
+        RoleEvents.ApplyResult result = RoleEvents.applyUpsert(cache,
+                new RoleUpsertEvent("R", List.of("READ"), null));
         assertTrue(result.applied(), "Valid UPSERT_ROLE must apply");
-        // Simulate KafkaCacheEventHandler: only inc when !applied
+        // CacheBootstrap.applyUpsert: only inc ROLE_EVENT_SKIPPED when !applied
         if (!result.applied()) metrics.inc(Metrics.ROLE_EVENT_SKIPPED);
         assertEquals(0, metrics.get(Metrics.ROLE_EVENT_SKIPPED),
                 "D2: role_event_skipped_total must NOT increment on successful apply");

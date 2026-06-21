@@ -71,11 +71,10 @@ In both, business routes contain **no** authorization code; rules live entirely 
   NestJS axios interceptor) — no per-call header building.
 - **Security** — global enforcement, identity-header stripping, `alg:none` rejected.
 - **Observability** — per-decision audit (INFO + DEBUG, including the governing permission),
-  metrics counters/gauges, health snapshot.
-- **Local o11y integration** — both stacks support local observability libraries without
-  publishing them to external repositories. Spring Boot installs the local
-  `idf.hatraa:o11y-lib` artifact into the repo used by the Docker build wrapper;
-  NestJS vendors `@hatraa/otel-ts` in `libraries/authz-nestjs/vendor/`.
+  metrics counters/gauges, health snapshot. The libraries own no observability SDK
+  config — that's a service concern. They expose seams: a pluggable `AuditSink` and an
+  in-process `Metrics` registry (Spring auto-mirrors it to a service-provided Micrometer
+  `MeterRegistry`).
 
 ## Running the tests
 

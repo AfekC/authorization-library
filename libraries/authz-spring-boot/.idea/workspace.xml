@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="1de2bae6-f31a-4f03-b2a5-9ccc4d4bb02f" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../../CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../CLAUDE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../docs/contracts/kafka-events.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs/contracts/kafka-events.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../docs/contracts/test-vectors/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs/contracts/test-vectors/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/bootstrap/create-authz.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/src/bootstrap/create-authz.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/bootstrap/env-config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/src/bootstrap/env-config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/cache-sync/bootstrap.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/src/cache-sync/bootstrap.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/cache-sync/events.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/src/cache-sync/events.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/cache-sync/kafka.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/inbound-auth/token-validator.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/src/inbound-auth/token-validator.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/src/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/nest/modules/cache-sync.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/src/nest/modules/cache-sync.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/nest/modules/observability.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/src/nest/modules/observability.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/observability/otel-audit-sink.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/observability/otel-bridge.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/observability/otel.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/outbound/propagation.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/src/outbound/propagation.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/role-service-client/client.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/src/role-service-client/client.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/src/spi/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/src/spi/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/test/architecture-fixes.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/test/architecture-fixes.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/test/cache-sync-gaps.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/test/cache-sync-gaps.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/test/env-config.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/test/env-config.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/test/error-handling-gaps.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/test/error-handling-gaps.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/test/kafka-handler.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/test/modules.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/test/modules.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/test/n4-n7-m4-gaps.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/test/n4-n7-m4-gaps.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/test/observability-otel.spec.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/test/outbound.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/test/outbound.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/test/standards-gaps.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/test/standards-gaps.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/test/token-validator.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/test/token-validator.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/test/vectors.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/test/vectors.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../authz-nestjs/vendor/hatraa-otel-ts-7.0.11.tgz" beforeDir="false" afterPath="$PROJECT_DIR$/../authz-nestjs/vendor/hatraa-otel-ts-7.0.11.tgz" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/authz/autoconfigure/AuthzProperties.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/authz/autoconfigure/AuthzProperties.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/authz/autoconfigure/CacheSyncAutoConfiguration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/authz/autoconfigure/CacheSyncAutoConfiguration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/authz/autoconfigure/InboundAuthAutoConfiguration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/authz/autoconfigure/InboundAuthAutoConfiguration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/authz/autoconfigure/ObservabilityAutoConfiguration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/authz/autoconfigure/ObservabilityAutoConfiguration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/authz/cache/PermissionCache.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/authz/cache/PermissionCache.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/authz/spi/Spi.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/authz/spi/Spi.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/authz/spi/package-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/authz/spi/package-info.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/authz/sync/CacheBootstrap.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/authz/sync/CacheBootstrap.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/authz/sync/KafkaCacheEventHandler.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/authz/sync/RoleEvents.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/authz/sync/RoleEvents.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/authz/web/NimbusJwksTokenValidator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/authz/web/NimbusJwksTokenValidator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/authz/ArchitectureFixesTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/example/authz/ArchitectureFixesTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/authz/AuthzAutoConfigurationTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/example/authz/AuthzAutoConfigurationTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/authz/CacheConcurrencyTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/example/authz/CacheConcurrencyTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/authz/HardeningGapsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/example/authz/HardeningGapsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/authz/KafkaCacheEventHandlerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/authz/ModulesTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/example/authz/ModulesTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/authz/NimbusJwksTokenValidatorTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/example/authz/NimbusJwksTokenValidatorTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/authz/ObservabilityAndRoleClientTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/example/authz/ObservabilityAndRoleClientTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/authz/RequestPathAndAuditFixesTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/example/authz/RequestPathAndAuditFixesTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/authz/SharedVectorsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/example/authz/SharedVectorsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/authz/StandardsGapsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/example/authz/StandardsGapsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/mock-service/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/mock-service/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/mock-service/src/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/mock-service/src/index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/mock-service/src/keys.js" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/mock-service/src/keys.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/src/app.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/src/app.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/src/health.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/src/health.controller.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/src/main.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/src/main.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/src/orders.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/src/orders.controller.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/nestjs-demo/tsconfig.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/spring-demo/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/spring-demo/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/spring-demo/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/spring-demo/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/demo-services/spring-demo/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/demo-services/spring-demo/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/e2e/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../../tests/e2e/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/scripts/install-o11y-node.ps1" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/scripts/install-o11y-node.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tests/scripts/install-o11y.ps1" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 5
+}]]></component>
+  <component name="ProjectId" id="3FSH0gToM7BYaY8OiGF00IbILfG" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Maven.authz-spring-boot [install].executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="1de2bae6-f31a-4f03-b2a5-9ccc4d4bb02f" name="Changes" comment="" />
+      <created>1782061328913</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1782061328913</updated>
+    </task>
+    <servers />
+  </component>
+</project>

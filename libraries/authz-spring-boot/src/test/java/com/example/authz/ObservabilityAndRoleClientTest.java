@@ -7,9 +7,7 @@ import com.example.authz.observability.Metrics;
 import com.example.authz.sync.CacheBootstrap;
 import com.example.authz.sync.DiskCache;
 import com.example.authz.sync.HttpRoleServiceClient;
-import com.example.authz.web.NimbusJwksTokenValidator;
 import com.sun.net.httpserver.HttpServer;
-import idf.hatraa.annotation.Span;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +15,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -86,15 +83,6 @@ class ObservabilityAndRoleClientTest {
 
     private String stubUrl() {
         return "http://localhost:" + stubPort;
-    }
-
-    @Test
-    void o11y_tokenValidationEntryPointsAreSpanned() throws Exception {
-        Method user = NimbusJwksTokenValidator.class.getMethod("validateUserToken", String.class);
-        Method service = NimbusJwksTokenValidator.class.getMethod("validateServiceToken", String.class);
-
-        assertEquals("authz.validate_user_token", user.getAnnotation(Span.class).name());
-        assertEquals("authz.validate_service_token", service.getAnnotation(Span.class).name());
     }
 
     // =========================================================================
@@ -286,7 +274,7 @@ class ObservabilityAndRoleClientTest {
     @Test
     void d3_reportKafkaConsumerConnectedFalseWithNoEventHandler(@TempDir Path tmp) {
         PermissionCache cache = new PermissionCache();
-        // No Spi.CacheEventHandler wired -> kafkaConnected stays false
+        // No RoleEventKafkaListener calling setKafkaConnected -> kafkaConnected stays false
         CacheBootstrap boot = new CacheBootstrap(cache,
                 () -> Map.of("R", List.of("READ")),
                 new DiskCache(tmp.resolve("d3f.json")));
@@ -300,24 +288,18 @@ class ObservabilityAndRoleClientTest {
     @Test
     void d3_reportKafkaConsumerConnectedTrueWhenHandlerStartsOk(@TempDir Path tmp) {
         PermissionCache cache = new PermissionCache();
-        // A no-op CacheEventHandler that starts successfully
-        com.example.authz.spi.Spi.CacheEventHandler handler =
-                new com.example.authz.spi.Spi.CacheEventHandler() {
-            public void start(java.util.function.Consumer<Map<String, Object>> onEvent,
-                              Runnable onRefresh) {
-                // start without error -> kafkaConnected = true
-            }
-            public void stop() {}
-        };
+        // Kafka connection is now managed by RoleEventKafkaListener, which calls
+        // setKafkaConnected(true) once it has started. Simulate that here.
         CacheBootstrap boot = new CacheBootstrap(cache,
                 () -> Map.of("R", List.of("READ")),
                 new DiskCache(tmp.resolve("d3g.json")),
-                handler, new Metrics());
+                new Metrics());
         boot.start();
+        boot.setKafkaConnected(true); // simulates RoleEventKafkaListener reporting in
 
         Report report = new AuthzHealth(cache, boot).report();
         assertTrue(report.kafkaConsumerConnected(),
-                "D3: kafkaConsumerConnected must be true when the event handler starts without error");
+                "D3: kafkaConsumerConnected must be true when the listener reports connected");
     }
 
     @Test
@@ -343,7 +325,7 @@ class ObservabilityAndRoleClientTest {
         CacheBootstrap boot = new CacheBootstrap(cache,
                 () -> Map.of("R", List.of("READ")),
                 new DiskCache(tmp.resolve("d2v.json")),
-                null, metrics);
+                metrics);
         boot.start();
 
         long ageGauge = metrics.get(Metrics.CACHE_AGE_SECONDS);
@@ -358,7 +340,7 @@ class ObservabilityAndRoleClientTest {
         CacheBootstrap boot = new CacheBootstrap(cache,
                 () -> Map.of("R", List.of("READ")),
                 new DiskCache(tmp.resolve("d2a.json")),
-                null, metrics);
+                metrics);
         boot.start();
 
         long ageGauge = metrics.get(Metrics.CACHE_AGE_SECONDS);
@@ -373,7 +355,7 @@ class ObservabilityAndRoleClientTest {
         CacheBootstrap boot = new CacheBootstrap(cache,
                 () -> Map.of("R", List.of("READ")),
                 new DiskCache(tmp.resolve("d2az.json")),
-                null, metrics);
+                metrics);
         boot.start(); // sets lastUpdatedAt = now, then calls updateGauges()
 
         // Immediately after start(), the age must be 0 (< 1 second elapsed)
@@ -393,7 +375,7 @@ class ObservabilityAndRoleClientTest {
         CacheBootstrap boot = new CacheBootstrap(cache,
                 () -> Map.of("X", List.of("Y")),
                 new DiskCache(tmp.resolve("d2gc.json")),
-                null, metrics);
+                metrics);
         boot.start();
 
         // Counters unaffected by gauge sets
@@ -430,7 +412,7 @@ class ObservabilityAndRoleClientTest {
             throw new RuntimeException("role service unavailable (N5 test)");
         };
 
-        CacheBootstrap boot = new CacheBootstrap(cache, failingClient, disk, null, metrics);
+        CacheBootstrap boot = new CacheBootstrap(cache, failingClient, disk, metrics);
         // start() fails the initial fetch, falls back to seed
         boot.start();
         assertEquals(CacheBootstrap.Mode.SEED, boot.mode(), "N5: must start in SEED mode");
@@ -466,7 +448,7 @@ class ObservabilityAndRoleClientTest {
 
         // Start successfully first
         CacheBootstrap boot = new CacheBootstrap(cache,
-                () -> Map.of("R", List.of("READ")), disk, null, metrics);
+                () -> Map.of("R", List.of("READ")), disk, metrics);
         boot.start();
 
         long before = metrics.get(Metrics.ROLE_REFRESH_FAILURES);
@@ -475,7 +457,7 @@ class ObservabilityAndRoleClientTest {
         // so create a new bootstrap that fails immediately on forcedRefresh
         CacheBootstrap failBoot = new CacheBootstrap(cache,
                 () -> { throw new RuntimeException("forced fail"); },
-                disk, null, metrics);
+                disk, metrics);
         failBoot.forcedRefresh();
 
         assertEquals(before + 1, metrics.get(Metrics.ROLE_REFRESH_FAILURES),

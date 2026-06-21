@@ -186,16 +186,14 @@ class ArchitectureFixesTest {
 
     @Test
     void kafkaUnreachableAtStartupIsFailOpen(@org.junit.jupiter.api.io.TempDir Path tmp) {
+        // CacheBootstrap.start() no longer manages Kafka subscription — that is
+        // driven by RoleEventKafkaListener. start() must succeed (NORMAL) even
+        // when no Kafka infrastructure is present, and kafkaConnected stays false
+        // until the listener calls setKafkaConnected(true).
         Spi.RoleServiceClient ok = () -> Map.of("VIEWER", List.of("READ_ORDER"));
-        Spi.CacheEventHandler failingEvents = new Spi.CacheEventHandler() {
-            public void start(java.util.function.Consumer<Map<String, Object>> onEvent, Runnable onRefresh) {
-                throw new RuntimeException("broker down");
-            }
-            public void stop() {}
-        };
         PermissionCache cache = new PermissionCache();
         CacheBootstrap boot = new CacheBootstrap(
-                cache, ok, new DiskCache(tmp.resolve("k.json")), failingEvents, new Metrics());
+                cache, ok, new DiskCache(tmp.resolve("k.json")), new Metrics());
 
         assertEquals(CacheBootstrap.Mode.NORMAL, boot.start());
         assertFalse(boot.isKafkaConnected());

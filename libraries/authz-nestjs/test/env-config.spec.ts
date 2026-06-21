@@ -76,22 +76,6 @@ describe("optionsFromEnv — numbers", () => {
   });
 });
 
-describe("optionsFromEnv — Kafka brokers", () => {
-  it("splits a comma-separated list and trims entries", () => {
-    expect(optionsFromEnv({ AUTHZ_KAFKA_BROKERS: "a:9092, b:9092 ,c:9092" })).toEqual({
-      kafkaBrokers: ["a:9092", "b:9092", "c:9092"],
-    });
-  });
-
-  it("maps a present-but-empty value to [] (Kafka disabled)", () => {
-    expect(optionsFromEnv({ AUTHZ_KAFKA_BROKERS: "" })).toEqual({ kafkaBrokers: [] });
-  });
-
-  it("omits kafkaBrokers entirely when the var is absent", () => {
-    expect("kafkaBrokers" in optionsFromEnv({})).toBe(false);
-  });
-});
-
 describe("optionsFromEnv — outbound identity (serviceToken)", () => {
   it("assembles serviceToken when AUTHZ_CLIENT_ID is set", () => {
     const opts = optionsFromEnv({
@@ -124,4 +108,41 @@ describe("optionsFromEnv — outbound identity (serviceToken)", () => {
   });
 });
 
+describe("optionsFromEnv — outbound trusted-host allowlist (T19)", () => {
+  it("parses a comma-separated list of hosts into outboundAllowedHosts", () => {
+    const opts = optionsFromEnv({
+      AUTHZ_OUTBOUND_ALLOWED_HOSTS: "api.internal, payments.internal:8443 , reports.internal",
+    });
+    expect(opts.outboundAllowedHosts).toEqual([
+      "api.internal",
+      "payments.internal:8443",
+      "reports.internal",
+    ]);
+  });
+
+  it("maps a single host to a one-element array", () => {
+    const opts = optionsFromEnv({ AUTHZ_OUTBOUND_ALLOWED_HOSTS: "api.internal" });
+    expect(opts.outboundAllowedHosts).toEqual(["api.internal"]);
+  });
+
+  it("maps a present-but-empty value to [] (attach credentials to nothing)", () => {
+    const opts = optionsFromEnv({ AUTHZ_OUTBOUND_ALLOWED_HOSTS: "" });
+    expect(opts.outboundAllowedHosts).toEqual([]);
+  });
+
+  it("omits outboundAllowedHosts entirely when the var is absent", () => {
+    const opts = optionsFromEnv({});
+    expect("outboundAllowedHosts" in opts).toBe(false);
+  });
+
+  it("trims whitespace around each entry", () => {
+    const opts = optionsFromEnv({ AUTHZ_OUTBOUND_ALLOWED_HOSTS: "  a.internal  ,  b.internal  " });
+    expect(opts.outboundAllowedHosts).toEqual(["a.internal", "b.internal"]);
+  });
+
+  it("skips blank-only comma entries (e.g. trailing comma)", () => {
+    const opts = optionsFromEnv({ AUTHZ_OUTBOUND_ALLOWED_HOSTS: "a.internal,,b.internal," });
+    expect(opts.outboundAllowedHosts).toEqual(["a.internal", "b.internal"]);
+  });
+});
 

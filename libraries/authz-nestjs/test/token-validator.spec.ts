@@ -1,9 +1,12 @@
 ﻿/**
  * Direct unit tests for JwksTokenValidator (D1/G8).
  *
- * Uses `jose` to generate ephemeral RSA keys and mint JWTs in-process.
+ * Uses `jose` to generate ephemeral Ed25519 keys and mint JWTs in-process.
  * The JWKS endpoint is served by a lightweight HTTP server so that
  * `createRemoteJWKSet` can fetch it.
+ *
+ * T1: The default algorithm allow-list is now ["EdDSA"] only (Ed25519).
+ * All key generation uses Ed25519; the "wrong-alg" test verifies HS256 is rejected.
  */
 import * as http from "http";
 import { AddressInfo } from "net";
@@ -68,7 +71,7 @@ async function startJwksServer(keySets: KeySet[]): Promise<{
 async function mintJwt(
   ks: KeySet,
   claims: Record<string, unknown>,
-  alg = "RS256",
+  alg = "EdDSA",
 ): Promise<string> {
   let builder = new SignJWT(claims)
     .setProtectedHeader({ alg, kid: ks.kid });
@@ -93,10 +96,11 @@ let validator: JwksTokenValidator;
 let cfg: JwksValidatorConfig;
 
 beforeAll(async () => {
+  // T1: All keys are Ed25519 (EdDSA) — the provider re-platformed from RS256.
   [userKeys, serviceKeys, wrongKeys] = await Promise.all([
-    makeKeySet("RS256", "user-key-1"),
-    makeKeySet("RS256", "svc-key-1"),
-    makeKeySet("RS256", "wrong-key"),
+    makeKeySet("Ed25519", "user-key-1"),
+    makeKeySet("Ed25519", "svc-key-1"),
+    makeKeySet("Ed25519", "wrong-key"),
   ]);
 
   [userJwksServer, serviceJwksServer] = await Promise.all([
@@ -180,7 +184,7 @@ describe("JwksTokenValidator.validateUserToken", () => {
   });
 
   it("B2/D1 — unexpected algorithm (e.g. HS256) → throws", async () => {
-    // Mint a token using HS256 (symmetric) — our validator pins RS256/ES256
+    // Mint a token using HS256 (symmetric) — our validator pins EdDSA only (T1)
     const secret = new TextEncoder().encode("super-secret");
     const jwt = await new SignJWT({
       sub: "user-x",
@@ -433,5 +437,71 @@ describe("userPrincipalFromClaims", () => {
   it("returns null for absent/invalid claims", () => {
     const p = userPrincipalFromClaims({ userId: "u-1" });
     expect(p.roleId).toBeNull();
+  });
+});
+
+// ===========================================================================
+// T5 — optional audience check on service tokens
+// ===========================================================================
+
+describe("T5 — JwksTokenValidator.validateServiceToken optional audience", () => {
+  it("T5 — no serviceAudience configured → audience claim is not enforced (default off)", async () => {
+    // Default config has no serviceAudience — token without aud passes.
+    const jwt = await validServiceJwt();
+    await expect(validator.validateServiceToken(jwt)).resolves.toBeDefined();
+  });
+
+  it("T5 — serviceAudience configured → token with matching aud passes", async () => {
+    const audValidator = new JwksTokenValidator({
+      ...cfg,
+      serviceAudience: "api://internal-service",
+    });
+    const jwt = await mintJwt(serviceKeys, {
+      sub: "svc-scheduler",
+      service_name: "scheduler",
+      token_use: "service",
+      iss: SERVICE_ISSUER,
+      aud: "api://internal-service",
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+    await expect(audValidator.validateServiceToken(jwt)).resolves.toBeDefined();
+  });
+
+  it("T5 — serviceAudience configured → token with wrong aud → throws", async () => {
+    const audValidator = new JwksTokenValidator({
+      ...cfg,
+      serviceAudience: "api://internal-service",
+    });
+    const jwt = await mintJwt(serviceKeys, {
+      sub: "svc-scheduler",
+      service_name: "scheduler",
+      token_use: "service",
+      iss: SERVICE_ISSUER,
+      aud: "api://wrong-audience",
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+    await expect(audValidator.validateServiceToken(jwt)).rejects.toMatchObject({
+      message: expect.stringContaining("service token validation failed"),
+      cause: expect.any(Error),
+    });
+  });
+
+  it("T5 — serviceAudience configured → token with no aud claim → throws", async () => {
+    const audValidator = new JwksTokenValidator({
+      ...cfg,
+      serviceAudience: "api://internal-service",
+    });
+    const jwt = await mintJwt(serviceKeys, {
+      sub: "svc-scheduler",
+      service_name: "scheduler",
+      token_use: "service",
+      iss: SERVICE_ISSUER,
+      // aud deliberately omitted
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+    await expect(audValidator.validateServiceToken(jwt)).rejects.toMatchObject({
+      message: expect.stringContaining("service token validation failed"),
+      cause: expect.any(Error),
+    });
   });
 });

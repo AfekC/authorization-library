@@ -13,12 +13,10 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Observability beans: the in-process Metrics registry, optional Micrometer
- * mirroring, the o11y-lib compatibility util, and the default audit sink.
- * Declared before the in-house ObservabilityAutoConfiguration so the Metrics
- * bean exists when that starter wires its registry.
+ * mirroring, and the default audit sink. The library exposes these seams; the
+ * consuming service owns any otel/o11y SDK configuration.
  */
-@AutoConfiguration(after = AuthzCoreAutoConfiguration.class,
-        beforeName = "idf.hatraa.ObservabilityAutoConfiguration")
+@AutoConfiguration(after = AuthzCoreAutoConfiguration.class)
 public class ObservabilityAutoConfiguration {
 
     @Bean
@@ -66,16 +64,6 @@ public class ObservabilityAutoConfiguration {
                     });
                 }
             };
-        }
-    }
-
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnClass(name = "idf.hatraa.util.ConfigurationUtil")
-    static class O11yCompatibilityBinding {
-        @Bean
-        @ConditionalOnMissingBean
-        idf.hatraa.util.ConfigurationUtil authzO11yConfigurationUtil() {
-            return new idf.hatraa.util.ConfigurationUtil();
         }
     }
 }

@@ -25,13 +25,15 @@ public class InboundAuthAutoConfiguration {
             return NimbusJwksTokenValidator.serviceOnly(
                     props.getServiceIssuer(), props.getServiceJwksUri(),
                     props.getServiceTokenUseClaim(), props.getServiceTokenUseValue(),
-                    props.getClockSkewSeconds(), props.getJwksTimeoutMs());
+                    props.getClockSkewSeconds(), props.getJwksTimeoutMs(),
+                    props.getServiceTokenAudience());
         }
         return new NimbusJwksTokenValidator(
                 props.getUserIssuer(), props.getUserJwksUri(),
                 props.getServiceIssuer(), props.getServiceJwksUri(),
                 props.getAudience(), props.getServiceTokenUseClaim(), props.getServiceTokenUseValue(),
-                props.getClockSkewSeconds(), props.getJwksTimeoutMs());
+                props.getClockSkewSeconds(), props.getJwksTimeoutMs(),
+                props.getServiceTokenAudience());
     }
 
     @Bean

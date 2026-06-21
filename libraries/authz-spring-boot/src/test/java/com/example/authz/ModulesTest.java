@@ -7,11 +7,13 @@ import com.example.authz.context.RequestContext;
 import com.example.authz.context.RequestContextBuilder;
 import com.example.authz.engine.AuthType;
 import com.example.authz.observability.Metrics;
+import com.example.authz.spi.Spi;
 import com.example.authz.sync.CacheBootstrap;
 import com.example.authz.sync.CacheBootstrapException;
 import com.example.authz.sync.DiskCache;
+import com.example.authz.sync.RoleDeleteEvent;
 import com.example.authz.sync.RoleEvents;
-import com.example.authz.spi.Spi;
+import com.example.authz.sync.RoleUpsertEvent;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -49,17 +51,16 @@ class ModulesTest {
     }
 
     @Test
-    void roleEventsApplyUpsertDeleteSkipUnknown() {
+    void roleEventsApplyUpsertDeleteSkipNull() {
         PermissionCache cache = new PermissionCache(Map.of("MANAGER", List.of("READ_ORDER")));
-        assertTrue(RoleEvents.apply(cache, Map.of(
-                "operation", "UPSERT_ROLE", "roleId", "MANAGER",
-                "permissions", List.of("READ_ORDER", "DELETE_ORDER"))).applied());
+        assertTrue(RoleEvents.applyUpsert(cache,
+                new RoleUpsertEvent("MANAGER", List.of("READ_ORDER", "DELETE_ORDER"), null)).applied());
         assertTrue(cache.permissionsForRole("MANAGER").contains("DELETE_ORDER"));
 
-        assertTrue(RoleEvents.apply(cache, Map.of("operation", "DELETE_ROLE", "roleId", "MANAGER")).applied());
+        assertTrue(RoleEvents.applyDelete(cache, new RoleDeleteEvent("MANAGER", null)).applied());
         assertTrue(cache.permissionsForRole("MANAGER").isEmpty());
 
-        assertFalse(RoleEvents.apply(cache, Map.of("operation", "FROBNICATE")).applied());
+        assertFalse(RoleEvents.applyUpsert(cache, null).applied());
     }
 
     @Test
@@ -141,7 +142,7 @@ class ModulesTest {
         };
         Metrics metrics = new Metrics();
         PermissionCache cache = new PermissionCache();
-        CacheBootstrap boot = new CacheBootstrap(cache, client, new DiskCache(tmp.resolve("rf.json")), null, metrics);
+        CacheBootstrap boot = new CacheBootstrap(cache, client, new DiskCache(tmp.resolve("rf.json")), metrics);
         boot.start();
         up[0] = false;
         boot.forcedRefresh();

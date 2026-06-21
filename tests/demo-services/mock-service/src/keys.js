@@ -24,7 +24,7 @@ import crypto from "node:crypto";
  *     "missingClaims"    â€” omits iss/aud/exp; bare header+payload, bogus signature.
  *     "malformed"        â€” returns the literal string "not.a.jwt".
  */
-async function createIssuer(issuer, initialKid) {
+async function createIssuer(issuer, initialKid, alg = "RS256") {
   // All active keypairs: kid -> { privateKey, publicJwk }
   const keyring = new Map();
 
@@ -32,11 +32,13 @@ async function createIssuer(issuer, initialKid) {
     // jose v6 returns non-extractable WebCrypto CryptoKeys by default; request
     // extractable keys so the private key bridges cleanly to a Node KeyObject in
     // _signRaw (the raw "expired" signing path) and the public key exports to JWK.
-    const { publicKey, privateKey } = await generateKeyPair("RS256", { extractable: true });
+    // alg is "RS256" (SSO/service tokens, like Keycloak) or "EdDSA" (Auth Service
+    // user tokens — the provider was re-platformed to Ed25519/OKP).
+    const { publicKey, privateKey } = await generateKeyPair(alg, { extractable: true });
     const jwk = await exportJWK(publicKey);
     jwk.kid = kid;
     jwk.use = "sig";
-    jwk.alg = "RS256";
+    jwk.alg = alg;
     keyring.set(kid, { privateKey, publicJwk: jwk });
   }
 
@@ -54,6 +56,11 @@ async function createIssuer(issuer, initialKid) {
   function _signRaw(privateKey, data) {
     // jose v6 gives a WebCrypto CryptoKey; Node's crypto.sign needs a KeyObject.
     const keyObject = crypto.KeyObject.from(privateKey);
+    // Ed25519 signs with no pre-hash and no padding (algorithm omitted/null).
+    if (alg === "EdDSA") {
+      const sig = crypto.sign(null, Buffer.from(data), keyObject);
+      return sig.toString("base64url");
+    }
     const sig = crypto.sign("sha256", Buffer.from(data), {
       key: keyObject,
       padding: crypto.constants.RSA_PKCS1_PADDING,
@@ -87,7 +94,7 @@ async function createIssuer(issuer, initialKid) {
   async function sign(claims, { audience, expiresIn = "10m" } = {}) {
     const { privateKey } = keyring.get(_signingKid);
     let b = new SignJWT(claims)
-      .setProtectedHeader({ alg: "RS256", kid: _signingKid })
+      .setProtectedHeader({ alg, kid: _signingKid })
       .setIssuedAt()
       .setIssuer(issuer)
       .setExpirationTime(expiresIn);
@@ -108,16 +115,16 @@ async function createIssuer(issuer, initialKid) {
 
       case "missingClaims": {
         // No iss, aud, or exp. Signature is structurally present but bogus.
-        const hdr = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT" })).toString("base64url");
+        const hdr = Buffer.from(JSON.stringify({ alg, typ: "JWT" })).toString("base64url");
         const pld = Buffer.from(JSON.stringify(claims)).toString("base64url");
         return `${hdr}.${pld}.invalidsignature`;
       }
 
       case "wrongSignature": {
         // Signed with a throwaway key that is NOT in the JWKS.
-        const { privateKey: throwaway } = await generateKeyPair("RS256");
+        const { privateKey: throwaway } = await generateKeyPair(alg);
         let b = new SignJWT({ ...claims })
-          .setProtectedHeader({ alg: "RS256", kid: _signingKid })
+          .setProtectedHeader({ alg, kid: _signingKid })
           .setIssuedAt()
           .setIssuer(issuer)
           .setExpirationTime("10m");
@@ -137,7 +144,7 @@ async function createIssuer(issuer, initialKid) {
         };
         if (audience) expiredPayload.aud = audience;
         const hdr = Buffer.from(
-          JSON.stringify({ alg: "RS256", kid: _signingKid, typ: "JWT" }),
+          JSON.stringify({ alg, kid: _signingKid, typ: "JWT" }),
         ).toString("base64url");
         const pld = Buffer.from(JSON.stringify(expiredPayload)).toString("base64url");
         const sig = _signRaw(privateKey, `${hdr}.${pld}`);
@@ -148,7 +155,7 @@ async function createIssuer(issuer, initialKid) {
         // Structurally valid and signed, but token_use claim is wrong.
         const { privateKey } = keyring.get(_signingKid);
         let b = new SignJWT({ ...claims, token_use: "INVALID_USE" })
-          .setProtectedHeader({ alg: "RS256", kid: _signingKid })
+          .setProtectedHeader({ alg, kid: _signingKid })
           .setIssuedAt()
           .setIssuer(issuer)
           .setExpirationTime("10m");
@@ -160,7 +167,7 @@ async function createIssuer(issuer, initialKid) {
         // Structurally valid, correctly signed, not expired â€” but no token_use claim.
         const { privateKey } = keyring.get(_signingKid);
         let b = new SignJWT({ ...claims })
-          .setProtectedHeader({ alg: "RS256", kid: _signingKid })
+          .setProtectedHeader({ alg, kid: _signingKid })
           .setIssuedAt()
           .setIssuer(issuer)
           .setExpirationTime("10m");

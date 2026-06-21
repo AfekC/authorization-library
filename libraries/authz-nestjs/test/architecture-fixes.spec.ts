@@ -1,4 +1,4 @@
-﻿import * as fs from "fs";
+import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { AuthorizationEngine, auditPermission } from "../src/decision-engine/engine.js";
@@ -9,7 +9,7 @@ import { Metrics, METRIC } from "../src/observability/metrics.js";
 import { LoggingAuditSink } from "../src/audit/audit.js";
 import { CacheBootstrap } from "../src/cache-sync/bootstrap.js";
 import { DiskCache } from "../src/cache-sync/disk.js";
-import { CacheEventHandler, RoleMap, RoleServiceClient, TokenValidator } from "../src/spi.js";
+import { RoleMap, RoleServiceClient, TokenValidator } from "../src/spi.js";
 import { runWithOutboundContext } from "../src/outbound/context-store.js";
 import { attachOutboundPropagation } from "../src/outbound/propagation.js";
 import { buildRequestContext } from "../src/inbound-auth/context.js";
@@ -103,15 +103,19 @@ rules:
 });
 
 describe("axios outbound auto-propagation (§9/§12)", () => {
-  it("attaches headers only within an authorized request context", async () => {
+  it("attaches headers only within an authorized request context (trusted target)", async () => {
     const provider = { getServiceToken: async () => "svc-tok" };
     const axiosLike: any = {
       interceptors: { request: { use: (fn: any) => { axiosLike._fn = fn; return 0; } } },
     };
-    attachOutboundPropagation(axiosLike, { serviceIdentity: provider });
+    // T19: must include the target host in the allowlist to get credential headers.
+    attachOutboundPropagation(axiosLike, {
+      serviceIdentity: provider,
+      allowedHosts: ["downstream.internal"],
+    });
 
     // Outside any request context: no propagation headers added.
-    const outside = await axiosLike._fn({ headers: {} });
+    const outside = await axiosLike._fn({ headers: {}, url: "https://downstream.internal/api" });
     expect(outside.headers["X-Service-Token"]).toBeUndefined();
     expect(outside.headers["Authorization"]).toBeUndefined();
 
@@ -124,7 +128,8 @@ describe("axios outbound auto-propagation (§9/§12)", () => {
     await new Promise<void>((resolve, reject) => {
       runWithOutboundContext(ctx, "user-jwt", () => {
         axiosLike
-          ._fn({ headers: {} })
+          // Provide a URL matching the allowlist so credentials are propagated.
+          ._fn({ headers: {}, url: "https://downstream.internal/api" })
           .then((cfg: any) => {
             expect(cfg.headers["Authorization"]).toBe("Bearer user-jwt");
             expect(cfg.headers["X-Service-Token"]).toBe("svc-tok");
@@ -138,29 +143,24 @@ describe("axios outbound auto-propagation (§9/§12)", () => {
   });
 });
 
-describe("Kafka unreachable at startup is fail-open (§8.4)", () => {
+describe("CacheBootstrap startup still reaches READY without Kafka (§8.4)", () => {
   const okClient = (roles: RoleMap): RoleServiceClient => ({
     fetchSnapshot: async () => roles,
   });
 
-  it("startup still reaches READY when the broker is down", async () => {
-    const file = path.join(os.tmpdir(), `kafka-down-${Date.now()}.json`);
-    const failingEvents: CacheEventHandler = {
-      start: async () => {
-        throw new Error("broker down");
-      },
-      stop: async () => {},
-    };
+  it("startup reaches READY (normal mode) when no Kafka consumer is wired", async () => {
+    const file = path.join(os.tmpdir(), `no-kafka-${Date.now()}.json`);
     const cache = new PermissionCache();
+    // Kafka connection is now the host's responsibility via connectMicroservice().
+    // CacheBootstrap no longer accepts an events param — startup always succeeds.
     const boot = new CacheBootstrap(
       cache,
       okClient({ VIEWER: ["READ_ORDER"] }),
       new DiskCache(file),
-      failingEvents,
+      {},
     );
     const res = await boot.start();
     expect(res.mode).toBe("normal");
-    expect(boot.isKafkaConnected()).toBe(false);
     expect(cache.permissionsForRole("VIEWER").has("READ_ORDER")).toBe(true);
     fs.unlinkSync(file);
   });

@@ -1,10 +1,9 @@
-﻿/**
+/**
  * Tests for standards-audit gap fixes (general best-practice alignment):
  *   GAP-1  — DiskCache.write() is atomic (temp file + rename); no partial file on failure
- *   GAP-3  — Kafka unparseable events: logged + counted via injected hooks (not console)
  *   GAP-4  — Service-token provider onError callback that throws must not break retry
  *   GAP-5  — Role Service snapshot: blank role id is rejected
- *   GAP-9  — CacheBootstrap.stop() disconnects the Kafka consumer; stop() is idempotent
+ *   GAP-9  — CacheBootstrap.stop() stops timers and is safe to call multiple times
  *   GAP-10 — Outbound: blank/whitespace service token is not attached
  *   GAP-8  — createAuthz: whitespace-only audience is rejected
  */
@@ -15,13 +14,12 @@ import * as path from "path";
 
 import { DiskCache } from "../src/cache-sync/disk.js";
 import { CacheBootstrap } from "../src/cache-sync/bootstrap.js";
-import { KafkaCacheEventHandler } from "../src/cache-sync/kafka.js";
 import { PermissionCache } from "../src/permission-cache/cache.js";
 import { HttpRoleServiceClient } from "../src/role-service-client/client.js";
 import { ClientCredentialsProvider } from "../src/service-token/provider.js";
 import { buildOutboundHeaders } from "../src/outbound/propagation.js";
 import { RequestContext } from "../src/inbound-auth/context.js";
-import { RoleServiceClient, CacheEventHandler, ServiceIdentityProvider } from "../src/spi.js";
+import { RoleServiceClient, ServiceIdentityProvider } from "../src/spi.js";
 import { createAuthzFromOptions as createAuthz } from "../src/bootstrap/create-authz.js";
 import { ConfigError } from "../src/rule-config/types.js";
 import nock from "nock";
@@ -58,49 +56,6 @@ describe("GAP-1 — DiskCache.write() is atomic", () => {
     expect(fs.existsSync(target)).toBe(false);
 
     fs.rmSync(dir, { recursive: true, force: true });
-  });
-});
-
-// ---------------------------------------------------------------------------
-// GAP-3 — unparseable Kafka events go through logger + metric hook
-// ---------------------------------------------------------------------------
-
-describe("GAP-3 — unparseable role events are logged and counted, not console", () => {
-  it("invokes onSkippedEvent and logger.warn for a malformed message", async () => {
-    const warns: string[] = [];
-    let skipped = 0;
-    const handler = new KafkaCacheEventHandler({
-      brokers: ["localhost:9092"],
-      logger: { warn: (m) => warns.push(m) },
-      onSkippedEvent: () => skipped++,
-    });
-
-    // Drive the eachMessage handler directly by stubbing consumer.run to
-    // capture the callback, then feed it a malformed message.
-    let eachMessage: any;
-    const fakeConsumer = {
-      connect: async () => {},
-      subscribe: async () => {},
-      run: async (opts: any) => {
-        eachMessage = opts.eachMessage;
-      },
-      disconnect: async () => {},
-    };
-    (handler as any).kafka = { consumer: () => fakeConsumer };
-
-    await handler.start(
-      () => {
-        throw new Error("onEvent should not be called for a bad message");
-      },
-      () => {},
-    );
-    await eachMessage({
-      topic: "role-updates",
-      message: { value: Buffer.from("not json{{{") },
-    });
-
-    expect(skipped).toBe(1);
-    expect(warns.some((w) => w.includes("unparseable"))).toBe(true);
   });
 });
 
@@ -155,44 +110,23 @@ describe("GAP-5 — Role Service snapshot rejects a blank role id", () => {
 });
 
 // ---------------------------------------------------------------------------
-// GAP-9 — stop() disconnects Kafka and is idempotent
+// GAP-9 — stop() is safe to call; stops background timers
 // ---------------------------------------------------------------------------
 
-describe("GAP-9 — CacheBootstrap.stop() disconnects Kafka", () => {
-  it("calls events.stop() on shutdown", async () => {
-    let stopped = 0;
-    const events: CacheEventHandler = {
-      start: async () => {},
-      stop: async () => {
-        stopped++;
-      },
-    };
+describe("GAP-9 — CacheBootstrap.stop() stops background loops", () => {
+  it("stop() is idempotent and does not throw", async () => {
     const cache = new PermissionCache({ ADMIN: ["READ"] });
     const role: RoleServiceClient = { fetchSnapshot: async () => ({ ADMIN: ["READ"] }) };
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "authz-stop-"));
     const disk = new DiskCache(path.join(dir, "c.json"));
 
-    const boot = new CacheBootstrap(cache, role, disk, events);
+    const boot = new CacheBootstrap(cache, role, disk, {});
     await boot.start();
+    // stop() twice must not throw
     boot.stop();
-    // stop() fires events.stop() without awaiting; let the microtask settle.
-    await new Promise((r) => setTimeout(r, 0));
-    expect(stopped).toBeGreaterThanOrEqual(1);
+    boot.stop();
 
     fs.rmSync(dir, { recursive: true, force: true });
-  });
-
-  it("KafkaCacheEventHandler.stop() is idempotent (no double-disconnect)", async () => {
-    let disconnects = 0;
-    const handler = new KafkaCacheEventHandler({ brokers: ["localhost:9092"] });
-    (handler as any).consumer = {
-      disconnect: async () => {
-        disconnects++;
-      },
-    };
-    await handler.stop();
-    await handler.stop();
-    expect(disconnects).toBe(1);
   });
 });
 
@@ -210,7 +144,8 @@ describe("GAP-10 — blank service token is not attached", () => {
     const provider: ServiceIdentityProvider = {
       getServiceToken: async () => "   ",
     };
-    const headers = await buildOutboundHeaders({ ctx, serviceIdentity: provider });
+    // trusted: true — the target is allowlisted; we want to test the blank-token logic.
+    const headers = await buildOutboundHeaders({ ctx, serviceIdentity: provider, trusted: true });
     expect(headers["X-Service-Token"]).toBeUndefined();
   });
 
@@ -218,7 +153,8 @@ describe("GAP-10 — blank service token is not attached", () => {
     const provider: ServiceIdentityProvider = {
       getServiceToken: async () => "real-token",
     };
-    const headers = await buildOutboundHeaders({ ctx, serviceIdentity: provider });
+    // trusted: true — the target is allowlisted; verify the token is attached.
+    const headers = await buildOutboundHeaders({ ctx, serviceIdentity: provider, trusted: true });
     expect(headers["X-Service-Token"]).toBe("real-token");
   });
 });

@@ -18,7 +18,7 @@ export class HealthController {
     const h = this.boot
       ? buildHealth(this.cache, this.boot.mode_(), {
           roleServiceLastSync: this.boot.roleServiceLastSync(),
-          kafkaConsumerConnected: this.boot.isKafkaConnected(),
+          kafkaConsumerConnected: false,
         })
       : buildHealth(this.cache, "normal", {
           roleServiceLastSync: null,

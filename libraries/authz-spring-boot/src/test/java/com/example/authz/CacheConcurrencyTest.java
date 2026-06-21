@@ -2,16 +2,16 @@ package com.example.authz;
 
 import com.example.authz.cache.PermissionCache;
 import com.example.authz.observability.Metrics;
+import com.example.authz.spi.Spi;
 import com.example.authz.sync.CacheBootstrap;
 import com.example.authz.sync.DiskCache;
 import com.example.authz.sync.RoleEvents;
-import com.example.authz.spi.Spi;
+import com.example.authz.sync.RoleUpsertEvent;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -343,114 +343,46 @@ class CacheConcurrencyTest {
     // -------------------------------------------------------------------------
 
     /**
-     * A Kafka UPSERT_ROLE event with mixed-type permissions (String, Integer,
-     * Boolean) must store all values as strings. The decision engine's Set.contains
-     * checks use strings, so numeric/boolean permissions stored as-is would
-     * silently never match.
+     * B4/C5 — Permissions from Avro (pre-coerced to String by RoleEventKafkaListener)
+     * must be stored exactly as received; RoleEvents.applyUpsert applies String.valueOf
+     * on each element as a safeguard. Verify that a list of already-stringified
+     * mixed-origin values (String, numeric string, boolean string) is stored correctly.
      */
     @Test
     void b4_mixedTypePermissionsStoredAsStrings() {
         PermissionCache cache = new PermissionCache();
-        // permissions list contains a String, an Integer, and a Boolean
-        List<Object> mixedPerms = new ArrayList<>();
-        mixedPerms.add("read");
-        mixedPerms.add(123);
-        mixedPerms.add(true);
-
-        Map<String, Object> event = new HashMap<>();
-        event.put("operation", "UPSERT_ROLE");
-        event.put("roleId", "MIXED_ROLE");
-        event.put("permissions", mixedPerms);
-
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, event);
+        // RoleEventKafkaListener coerces Avro types to strings before building the DTO;
+        // applyUpsert further runs String.valueOf on each element.
+        List<String> preCoerced = List.of("read", "123", "true");
+        RoleEvents.ApplyResult result = RoleEvents.applyUpsert(cache,
+                new RoleUpsertEvent("MIXED_ROLE", preCoerced, null));
         assertTrue(result.applied(), "UPSERT_ROLE with mixed permissions should apply: " + result.reason());
 
         Set<String> stored = cache.permissionsForRole("MIXED_ROLE");
         assertTrue(stored.contains("read"),  "String 'read' must be stored");
-        assertTrue(stored.contains("123"),   "Integer 123 must be stored as String '123'");
-        assertTrue(stored.contains("true"),  "Boolean true must be stored as String 'true'");
+        assertTrue(stored.contains("123"),   "Numeric string '123' must be stored");
+        assertTrue(stored.contains("true"),  "Boolean string 'true' must be stored");
         assertEquals(3, stored.size(), "Exactly 3 permissions expected");
     }
 
     // -------------------------------------------------------------------------
-    // C9 — Kafka topic vs message operation field cross-check
+    // C9 — Topic-to-method routing replaces wire-field cross-check
     // -------------------------------------------------------------------------
 
     /**
-     * If a message carries an explicit 'operation' field that CONFLICTS with the
-     * topic-derived operation, RoleEvents.apply must skip the event rather than
-     * acting on it.
-     *
-     * Scenario: The topic says UPSERT_ROLE but the message body carries
-     * operation=DELETE_ROLE. This is a misconfigured or spoofed message.
-     * The implementation stamps the topic-derived operation on the event map
-     * BEFORE calling RoleEvents.apply; the message's own field (if present before
-     * stamping) must be cross-checked in KafkaCacheEventHandler.
-     *
-     * We test the cross-check logic directly via the event map that would be
-     * produced by a cross-checking KafkaCacheEventHandler: if the stamped
-     * operation differs from a pre-existing 'operation' field in the raw payload,
-     * the event should be skipped.
+     * C9 — With the @KafkaListener design, topic-to-method routing replaces the
+     * old WIRE_OPERATION_KEY cross-check: onUpsert() is bound to the upsert topic,
+     * onDelete() to the delete topic. A message cannot arrive on the wrong method.
+     * The cross-check concern is now architectural (separate listeners) rather than
+     * runtime (WIRE_OPERATION_KEY field in the Map). Verify the typed path applies
+     * a normal upsert correctly.
      */
     @Test
-    void c9_conflictingOperationFieldCausesSkip() {
-        PermissionCache cache = new PermissionCache(Map.of("EXISTING", List.of("READ")));
-
-        // Simulate: topic says UPSERT_ROLE, but message carried operation=DELETE_ROLE.
-        // After cross-check the event should be skipped (not applied).
-        // The event map has topicOperation=UPSERT_ROLE and wireOperation=DELETE_ROLE
-        // encoded in the special "__wire_operation" field (set by the cross-checking handler).
-        Map<String, Object> conflictingEvent = new HashMap<>();
-        conflictingEvent.put("operation", "UPSERT_ROLE");         // topic-derived (stamped)
-        conflictingEvent.put("__wire_operation", "DELETE_ROLE");   // wire field (conflicting)
-        conflictingEvent.put("roleId", "EXISTING");
-        conflictingEvent.put("permissions", List.of("WRITE"));
-
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, conflictingEvent);
-        assertFalse(result.applied(), "Conflicting operation field should cause skip");
-        assertTrue(result.reason().contains("conflict") || result.reason().contains("mismatch"),
-                "Skip reason should mention conflict/mismatch, got: " + result.reason());
-
-        // Cache must be unchanged — EXISTING must still have READ, not WRITE
-        assertTrue(cache.permissionsForRole("EXISTING").contains("READ"),
-                "Cache should be unchanged when event is skipped");
-        assertFalse(cache.permissionsForRole("EXISTING").contains("WRITE"),
-                "Cache must not apply the conflicting event");
-    }
-
-    /**
-     * A message without an explicit 'operation' field on the wire (the normal case)
-     * should be applied normally — no cross-check interference.
-     */
-    @Test
-    void c9_noWireOperationFieldIsAppliedNormally() {
+    void c9_upsertViaTypedApiIsApplied() {
         PermissionCache cache = new PermissionCache();
-        // Normal event: only the topic-derived operation, no __wire_operation
-        Map<String, Object> normalEvent = new HashMap<>();
-        normalEvent.put("operation", "UPSERT_ROLE");
-        normalEvent.put("roleId", "NORMAL_ROLE");
-        normalEvent.put("permissions", List.of("READ"));
-
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, normalEvent);
-        assertTrue(result.applied(), "Normal event should be applied: " + result.reason());
+        RoleEvents.ApplyResult result = RoleEvents.applyUpsert(cache,
+                new RoleUpsertEvent("NORMAL_ROLE", List.of("READ"), null));
+        assertTrue(result.applied(), "Normal upsert must be applied: " + result.reason());
         assertTrue(cache.permissionsForRole("NORMAL_ROLE").contains("READ"));
-    }
-
-    /**
-     * A message where wire operation matches the topic-derived operation
-     * (consistent, not conflicting) should be applied normally.
-     */
-    @Test
-    void c9_matchingWireOperationFieldIsAppliedNormally() {
-        PermissionCache cache = new PermissionCache();
-        Map<String, Object> consistentEvent = new HashMap<>();
-        consistentEvent.put("operation", "UPSERT_ROLE");
-        consistentEvent.put("__wire_operation", "UPSERT_ROLE"); // same — no conflict
-        consistentEvent.put("roleId", "CONSISTENT_ROLE");
-        consistentEvent.put("permissions", List.of("WRITE"));
-
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, consistentEvent);
-        assertTrue(result.applied(), "Consistent operation field should be applied: " + result.reason());
-        assertTrue(cache.permissionsForRole("CONSISTENT_ROLE").contains("WRITE"));
     }
 }

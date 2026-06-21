@@ -35,11 +35,25 @@ export interface JwksValidatorConfig {
   serviceIssuer: string;
   serviceJwksUri: string;
   clockSkewSeconds?: number;
-  /** Pinned algorithms (alg:none is always rejected). */
+  /**
+   * Optional algorithm allow-list. Left undefined by default so verification is
+   * generic — jose validates each token against the algorithm of the JWKS key
+   * that matches its `kid`/`kty` (the Auth Service signs user tokens EdDSA; SSO
+   * signs service tokens RS256; both are verified by the same generic path).
+   * `alg:none` is always rejected by jose regardless. Set this only to harden a
+   * deployment to a fixed set of algorithms.
+   */
   algorithms?: string[];
   /** Claim that marks a service token. */
   serviceTokenUseClaim?: string;
   serviceTokenUseValue?: string;
+  /**
+   * Optional audience for service tokens (T5). When set, `validateServiceToken`
+   * enforces that the token's `aud` matches this value. Off by default (omit or
+   * leave undefined) to preserve current behaviour where no audience check is
+   * performed on service tokens.
+   */
+  serviceAudience?: string;
   /**
    * Timeout (ms) for JWKS HTTP fetches. Defaults to {@link DEFAULT_JWKS_TIMEOUT_MS}
    * (5000 ms). Passed as `timeoutDuration` to createRemoteJWKSet.
@@ -52,7 +66,8 @@ export class JwksTokenValidator implements TokenValidator {
   /** Undefined in SERVICE-ONLY mode (no user-JWT validation). */
   private readonly userJwks?: JWTVerifyGetKey;
   private readonly serviceJwks: JWTVerifyGetKey;
-  private readonly algorithms: string[];
+  /** Undefined → generic: jose verifies against the matched JWKS key's algorithm. */
+  private readonly algorithms?: string[];
 
   constructor(private readonly cfg: JwksValidatorConfig) {
     const timeoutDuration = cfg.jwksTimeoutMs ?? DEFAULT_JWKS_TIMEOUT_MS;
@@ -61,7 +76,10 @@ export class JwksTokenValidator implements TokenValidator {
       ? createRemoteJWKSet(new URL(cfg.userJwksUri), { timeoutDuration })
       : undefined;
     this.serviceJwks = createRemoteJWKSet(new URL(cfg.serviceJwksUri), { timeoutDuration });
-    this.algorithms = cfg.algorithms ?? ["RS256", "ES256"];
+    // Generic verification: don't pin an algorithm. The provider signs user tokens
+    // EdDSA and SSO signs service tokens RS256; jose selects the algorithm from the
+    // JWKS key matched by `kid`. Only honour an explicit operator override.
+    this.algorithms = cfg.algorithms;
   }
 
   async validateUserToken(jwt: string): Promise<TokenClaims> {
@@ -72,7 +90,8 @@ export class JwksTokenValidator implements TokenValidator {
       const { payload } = await jwtVerify(jwt, this.userJwks, {
         issuer: this.cfg.userIssuer,
         audience: this.cfg.audience,
-        algorithms: this.algorithms,
+        // Generic by default: omit `algorithms` so jose uses the matched key's alg.
+        ...(this.algorithms ? { algorithms: this.algorithms } : {}),
         clockTolerance: this.cfg.clockSkewSeconds ?? 5,
       });
       return payload as TokenClaims;
@@ -89,7 +108,13 @@ export class JwksTokenValidator implements TokenValidator {
     try {
       ({ payload } = await jwtVerify(jwt, this.serviceJwks, {
         issuer: this.cfg.serviceIssuer,
-        algorithms: this.algorithms,
+        // T5: enforce audience only when serviceAudience is configured; omit the
+        // option when undefined so jose skips the aud check (off-by-default).
+        ...(this.cfg.serviceAudience !== undefined
+          ? { audience: this.cfg.serviceAudience }
+          : {}),
+        // Generic by default: omit `algorithms` so jose uses the matched key's alg.
+        ...(this.algorithms ? { algorithms: this.algorithms } : {}),
         clockTolerance: this.cfg.clockSkewSeconds ?? 5,
       }));
     } catch (cause) {

@@ -1,10 +1,10 @@
-﻿import { Module, OnApplicationBootstrap, OnModuleDestroy, Injectable } from "@nestjs/common";
+import { Module, OnApplicationBootstrap, OnModuleDestroy, Injectable } from "@nestjs/common";
 import { HttpRoleServiceClient } from "../../role-service-client/client.js";
 import { DiskCache } from "../../cache-sync/disk.js";
-import { KafkaCacheEventHandler } from "../../cache-sync/kafka.js";
 import { CacheBootstrap } from "../../cache-sync/bootstrap.js";
+import { RoleEventsController } from "../../cache-sync/role-events.controller.js";
 import { PermissionCache } from "../../permission-cache/cache.js";
-import { Metrics, METRIC } from "../../observability/metrics.js";
+import { Metrics } from "../../observability/metrics.js";
 import { CreateAuthzOptions } from "../../bootstrap/create-authz.js";
 import {
   AUTHZ_OPTIONS, AUTHZ_CACHE, AUTHZ_METRICS, AUTHZ_BOOTSTRAP,
@@ -33,21 +33,13 @@ export class CacheSyncLifecycle implements OnApplicationBootstrap, OnModuleDestr
 }
 
 @Module({
+  controllers: [RoleEventsController],
   providers: [
     {
       provide: AUTHZ_BOOTSTRAP,
       useFactory: (opts: CreateAuthzOptions, cache: PermissionCache, metrics: Metrics): CacheBootstrap | null => {
         const enabled = Boolean(opts.userIssuer || opts.userJwksUri || opts.audience || opts.roleServiceUrl);
         if (!enabled) return null; // SERVICE-ONLY mode
-        const events = opts.kafkaBrokers?.length
-          ? new KafkaCacheEventHandler({
-              brokers: opts.kafkaBrokers, updatesTopic: opts.roleUpdatesTopic,
-              deleteTopic: opts.roleDeleteTopic, publishTopic: opts.publishRolesTopic,
-              groupId: opts.kafkaGroupId, clientId: opts.kafkaClientId,
-              logger: { warn: (m) => console.warn(m) },
-              onSkippedEvent: () => metrics.inc(METRIC.roleEventSkipped),
-            })
-          : undefined;
         return new CacheBootstrap(
           cache,
           new HttpRoleServiceClient({
@@ -56,7 +48,6 @@ export class CacheSyncLifecycle implements OnApplicationBootstrap, OnModuleDestr
             readTimeoutMs: opts.roleServiceReadTimeout ?? 5000,
           }),
           new DiskCache(opts.diskCachePath ?? "authorization-cache.json"),
-          events,
           { metrics, logger: { warn: (m) => console.warn(m) } },
         );
       },

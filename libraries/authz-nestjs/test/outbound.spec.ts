@@ -1,6 +1,11 @@
 ﻿import nock from "nock";
 import { ClientCredentialsProvider } from "../src/service-token/provider.js";
-import { buildOutboundHeaders, attachOutboundPropagation } from "../src/outbound/propagation.js";
+import {
+  buildOutboundHeaders,
+  attachOutboundPropagation,
+  isHostAllowed,
+  resolveEffectiveUrl,
+} from "../src/outbound/propagation.js";
 import { buildRequestContext } from "../src/inbound-auth/context.js";
 import { runWithOutboundContext } from "../src/outbound/context-store.js";
 
@@ -235,25 +240,64 @@ describe("ClientCredentialsProvider", () => {
 describe("buildOutboundHeaders", () => {
   const provider = { getServiceToken: async () => "svc-token" };
 
-  it("propagates JWT, service token, and trace ids", async () => {
+  // trusted: true simulates the allowlist matching the outbound target.
+  it("propagates JWT, service token, and trace ids (trusted target)", async () => {
     const ctx = buildRequestContext({
       user: { userId: "u1", roleId: "MANAGER" },
       service: null,
       correlationId: "corr-1",
       requestId: "req-1",
     });
-    const h = await buildOutboundHeaders({ ctx, userJwt: "user-jwt", serviceIdentity: provider });
+    const h = await buildOutboundHeaders({ ctx, userJwt: "user-jwt", serviceIdentity: provider, trusted: true });
     expect(h["Authorization"]).toBe("Bearer user-jwt");
     expect(h["X-Service-Token"]).toBe("svc-token");
     expect(h["X-Correlation-Id"]).toBe("corr-1");
     expect(h["X-Request-Id"]).toBe("req-1");
   });
 
-  it("omits Authorization for service-to-service calls", async () => {
+  it("omits Authorization for service-to-service calls (trusted target)", async () => {
     const ctx = buildRequestContext({ user: null, service: { serviceName: "scheduler" } });
-    const h = await buildOutboundHeaders({ ctx, userJwt: null, serviceIdentity: provider });
+    const h = await buildOutboundHeaders({ ctx, userJwt: null, serviceIdentity: provider, trusted: true });
     expect(h["Authorization"]).toBeUndefined();
     expect(h["X-Service-Token"]).toBe("svc-token");
+  });
+
+  // -------------------------------------------------------------------------
+  // T19 — default-deny: credentials suppressed when trusted is false/absent
+  // -------------------------------------------------------------------------
+  it("T19 — credentials are NOT attached when trusted is false (default)", async () => {
+    const ctx = buildRequestContext({
+      user: { userId: "u1", roleId: "MANAGER" },
+      service: null,
+      correlationId: "c1",
+      requestId: "r1",
+    });
+    const h = await buildOutboundHeaders({
+      ctx,
+      userJwt: "some-jwt",
+      serviceIdentity: provider,
+      // trusted omitted → defaults to false
+    });
+    expect(h["Authorization"]).toBeUndefined();
+    expect(h["X-Service-Token"]).toBeUndefined();
+    // Trace headers are NOT credentials — always present.
+    expect(h["X-Correlation-Id"]).toBe("c1");
+    expect(h["X-Request-Id"]).toBe("r1");
+  });
+
+  it("T19 — credentials are NOT attached when trusted is explicitly false", async () => {
+    const ctx = buildRequestContext({
+      user: { userId: "u1", roleId: "MANAGER" },
+      service: null,
+    });
+    const h = await buildOutboundHeaders({
+      ctx,
+      userJwt: "some-jwt",
+      serviceIdentity: provider,
+      trusted: false,
+    });
+    expect(h["Authorization"]).toBeUndefined();
+    expect(h["X-Service-Token"]).toBeUndefined();
   });
 
   // -------------------------------------------------------------------------
@@ -268,6 +312,7 @@ describe("buildOutboundHeaders", () => {
       ctx,
       userJwt: "   ", // whitespace-only — must be treated as absent
       serviceIdentity: provider,
+      trusted: true,
     });
     expect(h["Authorization"]).toBeUndefined();
   });
@@ -281,11 +326,12 @@ describe("buildOutboundHeaders", () => {
       ctx,
       userJwt: "",
       serviceIdentity: provider,
+      trusted: true,
     });
     expect(h["Authorization"]).toBeUndefined();
   });
 
-  it("B5 — a valid non-blank userJwt is still propagated correctly", async () => {
+  it("B5 — a valid non-blank userJwt is still propagated correctly (trusted target)", async () => {
     const ctx = buildRequestContext({
       user: { userId: "u1", roleId: "MANAGER" },
       service: null,
@@ -294,6 +340,7 @@ describe("buildOutboundHeaders", () => {
       ctx,
       userJwt: "valid.jwt.token",
       serviceIdentity: provider,
+      trusted: true,
     });
     expect(h["Authorization"]).toBe("Bearer valid.jwt.token");
   });
@@ -312,6 +359,7 @@ describe("buildOutboundHeaders", () => {
       ctx,
       userJwt: "valid-jwt",
       serviceIdentity: undefined,
+      trusted: true,
     });
     expect(h["X-Service-Token"]).toBeUndefined();
     // Other headers still present
@@ -337,6 +385,7 @@ describe("buildOutboundHeaders", () => {
       ctx,
       userJwt: "user.jwt.token",
       serviceIdentity: failingIdentity,
+      trusted: true,
     });
     // User JWT MUST be propagated even when service token failed
     expect(h["Authorization"]).toBe("Bearer user.jwt.token");
@@ -357,7 +406,7 @@ describe("buildOutboundHeaders", () => {
     });
     // Must resolve — not reject — even when service token acquisition throws
     await expect(
-      buildOutboundHeaders({ ctx, userJwt: "jwt", serviceIdentity: failingIdentity }),
+      buildOutboundHeaders({ ctx, userJwt: "jwt", serviceIdentity: failingIdentity, trusted: true }),
     ).resolves.toBeDefined();
   });
 });
@@ -366,14 +415,17 @@ describe("buildOutboundHeaders", () => {
 // G4 — axios interceptor (attachOutboundPropagation) is fail-open
 // -------------------------------------------------------------------------
 describe("G4 — attachOutboundPropagation interceptor is fail-open on service token failure", () => {
-  it("interceptor resolves with user JWT + trace headers when service token throws", async () => {
+  it("interceptor resolves with user JWT + trace headers when service token throws (trusted target)", async () => {
     const failingIdentity = {
       getServiceToken: async () => { throw new Error("SSO down"); },
     };
     const axiosLike: any = {
       interceptors: { request: { use: (fn: any) => { axiosLike._fn = fn; return 0; } } },
     };
-    attachOutboundPropagation(axiosLike, { serviceIdentity: failingIdentity });
+    attachOutboundPropagation(axiosLike, {
+      serviceIdentity: failingIdentity,
+      allowedHosts: ["api.internal"],
+    });
 
     const ctx = buildRequestContext({
       user: { userId: "u-axios", roleId: "MANAGER" },
@@ -384,7 +436,8 @@ describe("G4 — attachOutboundPropagation interceptor is fail-open on service t
 
     const result = await new Promise<any>((resolve, reject) => {
       runWithOutboundContext(ctx, "bearer-jwt", () => {
-        axiosLike._fn({ headers: {} }).then(resolve).catch(reject);
+        // url matches the allowlist host
+        axiosLike._fn({ headers: {}, url: "https://api.internal/endpoint" }).then(resolve).catch(reject);
       });
     });
 
@@ -395,14 +448,17 @@ describe("G4 — attachOutboundPropagation interceptor is fail-open on service t
     expect(result.headers["X-Request-Id"]).toBe("axreq");
   });
 
-  it("interceptor resolves with all headers when service token succeeds", async () => {
+  it("interceptor resolves with all headers when service token succeeds (trusted target)", async () => {
     const goodIdentity = {
       getServiceToken: async () => "good-svc-token",
     };
     const axiosLike: any = {
       interceptors: { request: { use: (fn: any) => { axiosLike._fn = fn; return 0; } } },
     };
-    attachOutboundPropagation(axiosLike, { serviceIdentity: goodIdentity });
+    attachOutboundPropagation(axiosLike, {
+      serviceIdentity: goodIdentity,
+      allowedHosts: ["api.internal"],
+    });
 
     const ctx = buildRequestContext({
       user: { userId: "u-good", roleId: "VIEWER" },
@@ -413,7 +469,8 @@ describe("G4 — attachOutboundPropagation interceptor is fail-open on service t
 
     const result = await new Promise<any>((resolve, reject) => {
       runWithOutboundContext(ctx, "user-tok", () => {
-        axiosLike._fn({ headers: {} }).then(resolve).catch(reject);
+        // url matches the allowlist host
+        axiosLike._fn({ headers: {}, url: "https://api.internal/data" }).then(resolve).catch(reject);
       });
     });
 
@@ -421,5 +478,245 @@ describe("G4 — attachOutboundPropagation interceptor is fail-open on service t
     expect(result.headers["X-Service-Token"]).toBe("good-svc-token");
     expect(result.headers["X-Correlation-Id"]).toBe("corr-good");
     expect(result.headers["X-Request-Id"]).toBe("req-good");
+  });
+});
+
+// -------------------------------------------------------------------------
+// T19 — trusted-host allowlist: isHostAllowed() unit tests
+// -------------------------------------------------------------------------
+describe("T19 — isHostAllowed()", () => {
+  it("returns false for an empty allowlist (default-deny)", () => {
+    expect(isHostAllowed("https://api.internal/data", [])).toBe(false);
+  });
+
+  it("returns true when the host matches an allowlist entry (bare hostname)", () => {
+    expect(isHostAllowed("https://api.internal/path", ["api.internal"])).toBe(true);
+  });
+
+  it("returns true for http scheme on a bare hostname entry", () => {
+    expect(isHostAllowed("http://api.internal/path", ["api.internal"])).toBe(true);
+  });
+
+  it("returns false when the host does NOT match", () => {
+    expect(isHostAllowed("https://evil.attacker.com/data", ["api.internal"])).toBe(false);
+  });
+
+  it("returns true when host:port matches exactly", () => {
+    expect(isHostAllowed("http://api.internal:8080/path", ["api.internal:8080"])).toBe(true);
+  });
+
+  it("returns false when port in allowlist does NOT match target port", () => {
+    expect(isHostAllowed("http://api.internal:9090/path", ["api.internal:8080"])).toBe(false);
+  });
+
+  it("bare hostname entry matches any port (operator intent: trust this host)", () => {
+    expect(isHostAllowed("http://api.internal:8080/path", ["api.internal"])).toBe(true);
+    expect(isHostAllowed("https://api.internal:443/path", ["api.internal"])).toBe(true);
+    expect(isHostAllowed("http://api.internal:9999/path", ["api.internal"])).toBe(true);
+  });
+
+  it("full base-URL entry: path is ignored, only host+port matched", () => {
+    expect(isHostAllowed("https://api.internal/v2/something", ["https://api.internal/v1"])).toBe(true);
+  });
+
+  it("hostname matching is case-insensitive (RFC 4343)", () => {
+    expect(isHostAllowed("https://API.INTERNAL/data", ["api.internal"])).toBe(true);
+    expect(isHostAllowed("https://api.internal/data", ["API.INTERNAL"])).toBe(true);
+  });
+
+  it("returns false for a blank targetUrl", () => {
+    expect(isHostAllowed("", ["api.internal"])).toBe(false);
+  });
+
+  it("SSRF target — attacker-controlled URL is not on allowlist → no leak", () => {
+    const allowlist = ["api.internal", "payments.internal:8443"];
+    // Attacker tries to redirect the call to their own server
+    expect(isHostAllowed("https://attacker.example.com/steal", allowlist)).toBe(false);
+    // Subdomain confusion attempt
+    expect(isHostAllowed("https://api.internal.evil.com/path", allowlist)).toBe(false);
+    // Port scan attempt
+    expect(isHostAllowed("http://api.internal:22/", allowlist)).toBe(true); // port 22 allowed (bare hostname)
+    expect(isHostAllowed("http://payments.internal:9999/", allowlist)).toBe(false); // wrong port
+  });
+
+  it("multiple allowlist entries — matches any", () => {
+    const allowlist = ["service-a.internal", "service-b.internal:8080"];
+    expect(isHostAllowed("https://service-a.internal/api", allowlist)).toBe(true);
+    expect(isHostAllowed("http://service-b.internal:8080/api", allowlist)).toBe(true);
+    expect(isHostAllowed("https://service-c.internal/api", allowlist)).toBe(false);
+  });
+});
+
+// -------------------------------------------------------------------------
+// T19 — resolveEffectiveUrl() unit tests
+// -------------------------------------------------------------------------
+describe("T19 — resolveEffectiveUrl()", () => {
+  it("returns path when no baseURL", () => {
+    expect(resolveEffectiveUrl({ url: "https://api.internal/v1" })).toBe("https://api.internal/v1");
+  });
+
+  it("returns baseURL when no url", () => {
+    expect(resolveEffectiveUrl({ baseURL: "https://api.internal" })).toBe("https://api.internal");
+  });
+
+  it("combines baseURL and url", () => {
+    expect(resolveEffectiveUrl({ baseURL: "https://api.internal", url: "/endpoint" })).toBe(
+      "https://api.internal/endpoint",
+    );
+  });
+
+  it("handles trailing slash on baseURL and leading slash on url", () => {
+    expect(resolveEffectiveUrl({ baseURL: "https://api.internal/", url: "/endpoint" })).toBe(
+      "https://api.internal/endpoint",
+    );
+  });
+
+  it("returns empty string when both are absent", () => {
+    expect(resolveEffectiveUrl({})).toBe("");
+  });
+});
+
+// -------------------------------------------------------------------------
+// T19 — attachOutboundPropagation: allowlist integration tests
+// -------------------------------------------------------------------------
+describe("T19 — attachOutboundPropagation: allowlist enforcement", () => {
+  const goodIdentity = { getServiceToken: async () => "svc-tok" };
+
+  function makeAxiosLike() {
+    const inst: any = {
+      interceptors: { request: { use: (fn: any) => { inst._fn = fn; return 0; } } },
+    };
+    return inst;
+  }
+
+  async function runInterceptor(
+    axiosLike: any,
+    ctx: ReturnType<typeof buildRequestContext>,
+    jwt: string,
+    config: { url?: string; baseURL?: string },
+  ) {
+    return new Promise<any>((resolve, reject) => {
+      runWithOutboundContext(ctx, jwt, () => {
+        axiosLike._fn({ headers: {}, ...config }).then(resolve).catch(reject);
+      });
+    });
+  }
+
+  it("credentials attached when target is on the allowlist", async () => {
+    const ax = makeAxiosLike();
+    attachOutboundPropagation(ax, {
+      serviceIdentity: goodIdentity,
+      allowedHosts: ["trusted.internal"],
+    });
+    const ctx = buildRequestContext({ user: { userId: "u1", roleId: "ADMIN" }, service: null });
+    const result = await runInterceptor(ax, ctx, "user-jwt", { url: "https://trusted.internal/api" });
+    expect(result.headers["Authorization"]).toBe("Bearer user-jwt");
+    expect(result.headers["X-Service-Token"]).toBe("svc-tok");
+  });
+
+  it("credentials NOT attached when target is NOT on the allowlist", async () => {
+    const ax = makeAxiosLike();
+    attachOutboundPropagation(ax, {
+      serviceIdentity: goodIdentity,
+      allowedHosts: ["trusted.internal"],
+    });
+    const ctx = buildRequestContext({ user: { userId: "u1", roleId: "ADMIN" }, service: null });
+    const result = await runInterceptor(ax, ctx, "user-jwt", { url: "https://untrusted.example.com/api" });
+    expect(result.headers["Authorization"]).toBeUndefined();
+    expect(result.headers["X-Service-Token"]).toBeUndefined();
+  });
+
+  it("credentials NOT attached when allowlist is empty (default-deny)", async () => {
+    const ax = makeAxiosLike();
+    attachOutboundPropagation(ax, {
+      serviceIdentity: goodIdentity,
+      allowedHosts: [],
+    });
+    const ctx = buildRequestContext({ user: { userId: "u1", roleId: "ADMIN" }, service: null });
+    const result = await runInterceptor(ax, ctx, "user-jwt", { url: "https://any.host.com/api" });
+    expect(result.headers["Authorization"]).toBeUndefined();
+    expect(result.headers["X-Service-Token"]).toBeUndefined();
+  });
+
+  it("credentials NOT attached when allowedHosts is omitted (default-deny)", async () => {
+    const ax = makeAxiosLike();
+    // No allowedHosts → defaults to []
+    attachOutboundPropagation(ax, { serviceIdentity: goodIdentity });
+    const ctx = buildRequestContext({ user: { userId: "u1", roleId: "ADMIN" }, service: null });
+    const result = await runInterceptor(ax, ctx, "user-jwt", { url: "https://any.host.com/api" });
+    expect(result.headers["Authorization"]).toBeUndefined();
+    expect(result.headers["X-Service-Token"]).toBeUndefined();
+  });
+
+  it("trace headers (X-Correlation-Id, X-Request-Id) always attached regardless of allowlist", async () => {
+    const ax = makeAxiosLike();
+    attachOutboundPropagation(ax, {
+      serviceIdentity: goodIdentity,
+      allowedHosts: [], // empty → deny credentials
+    });
+    const ctx = buildRequestContext({
+      user: { userId: "u1", roleId: "ADMIN" },
+      service: null,
+      correlationId: "c-trace",
+      requestId: "r-trace",
+    });
+    const result = await runInterceptor(ax, ctx, "user-jwt", { url: "https://any.host.com/api" });
+    // No credentials
+    expect(result.headers["Authorization"]).toBeUndefined();
+    expect(result.headers["X-Service-Token"]).toBeUndefined();
+    // Trace headers always present
+    expect(result.headers["X-Correlation-Id"]).toBe("c-trace");
+    expect(result.headers["X-Request-Id"]).toBe("r-trace");
+  });
+
+  it("baseURL + url combined and matched against allowlist", async () => {
+    const ax = makeAxiosLike();
+    attachOutboundPropagation(ax, {
+      serviceIdentity: goodIdentity,
+      allowedHosts: ["trusted.internal"],
+    });
+    const ctx = buildRequestContext({ user: { userId: "u1", roleId: "ADMIN" }, service: null });
+    const result = await runInterceptor(ax, ctx, "user-jwt", {
+      baseURL: "https://trusted.internal",
+      url: "/data",
+    });
+    expect(result.headers["Authorization"]).toBe("Bearer user-jwt");
+  });
+
+  it("SSRF scenario — attacker-influenced URL leaks nothing", async () => {
+    const ax = makeAxiosLike();
+    attachOutboundPropagation(ax, {
+      serviceIdentity: goodIdentity,
+      allowedHosts: ["trusted.internal"],
+    });
+    const ctx = buildRequestContext({ user: { userId: "victim", roleId: "ADMIN" }, service: null });
+    // attacker redirects to their own host
+    const result = await runInterceptor(ax, ctx, "victim-jwt", {
+      url: "https://attacker.evil.com/steal",
+    });
+    expect(result.headers["Authorization"]).toBeUndefined();
+    expect(result.headers["X-Service-Token"]).toBeUndefined();
+  });
+
+  it("host with explicit port on allowlist: only matching port allowed", async () => {
+    const ax = makeAxiosLike();
+    attachOutboundPropagation(ax, {
+      serviceIdentity: goodIdentity,
+      allowedHosts: ["trusted.internal:8443"],
+    });
+    const ctx = buildRequestContext({ user: { userId: "u1", roleId: "ADMIN" }, service: null });
+
+    // Correct port → credentials attached
+    const ok = await runInterceptor(ax, ctx, "jwt", { url: "https://trusted.internal:8443/api" });
+    expect(ok.headers["Authorization"]).toBe("Bearer jwt");
+
+    // Wrong port → no credentials
+    const ax2 = makeAxiosLike();
+    attachOutboundPropagation(ax2, {
+      serviceIdentity: goodIdentity,
+      allowedHosts: ["trusted.internal:8443"],
+    });
+    const bad = await runInterceptor(ax2, ctx, "jwt", { url: "https://trusted.internal:9999/api" });
+    expect(bad.headers["Authorization"]).toBeUndefined();
   });
 });

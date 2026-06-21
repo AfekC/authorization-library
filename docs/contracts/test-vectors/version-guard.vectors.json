@@ -1,0 +1,62 @@
+[
+  {
+    "_type": "version-guard",
+    "name": "T24 — first event for a key (no stored version) → apply",
+    "storedVersion": null,
+    "incomingVersion": 1,
+    "expectedApply": true,
+    "reason": "No prior version on record; any versioned event is accepted"
+  },
+  {
+    "_type": "version-guard",
+    "name": "T24 — incoming version strictly greater than stored → apply",
+    "storedVersion": 5,
+    "incomingVersion": 6,
+    "expectedApply": true,
+    "reason": "Monotonically increasing: 6 > 5, apply and update stored to 6"
+  },
+  {
+    "_type": "version-guard",
+    "name": "T24 — incoming version equal to stored → skip (idempotent duplicate)",
+    "storedVersion": 5,
+    "incomingVersion": 5,
+    "expectedApply": false,
+    "reason": "Duplicate delivery (Kafka at-least-once); equal version is idempotent → skip"
+  },
+  {
+    "_type": "version-guard",
+    "name": "T24 — incoming version less than stored → skip (out-of-order event)",
+    "storedVersion": 10,
+    "incomingVersion": 3,
+    "expectedApply": false,
+    "reason": "Stale Kafka event arrived out of order; 3 <= 10 → skip to prevent regression"
+  },
+  {
+    "_type": "version-guard",
+    "name": "T24 — version absent (null) → apply + warn once (legacy Role Service)",
+    "storedVersion": null,
+    "incomingVersion": null,
+    "expectedApply": true,
+    "warnOnce": true,
+    "reason": "Older Role Service that does not yet emit version numbers; backward-compat: apply the event but emit a one-time warning"
+  },
+  {
+    "_type": "version-guard",
+    "name": "T24 — version absent repeated → apply without additional warnings (warn-once)",
+    "storedVersion": null,
+    "incomingVersion": null,
+    "expectedApply": true,
+    "warnOnce": false,
+    "priorMissingVersionWarningFired": true,
+    "reason": "Second (and subsequent) unversioned events must not re-fire the warning; warn-once per VersionStore instance"
+  },
+  {
+    "_type": "version-guard",
+    "name": "T24 — DELETE_ROLE clears stored version; re-add with lower version accepted",
+    "operation": "DELETE_ROLE",
+    "storedVersionBeforeDelete": 10,
+    "reAddIncomingVersion": 3,
+    "expectedApply": true,
+    "reason": "DELETE_ROLE removes the version entry so a subsequent re-add is not blocked by the deleted role's stale version"
+  }
+]

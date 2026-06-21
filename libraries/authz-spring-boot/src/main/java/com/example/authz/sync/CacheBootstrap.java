@@ -13,11 +13,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Startup state machine for the permission cache (architecture §8):
- *  - try Role Service -> atomic replace + disk write + subscribe Kafka -> NORMAL
+ *  - try Role Service -> atomic replace + disk write -> NORMAL
  *  - on failure -> seed from disk -> READY in SEED mode
  * Two background loops handle post-startup sync (§8.3):
  *  - startSeedRetry: retries the Role Service until SEED->NORMAL promotion, then stops.
  *  - startReconciler: periodic unconditional re-fetch; safety net for missed Kafka events.
+ *
+ * <p>Kafka event application is driven by {@link RoleEventKafkaListener} calling
+ * {@link #applyUpsert} / {@link #applyDelete} / {@link #forcedRefresh} on this bean.
  */
 public class CacheBootstrap {
     private static final Logger LOG = LoggerFactory.getLogger(CacheBootstrap.class);
@@ -27,8 +30,7 @@ public class CacheBootstrap {
     private final PermissionCache cache;
     private final Spi.RoleServiceClient roleService;
     private final DiskCache disk;
-    private final Spi.CacheEventHandler events; // nullable
-    private final Metrics metrics;              // nullable
+    private final Metrics metrics; // nullable
 
     private volatile Mode mode = Mode.SEED;
     private volatile Instant lastSyncAt;
@@ -43,21 +45,23 @@ public class CacheBootstrap {
     private static final long[] SEED_RETRY_DELAYS_MS = {2000, 4000, 8000, 8000};
 
     public CacheBootstrap(PermissionCache cache, Spi.RoleServiceClient roleService, DiskCache disk) {
-        this(cache, roleService, disk, null, null);
+        this(cache, roleService, disk, null);
     }
 
     public CacheBootstrap(PermissionCache cache, Spi.RoleServiceClient roleService, DiskCache disk,
-                          Spi.CacheEventHandler events, Metrics metrics) {
+                          Metrics metrics) {
         this.cache = cache;
         this.roleService = roleService;
         this.disk = disk;
-        this.events = events;
         this.metrics = metrics;
     }
 
     public Mode mode() { return mode; }
     public Instant roleServiceLastSync() { return lastSyncAt; }
     public boolean isKafkaConnected() { return kafkaConnected; }
+
+    /** Called by {@link RoleEventKafkaListener} once it has successfully started. */
+    public void setKafkaConnected(boolean connected) { this.kafkaConnected = connected; }
 
     /** Try Role Service; seed from disk if usable; otherwise fail fast. */
     public Mode start() {
@@ -75,7 +79,6 @@ public class CacheBootstrap {
             mode = Mode.SEED;
         }
         updateGauges();
-        subscribe();
         return mode;
     }
 
@@ -103,30 +106,39 @@ public class CacheBootstrap {
         }
     }
 
-    private void subscribe() {
-        if (events == null) return;
-        // Fail-open at startup: a broker that is unreachable now must not abort
-        // startup — the cache already serves from the snapshot/seed and the
-        // reconciler heals any events missed while Kafka is down (§8.4).
-        try {
-            events.start(event -> {
-                // time processing of the individual role event
-                java.lang.Runnable stop = metrics != null ? metrics.startTimer(Metrics.ROLE_EVENT_PROCESSING_DURATION) : null;
-                RoleEvents.ApplyResult result = RoleEvents.apply(cache, event);
-                if (stop != null) stop.run();
-                if (result.applied()) {
-                    writeDiskQuietly();
-                    updateGauges();
-                    if (metrics != null) metrics.inc(Metrics.ROLE_EVENTS_PROCESSED);
-                } else {
-                    if (metrics != null) metrics.inc(Metrics.ROLE_EVENT_SKIPPED);
-                    LOG.warn("role event skipped: {}", result.reason());
-                }
-            }, this::forcedRefresh);
-            kafkaConnected = true;
-        } catch (RuntimeException e) {
-            kafkaConnected = false;
-            LOG.warn("Kafka subscribe failed at startup; continuing without live events", e);
+    /**
+     * Apply a role-upsert event from the Kafka listener.
+     * Called by {@link RoleEventKafkaListener#onUpsert}.
+     */
+    public void applyUpsert(RoleUpsertEvent event) {
+        Runnable stop = metrics != null ? metrics.startTimer(Metrics.ROLE_EVENT_PROCESSING_DURATION) : null;
+        RoleEvents.ApplyResult result = RoleEvents.applyUpsert(cache, event);
+        if (stop != null) stop.run();
+        if (result.applied()) {
+            writeDiskQuietly();
+            updateGauges();
+            if (metrics != null) metrics.inc(Metrics.ROLE_EVENTS_PROCESSED);
+        } else {
+            if (metrics != null) metrics.inc(Metrics.ROLE_EVENT_SKIPPED);
+            LOG.warn("role upsert event skipped: {}", result.reason());
+        }
+    }
+
+    /**
+     * Apply a role-delete event from the Kafka listener.
+     * Called by {@link RoleEventKafkaListener#onDelete}.
+     */
+    public void applyDelete(RoleDeleteEvent event) {
+        Runnable stop = metrics != null ? metrics.startTimer(Metrics.ROLE_EVENT_PROCESSING_DURATION) : null;
+        RoleEvents.ApplyResult result = RoleEvents.applyDelete(cache, event);
+        if (stop != null) stop.run();
+        if (result.applied()) {
+            writeDiskQuietly();
+            updateGauges();
+            if (metrics != null) metrics.inc(Metrics.ROLE_EVENTS_PROCESSED);
+        } else {
+            if (metrics != null) metrics.inc(Metrics.ROLE_EVENT_SKIPPED);
+            LOG.warn("role delete event skipped: {}", result.reason());
         }
     }
 
@@ -178,7 +190,7 @@ public class CacheBootstrap {
                     fullSync();
                     mode = Mode.NORMAL;
                     updateGauges();
-                        if (metrics != null) metrics.inc(Metrics.ROLE_REFRESH_SUCCESS);
+                    if (metrics != null) metrics.inc(Metrics.ROLE_REFRESH_SUCCESS);
                     LOG.info("authz seed retry succeeded — cache promoted to NORMAL mode");
                     return; // job done; periodic reconciler takes over
                 } catch (RuntimeException e) {
@@ -242,6 +254,5 @@ public class CacheBootstrap {
         reconcilerStarted.set(false); // allow restart on a fresh instance after stop()
         if (seedRetry != null) seedRetry.interrupt();
         if (reconciler != null) reconciler.interrupt();
-        if (events != null) events.stop();
     }
 }

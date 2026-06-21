@@ -6,7 +6,7 @@ import {
   stripUntrustedHeaders,
 } from "../src/inbound-auth/context.js";
 import { PermissionCache } from "../src/permission-cache/cache.js";
-import { applyRoleEvent, parseRoleEvent } from "../src/cache-sync/events.js";
+import { applyUpsert, applyDelete } from "../src/cache-sync/events.js";
 import { DiskCache } from "../src/cache-sync/disk.js";
 import { CacheBootstrap } from "../src/cache-sync/bootstrap.js";
 import { loadAuthorizationConfig } from "../src/rule-config/loader.js";
@@ -58,12 +58,11 @@ describe("buildRequestContext", () => {
   });
 });
 
-describe("applyRoleEvent", () => {
-  it("applies UPSERT and DELETE, skips unknown", async () => {
+describe("applyUpsert / applyDelete", () => {
+  it("applies upsert and delete correctly", async () => {
     const cache = new PermissionCache({ MANAGER: ["READ_ORDER"] });
     expect(
-      (await applyRoleEvent(cache, {
-        operation: "UPSERT_ROLE",
+      (await applyUpsert(cache, {
         roleId: "MANAGER",
         permissions: ["READ_ORDER", "DELETE_ORDER"],
       })).applied,
@@ -71,18 +70,21 @@ describe("applyRoleEvent", () => {
     expect(cache.permissionsForRole("MANAGER").has("DELETE_ORDER")).toBe(true);
 
     expect(
-      (await applyRoleEvent(cache, { operation: "DELETE_ROLE", roleId: "MANAGER" }))
-        .applied,
+      (await applyDelete(cache, { roleId: "MANAGER" })).applied,
     ).toBe(true);
     expect(cache.permissionsForRole("MANAGER").size).toBe(0);
+  });
 
-    const skipped = await applyRoleEvent(cache, { operation: "FROBNICATE" });
+  it("applyUpsert rejects empty roleId", async () => {
+    const cache = new PermissionCache();
+    const skipped = await applyUpsert(cache, { roleId: "", permissions: [] });
     expect(skipped.applied).toBe(false);
   });
 
-  it("parseRoleEvent returns null on bad json", () => {
-    expect(parseRoleEvent("{not json")).toBeNull();
-    expect(parseRoleEvent(null)).toBeNull();
+  it("applyDelete rejects empty roleId", async () => {
+    const cache = new PermissionCache();
+    const skipped = await applyDelete(cache, { roleId: "" });
+    expect(skipped.applied).toBe(false);
   });
 });
 
@@ -176,7 +178,7 @@ describe("CacheBootstrap", () => {
     };
     const metrics = new Metrics();
     const cache = new PermissionCache();
-    const boot = new CacheBootstrap(cache, client, new DiskCache(file), undefined, {
+    const boot = new CacheBootstrap(cache, client, new DiskCache(file), {
       metrics,
     });
     await boot.start();

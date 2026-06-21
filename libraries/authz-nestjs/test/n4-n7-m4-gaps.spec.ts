@@ -234,7 +234,8 @@ describe("M4 — nbf boundary parity (jose ≡ Java Nimbus)", () => {
   const AUDIENCE = "api://m4-test";
 
   async function makeKeySet(kid: string): Promise<KeySet> {
-    const pair: GenerateKeyPairResult<KeyLike> = await generateKeyPair("RS256", { extractable: true });
+    // T1: use Ed25519 to match the provider's re-platforming (default alg is now EdDSA)
+    const pair: GenerateKeyPairResult<KeyLike> = await generateKeyPair("Ed25519", { extractable: true });
     return { privateKey: pair.privateKey, publicKey: pair.publicKey, kid };
   }
 
@@ -255,7 +256,7 @@ describe("M4 — nbf boundary parity (jose ≡ Java Nimbus)", () => {
 
   async function mintToken(overrides: Record<string, unknown>): Promise<string> {
     return new SignJWT(overrides)
-      .setProtectedHeader({ alg: "RS256", kid: userKeys.kid })
+      .setProtectedHeader({ alg: "EdDSA", kid: userKeys.kid })
       .setIssuedAt()
       .sign(userKeys.privateKey as KeyLike);
   }

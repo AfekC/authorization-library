@@ -157,7 +157,7 @@ class StandardsGapsTest {
         // treat it as non-fatal (NORMAL mode, not SEED) and count the failure.
         DiskCache failingDisk = new DiskCache(tmp.resolve("missing-subdir").resolve("c.json"));
 
-        CacheBootstrap boot = new CacheBootstrap(cache, role, failingDisk, null, metrics);
+        CacheBootstrap boot = new CacheBootstrap(cache, role, failingDisk, metrics);
         CacheBootstrap.Mode mode = boot.start();
 
         assertEquals(CacheBootstrap.Mode.NORMAL, mode,
@@ -244,11 +244,11 @@ class StandardsGapsTest {
                 () -> assertThrows(RuntimeException.class, provider::getServiceToken));
     }
 
-    /** A structurally valid RS256 JWT (fake signature) so the decoder proceeds to fetch JWKS. */
+    /** A structurally valid EdDSA JWT (fake signature) so the decoder proceeds to fetch JWKS. */
     private static String fakeJwt() {
         Base64.Encoder enc = Base64.getUrlEncoder().withoutPadding();
         String header = enc.encodeToString(
-                "{\"alg\":\"RS256\",\"kid\":\"test-key\"}".getBytes(StandardCharsets.UTF_8));
+                "{\"alg\":\"EdDSA\",\"kid\":\"test-key\"}".getBytes(StandardCharsets.UTF_8));
         String payload = enc.encodeToString(
                 "{\"sub\":\"alice\",\"iss\":\"https://issuer.test\"}".getBytes(StandardCharsets.UTF_8));
         String sig = enc.encodeToString("not-a-real-signature".getBytes(StandardCharsets.UTF_8));

@@ -54,31 +54,20 @@ Spring Boot auto-configuration library for config-driven authorization.
 
 ## Observability
 
-When `idf.hatraa:o11y-lib:1.0.1` is present in the consuming app, the authz
-library routes its existing telemetry through that stack:
+The library owns **no** observability SDK configuration — that is a service
+concern. It exposes two framework-agnostic seams:
 
-- audit logs continue to use the `AUTHZ` logger and are emitted as JSON by the
-  o11y logback config;
-- token-validation entry points are annotated with `@Span`, so trace/span ids
-  are added to the logging MDC by the o11y aspect;
-- `Metrics` keeps its in-process counters/gauges for health and tests, and also
-  mirrors updates to Micrometer when a `MeterRegistry` is available.
+- audit logs use the `AUTHZ` logger via a pluggable `Spi.AuditSink`
+  (default `LoggingAuditSink`); register your own `AuditSink` bean to route
+  per-decision events into your telemetry stack;
+- the in-process `Metrics` registry keeps stable counters/gauges for health and
+  tests, and **auto-mirrors to Micrometer** when a `MeterRegistry` bean is on the
+  classpath (e.g. via `spring-boot-starter-actuator`). `micrometer-core` is an
+  optional dependency, so the binding activates only when the service provides a
+  registry.
 
-Install the local o11y artifact into the same Maven repo used by the Docker
-build wrapper before running apps that depend on it:
-
-```powershell
-tests\scripts\install-o11y.ps1 -O11ySpringDir C:\path\to\o11y-springboot
-```
-
-Set the o11y service metadata in the application, for example:
-
-```properties
-service.name=orders-api
-environment=drill
-system=auth-library
-management.otlp.tracing.endpoint=http://alloy:4317
-```
+Configure tracing/metrics/log export (OTLP, Prometheus, etc.) in your **service**
+using Spring Boot Actuator / your chosen observability starter.
 
 ## Configuration
 

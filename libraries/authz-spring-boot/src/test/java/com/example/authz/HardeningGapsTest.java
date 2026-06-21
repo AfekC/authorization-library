@@ -6,7 +6,9 @@ import com.example.authz.config.ConfigException;
 import com.example.authz.observability.Metrics;
 import com.example.authz.sync.CacheBootstrap;
 import com.example.authz.sync.DiskCache;
+import com.example.authz.sync.RoleDeleteEvent;
 import com.example.authz.sync.RoleEvents;
+import com.example.authz.sync.RoleUpsertEvent;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -14,7 +16,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -176,12 +177,8 @@ class HardeningGapsTest {
     @Test
     void q5_blankRoleIdInUpsertIsSkipped() {
         PermissionCache cache = new PermissionCache();
-        Map<String, Object> event = new HashMap<>();
-        event.put("operation", "UPSERT_ROLE");
-        event.put("roleId", "");   // blank
-        event.put("permissions", List.of("READ"));
-
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, event);
+        RoleEvents.ApplyResult result = RoleEvents.applyUpsert(cache,
+                new RoleUpsertEvent("", List.of("READ"), null));
         assertFalse(result.applied(),
                 "Q5: blank roleId in UPSERT_ROLE must be skipped");
         assertNotNull(result.reason(), "Q5: skip must include a reason");
@@ -190,12 +187,8 @@ class HardeningGapsTest {
     @Test
     void q5_whitespaceOnlyRoleIdInUpsertIsSkipped() {
         PermissionCache cache = new PermissionCache();
-        Map<String, Object> event = new HashMap<>();
-        event.put("operation", "UPSERT_ROLE");
-        event.put("roleId", "   "); // whitespace only
-        event.put("permissions", List.of("READ"));
-
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, event);
+        RoleEvents.ApplyResult result = RoleEvents.applyUpsert(cache,
+                new RoleUpsertEvent("   ", List.of("READ"), null));
         assertFalse(result.applied(),
                 "Q5: whitespace-only roleId in UPSERT_ROLE must be skipped");
     }
@@ -203,11 +196,8 @@ class HardeningGapsTest {
     @Test
     void q5_blankRoleIdInDeleteIsSkipped() {
         PermissionCache cache = new PermissionCache(Map.of("R", List.of("READ")));
-        Map<String, Object> event = new HashMap<>();
-        event.put("operation", "DELETE_ROLE");
-        event.put("roleId", "");  // blank
-
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, event);
+        RoleEvents.ApplyResult result = RoleEvents.applyDelete(cache,
+                new RoleDeleteEvent("", null));
         assertFalse(result.applied(),
                 "Q5: blank roleId in DELETE_ROLE must be skipped");
         // Cache must be unchanged
@@ -218,11 +208,8 @@ class HardeningGapsTest {
     @Test
     void q5_whitespaceOnlyRoleIdInDeleteIsSkipped() {
         PermissionCache cache = new PermissionCache(Map.of("R", List.of("READ")));
-        Map<String, Object> event = new HashMap<>();
-        event.put("operation", "DELETE_ROLE");
-        event.put("roleId", "  ");  // whitespace only
-
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, event);
+        RoleEvents.ApplyResult result = RoleEvents.applyDelete(cache,
+                new RoleDeleteEvent("  ", null));
         assertFalse(result.applied(),
                 "Q5: whitespace-only roleId in DELETE_ROLE must be skipped");
     }
@@ -230,17 +217,12 @@ class HardeningGapsTest {
     @Test
     void q5_blankPermissionEntryInUpsertIsSkipped() {
         PermissionCache cache = new PermissionCache();
-        List<Object> perms = new ArrayList<>();
+        List<String> perms = new ArrayList<>();
         perms.add("READ");
         perms.add("");      // blank permission
         perms.add("WRITE");
-
-        Map<String, Object> event = new HashMap<>();
-        event.put("operation", "UPSERT_ROLE");
-        event.put("roleId", "ROLE_A");
-        event.put("permissions", perms);
-
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, event);
+        RoleEvents.ApplyResult result = RoleEvents.applyUpsert(cache,
+                new RoleUpsertEvent("ROLE_A", perms, null));
         assertFalse(result.applied(),
                 "Q5: blank permission entry in UPSERT_ROLE must cause the event to be skipped");
     }
@@ -248,15 +230,11 @@ class HardeningGapsTest {
     @Test
     void q5_whitespaceOnlyPermissionEntryIsSkipped() {
         PermissionCache cache = new PermissionCache();
-        List<Object> perms = new ArrayList<>();
+        List<String> perms = new ArrayList<>();
         perms.add("READ");
         perms.add("   ");   // whitespace-only permission
-        Map<String, Object> event = new HashMap<>();
-        event.put("operation", "UPSERT_ROLE");
-        event.put("roleId", "ROLE_B");
-        event.put("permissions", perms);
-
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, event);
+        RoleEvents.ApplyResult result = RoleEvents.applyUpsert(cache,
+                new RoleUpsertEvent("ROLE_B", perms, null));
         assertFalse(result.applied(),
                 "Q5: whitespace-only permission string must cause skip");
     }
@@ -264,12 +242,8 @@ class HardeningGapsTest {
     @Test
     void q5_validUpsertWithNonBlankRoleIdAndPermissionsApplies() {
         PermissionCache cache = new PermissionCache();
-        Map<String, Object> event = new HashMap<>();
-        event.put("operation", "UPSERT_ROLE");
-        event.put("roleId", "ADMIN");
-        event.put("permissions", List.of("READ", "WRITE"));
-
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, event);
+        RoleEvents.ApplyResult result = RoleEvents.applyUpsert(cache,
+                new RoleUpsertEvent("ADMIN", List.of("READ", "WRITE"), null));
         assertTrue(result.applied(),
                 "Q5: valid UPSERT_ROLE must apply: " + result.reason());
         assertTrue(cache.permissionsForRole("ADMIN").contains("READ"));
@@ -279,11 +253,8 @@ class HardeningGapsTest {
     @Test
     void q5_validDeleteWithNonBlankRoleIdApplies() {
         PermissionCache cache = new PermissionCache(Map.of("VIEWER", List.of("READ")));
-        Map<String, Object> event = new HashMap<>();
-        event.put("operation", "DELETE_ROLE");
-        event.put("roleId", "VIEWER");
-
-        RoleEvents.ApplyResult result = RoleEvents.apply(cache, event);
+        RoleEvents.ApplyResult result = RoleEvents.applyDelete(cache,
+                new RoleDeleteEvent("VIEWER", null));
         assertTrue(result.applied(),
                 "Q5: valid DELETE_ROLE must apply: " + result.reason());
         assertTrue(cache.permissionsForRole("VIEWER").isEmpty(),
@@ -294,12 +265,7 @@ class HardeningGapsTest {
     void q5_blankRoleIdDoesNotInsertPhantomEntry() {
         // Key concern: "" role must not end up in the cache
         PermissionCache cache = new PermissionCache();
-        Map<String, Object> event = new HashMap<>();
-        event.put("operation", "UPSERT_ROLE");
-        event.put("roleId", "");
-        event.put("permissions", List.of("ADMIN"));
-
-        RoleEvents.apply(cache, event);  // should skip
+        RoleEvents.applyUpsert(cache, new RoleUpsertEvent("", List.of("ADMIN"), null)); // should skip
         assertTrue(cache.permissionsForRole("").isEmpty(),
                 "Q5: blank roleId must not produce a phantom '' entry in the cache");
     }
@@ -316,7 +282,7 @@ class HardeningGapsTest {
                 cache,
                 () -> Map.of("R", List.of("READ")),
                 new DiskCache(tmp.resolve("q6a.json")),
-                null, metrics);
+                metrics);
         boot.start();
 
         // Call startReconciler twice — second call must be a no-op
@@ -347,7 +313,7 @@ class HardeningGapsTest {
                 cache,
                 () -> { ticks.incrementAndGet(); return Map.of("R", List.of("READ")); },
                 new DiskCache(tmp.resolve("q6b.json")),
-                null, null);
+                null);
         boot.start();
         // Reset counter after start() (start() calls fullSync once itself)
         ticks.set(0);
@@ -379,7 +345,7 @@ class HardeningGapsTest {
                 cache,
                 () -> { ranAfterRestart.set(true); return Map.of("R", List.of("READ")); },
                 new DiskCache(tmp.resolve("q6c.json")),
-                null, null);
+                null);
         boot.start();
 
         // Start, then stop, then start again
@@ -396,7 +362,7 @@ class HardeningGapsTest {
                 cache,
                 () -> { ranAfterRestart.set(true); return Map.of("R", List.of("READ")); },
                 new DiskCache(tmp.resolve("q6c.json")),
-                null, null);
+                null);
         boot2.start();
         boot2.startReconciler(100);
 
@@ -419,7 +385,7 @@ class HardeningGapsTest {
                 cache,
                 () -> { ticks.incrementAndGet(); return Map.of("R", List.of("READ")); },
                 new DiskCache(tmp.resolve("q6d.json")),
-                null, null);
+                null);
         boot.start();
         ticks.set(0);
 
@@ -492,7 +458,7 @@ class HardeningGapsTest {
         CacheBootstrap boot = new CacheBootstrap(
                 cache,
                 () -> { throw new RuntimeException("still down (Q7)"); },
-                disk, null, metrics);
+                disk, metrics);
         assertEquals(CacheBootstrap.Mode.SEED, boot.start());
 
         long before = metrics.get(Metrics.ROLE_REFRESH_FAILURES);

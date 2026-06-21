@@ -22,7 +22,15 @@ export class OrdersController {
 
   constructor(@Inject(AUTHZ_SERVICE_IDENTITY) serviceIdentity: any) {
     this.downstream = axios.create({ timeout: 5000 });
-    attachOutboundPropagation(this.downstream, { serviceIdentity: serviceIdentity ?? undefined });
+    // T19: propagation is default-deny — only attach the user JWT + service token
+    // to explicitly trusted downstream hosts (comma-separated env allowlist).
+    attachOutboundPropagation(this.downstream, {
+      serviceIdentity: serviceIdentity ?? undefined,
+      allowedHosts: (process.env.AUTHZ_OUTBOUND_ALLOWED_HOSTS || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    });
   }
 
   @Get(":id")

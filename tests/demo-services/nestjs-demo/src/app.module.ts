@@ -26,21 +26,10 @@ const MOCK = process.env.MOCK_URL || "http://localhost:4000";
       roleServiceUrl: MOCK,
       authorizationYamlPath: path.join(__dirname, "..", "authorization.yaml"),
       diskCachePath: process.env.AUTHZ_DISK_CACHE_PATH || "/tmp/authorization-cache.json",
-      kafkaBrokers: (process.env.KAFKA_BROKERS || "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
       serviceToken: {
         tokenUrl: `${MOCK}/sso/token`,
         clientId: process.env.CLIENT_ID || "nestjs-demo-id",
         clientSecret: process.env.CLIENT_SECRET || "nestjs-demo-secret",
-      },
-      observability: {
-        enabled: true,
-        serviceName: process.env.SERVICE_NAME || "nestjs-demo",
-        systemName: process.env.SYSTEM_NAME || process.env.SYSTEM || "auth-library",
-        envName: (process.env.ENV_NAME || process.env.ENVIRONMENT || "drill").toLowerCase() as any,
-        otelExporterOtlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
       },
     }),
   ],

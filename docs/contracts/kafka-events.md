@@ -1,104 +1,84 @@
 # Kafka Event Contracts
 
-## Topic: `role-updates` — upsert events
+## Ownership split (who owns what)
 
-- **Type:** Change events only (no full snapshots)
-- **Format:** JSON, one event per message
-- **Derived operation:** `UPSERT_ROLE` (set by the consumer; not on the wire)
+The **library owns the listener**; the **service owns the connection config**.
 
-Insert or fully replace the permission set for one role.
+- The `authz-*` library ships the message handler — a Spring `@KafkaListener` bean
+  (`RoleEventKafkaListener`) and a NestJS `@EventPattern` controller
+  (`RoleEventsController`). It also **generates its own consumer group** per instance
+  (`authz-cache-sync-<uuid>`) so every replica receives every event (broadcast fan-out).
+- The **host service** owns all Kafka connection config — brokers, the Avro deserializer,
+  and the Schema Registry URL — via `spring.kafka.consumer.*` (Spring) or the
+  `authzKafkaOptions({ brokers, schemaRegistryUrl })` factory the library exports (NestJS).
+  The service does **not** set a consumer group; the library does.
+
+## Wire format
+
+**Confluent-framed Avro** (1-byte magic `0x00` + 4-byte schema id + Avro body). Schemas
+live in a Confluent-compatible Schema Registry; the deserializer resolves the writer
+schema by id at runtime. The **operation is derived from the topic** — each topic carries
+exactly one schema and routes to one typed handler method. There is no `operation` field
+on the wire, and (unlike the previous JSON protocol) no `operation` cross-check: the topic
+*is* the operation.
+
+## Topic: `role-updates` — upsert (`RoleUpsertEvent`)
+
+Insert or fully replace the permission set for one role. Routes to `applyUpsert`.
+
+| Field | Avro type | Description |
+|-------|-----------|-------------|
+| `roleId` | `string` | Role identifier (blank rejected) |
+| `permissions` | `array<string>` | Full replacement set, not a diff (blank entries rejected) |
+| `version` | `["null","long"]` | Optional monotonic serial (T24). Absent → always-apply (legacy) |
 
 ```jsonc
-{
-  "roleId": "manager",
-  "permissions": ["READ_ORDER", "DELETE_ORDER"]
-}
+{ "roleId": "manager", "permissions": ["READ_ORDER", "DELETE_ORDER"], "version": 7 }
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `roleId` | string | Role identifier |
-| `permissions` | string[] | Full replacement set, not a diff |
+## Topic: `role-delete` — delete (`RoleDeleteEvent`)
 
-> `operation` is **not** a wire field. It is absent from the message above. The consumer
-> synthesises `"UPSERT_ROLE"` because the message arrived on the `role-updates` topic.
+Remove a role entirely. Routes to `applyDelete`.
 
-## Topic: `role-delete` — delete events
-
-- **Type:** Deleted ID only
-- **Format:** JSON, one event per message
-- **Derived operation:** `DELETE_ROLE` (set by the consumer; not on the wire)
-
-Remove a role entirely.
+| Field | Avro type | Description |
+|-------|-----------|-------------|
+| `roleId` | `string` | Role identifier to remove (blank rejected) |
+| `version` | `["null","long"]` | Optional monotonic serial (T24) |
 
 ```jsonc
-{
-  "roleId": "manager"
-}
+{ "roleId": "manager", "version": 8 }
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `roleId` | string | Role identifier to remove |
+## Topic: `publish-roles` — forced-refresh trigger (`PublishRolesTrigger`)
 
-> `operation` is **not** a wire field. The consumer synthesises `"DELETE_ROLE"` because
-> the message arrived on the `role-delete` topic.
-
-## Topic
-
-- **Name:** `publish-roles`
-- **Type:** Forced-refresh trigger (no payload semantics)
-- **Format:** JSON, one message per trigger
-
-### PUBLISH_ROLES (forced refresh)
-
-Signals the library to re-fetch the **full** role map from the Role Service
-(`GET /roles`) and atomically replace the in-memory cache + rewrite the disk
-cache. The message **body is ignored** — any message on this topic is a trigger.
+Signals the library to re-fetch the **full** role map from the Role Service (`GET /roles`),
+atomically replace the in-memory cache, and rewrite the disk cache. The **payload is
+ignored** — its presence is the signal. It still must be Avro-framed because all three
+topics share one deserializer; a trivial schema carries the message.
 
 ```jsonc
 { "trigger": 1730000000000 }
 ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| _(any)_ | _(any)_ | Ignored. Presence of a message is the signal. |
+A forced refresh that cannot reach the Role Service is fail-open: the current cache is
+kept and `role_refresh_failures_total` is incremented.
 
-A forced refresh that cannot reach the Role Service is fail-open: the current
-cache is kept and `role_refresh_failures_total` is incremented.
+## Processing rules
 
-## Processing Rules
+- **T24 version guard** — an event is applied only if its `version` is strictly greater
+  than the highest applied version for that `roleId`; stale/duplicate events are skipped
+  (`role_event_skipped_total`). Absent `version` → always-apply + one-time warning.
+- **Atomic apply** — copy the in-memory map, apply the change, swap the reference in one
+  operation; the disk cache is rewritten after each applied event.
+- **Fail-closed authorization** — unknown role → empty permissions → DENY.
+- **No batching, no reordering** — each event is applied individually in arrival order
+  (the version guard, not arrival order, protects against out-of-order delivery).
 
-- Events are applied **atomically**: copy the in-memory map, apply the change, swap the reference in one operation.
-- After each applied event the disk cache (`authorization-cache.json`) is written.
-- The `operation` is **never on the wire**; the consumer synthesises it from the topic name before passing it to the event handler. The handler receives `UPSERT_ROLE` for messages from `role-updates` (or any non-delete topic) and `DELETE_ROLE` for messages from `role-delete`.
-- An unrecognised synthesised `operation` value is **logged as a warning and skipped** (defensive; cannot happen with a correct topic listener).
-- **No batching** — each event is applied individually.
-- **No reordering** — events are processed in arrival order.
-
-## Error Handling
+## Error handling
 
 | Scenario | Behaviour |
 |----------|-----------|
-| Kafka unavailable (service already READY) | **Fail open** — serve from last-known-good in-memory cache |
-| Event fails to parse | Skip event, log warning, cache unchanged |
-| Unrecognised `operation` (synthesised from topic) | Log warning, increment `role_event_skipped_total` metric, skip |
-
-## Wire Protocol Clarification
-
-**The `operation` field is NOT present in Kafka messages.** The producer publishes only the
-role payload; consumers synthesise the operation from which topic delivered the message:
-
-| Delivered via topic | Synthesised operation |
-|---------------------|-----------------------|
-| `role-updates` (or any non-delete topic) | `UPSERT_ROLE` |
-| `role-delete` | `DELETE_ROLE` |
-
-The consumer injects the `operation` key into the parsed event map **in memory** before
-passing it to the event handler — it is never on the wire. Both the Java
-(`KafkaCacheEventHandler.java:69`) and NestJS (`kafka.ts:62-64`) implementations
-follow this pattern identically.
-
-**Consequence (C9):** An UPSERT message accidentally published to the `role-delete` topic
-is treated as a deletion. There is no cross-check against an `operation` field in the
-message body because that field does not exist on the wire.
+| Kafka unavailable (service already READY) | **Fail open** — serve from last-known-good in-memory cache; the reconciler heals missed events |
+| Value fails Avro deserialization | Container logs/skips the message; cache unchanged |
+| Blank `roleId` / blank permission entry | Skip event, increment `role_event_skipped_total` |
+| Stale `version` | Skip event (idempotent), increment `role_event_skipped_total` |

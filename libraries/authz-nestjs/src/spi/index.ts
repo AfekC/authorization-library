@@ -38,25 +38,50 @@ export interface AttributeProvider {
  * replaces the whole map each cycle.
  */
 export type RoleMap = Record<string, string[]>;
+
+/**
+ * T24 — Versioned snapshot entry from a Role Service that supports the new
+ * monotonic serial. Each entry carries `permissions` + a monotonic `version`
+ * used to guard against out-of-order cache application. The Role Service may
+ * return entries in this format alongside (or instead of) the bare string[].
+ */
+export interface VersionedRoleEntry {
+  permissions: string[];
+  version: number;
+}
+
+/**
+ * T24 — Richer snapshot structure returned by a Role Service that includes
+ * per-role monotonic versions. Each value is either a plain string[] (legacy)
+ * or a VersionedRoleEntry (new). HttpRoleServiceClient normalises both into
+ * a VersionedSnapshot; callers that only need permissions use plain RoleMap.
+ */
+export type VersionedSnapshot = Record<string, VersionedRoleEntry | string[]>;
+
 export interface RoleServiceClient {
   fetchSnapshot(): Promise<RoleMap>;
 }
 
 /**
- * Incremental cache change events (Kafka). The wire message carries only
- * `roleId` (+ `permissions` for upserts); the operation is derived from the
- * source topic (`role-updates` vs `role-delete`) by the event handler.
+ * Incremental cache upsert event (from `role-updates` Kafka topic, Avro-decoded).
+ *
+ * T24: `version` is an optional monotonic serial. When present, the event is
+ * applied only if strictly greater than the stored version for that roleId.
  */
-export type RoleEvent =
-  | { operation: "UPSERT_ROLE"; roleId: string; permissions: string[] }
-  | { operation: "DELETE_ROLE"; roleId: string };
+export interface RoleUpsertEvent {
+  roleId: string;
+  permissions: string[];
+  version?: number;
+}
 
-export interface CacheEventHandler {
-  start(
-    onEvent: (event: RoleEvent) => void,
-    onRefresh: () => void,
-  ): Promise<void>;
-  stop(): Promise<void>;
+/**
+ * Incremental cache delete event (from `role-delete` Kafka topic, Avro-decoded).
+ *
+ * T24: `version` is optional; when present the same monotonic guard applies.
+ */
+export interface RoleDeleteEvent {
+  roleId: string;
+  version?: number;
 }
 
 /** Audit event emitted per decision. */

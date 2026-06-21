@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+
 /** Extension interfaces (architecture §11). Swap implementations without touching auth logic. */
 public final class Spi {
     private Spi() {}
@@ -44,12 +45,6 @@ public final class Spi {
      */
     public interface RoleServiceClient {
         Map<String, List<String>> fetchSnapshot();
-    }
-
-    /** Incremental cache change events + forced-refresh trigger. */
-    public interface CacheEventHandler {
-        void start(java.util.function.Consumer<Map<String, Object>> onEvent, Runnable onRefresh);
-        void stop();
     }
 
     /** Audit sink for per-decision events. */

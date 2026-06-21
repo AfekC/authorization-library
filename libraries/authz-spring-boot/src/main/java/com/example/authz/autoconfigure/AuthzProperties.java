@@ -45,6 +45,14 @@ public class AuthzProperties {
     /** Claim + value that marks a service token (§2.3). */
     private String serviceTokenUseClaim = "token_use";
     private String serviceTokenUseValue = "service";
+    /**
+     * Optional expected audience for service tokens (T5). When blank (default),
+     * no audience check is performed on service tokens — preserving existing
+     * behavior. When set, the service-token decoder enforces that the {@code aud}
+     * claim contains this value. Mirrors the NestJS {@code serviceTokenAudience}
+     * config option. Config key: {@code authz.service-token-audience}.
+     */
+    private String serviceTokenAudience = "";
     /** Clock-skew tolerance (seconds) for JWT exp/nbf checks (§2.2). */
     private long clockSkewSeconds = 5;
     /**
@@ -61,16 +69,16 @@ public class AuthzProperties {
     private int roleServiceReadTimeout = 5000;
     /** Fallback/seed cache file. */
     private String diskCachePath = "authorization-cache.json";
-    /** Kafka brokers for incremental role events (empty -> Kafka disabled). */
-    private List<String> kafkaBrokers = List.of();
-    /** Topics carrying role UPSERT and DELETE events, plus the forced-refresh trigger topic. */
+    /**
+     * Topics carrying role UPSERT and DELETE events, plus the forced-refresh trigger topic.
+     * These are read by the library's {@code @KafkaListener} beans via SpEL:
+     * {@code ${authz.kafka.role-updates-topic:role-updates}} etc.
+     * Kafka connection config (brokers, deserializer, schema-registry) is owned by the
+     * host service via {@code spring.kafka.consumer.*} properties.
+     */
     private String roleUpdatesTopic = "role-updates";
     private String roleDeleteTopic = "role-delete";
     private String publishRolesTopic = "publish-roles";
-    /** Kafka consumer group prefix (default "authz-cache-sync"). A UUID is appended per instance. */
-    private String kafkaGroupId = "authz-cache-sync";
-    /** Kafka consumer client ID prefix (default "authz-cache-sync"). */
-    private String kafkaClientId = "authz-cache-sync";
     /** Periodic reconciler interval in ms (§8.3). Default 5 minutes. */
     private long reconcileIntervalMs = 300000;
     /** Outbound service-token (client-credentials); empty clientId -> disabled. */
@@ -125,6 +133,8 @@ public class AuthzProperties {
     public void setServiceTokenUseClaim(String v) { this.serviceTokenUseClaim = v; }
     public String getServiceTokenUseValue() { return serviceTokenUseValue; }
     public void setServiceTokenUseValue(String v) { this.serviceTokenUseValue = v; }
+    public String getServiceTokenAudience() { return serviceTokenAudience; }
+    public void setServiceTokenAudience(String v) { this.serviceTokenAudience = v; }
     public long getClockSkewSeconds() { return clockSkewSeconds; }
     public void setClockSkewSeconds(long v) { this.clockSkewSeconds = v; }
     public long getJwksTimeoutMs() { return jwksTimeoutMs; }
@@ -137,18 +147,12 @@ public class AuthzProperties {
     public void setRoleServiceReadTimeout(int v) { this.roleServiceReadTimeout = v; }
     public String getDiskCachePath() { return diskCachePath; }
     public void setDiskCachePath(String v) { this.diskCachePath = v; }
-    public List<String> getKafkaBrokers() { return kafkaBrokers; }
-    public void setKafkaBrokers(List<String> v) { this.kafkaBrokers = v; }
     public String getRoleUpdatesTopic() { return roleUpdatesTopic; }
     public void setRoleUpdatesTopic(String v) { this.roleUpdatesTopic = v; }
     public String getRoleDeleteTopic() { return roleDeleteTopic; }
     public void setRoleDeleteTopic(String v) { this.roleDeleteTopic = v; }
     public String getPublishRolesTopic() { return publishRolesTopic; }
     public void setPublishRolesTopic(String v) { this.publishRolesTopic = v; }
-    public String getKafkaGroupId() { return kafkaGroupId; }
-    public void setKafkaGroupId(String v) { this.kafkaGroupId = v; }
-    public String getKafkaClientId() { return kafkaClientId; }
-    public void setKafkaClientId(String v) { this.kafkaClientId = v; }
     public long getReconcileIntervalMs() { return reconcileIntervalMs; }
     public void setReconcileIntervalMs(long v) { this.reconcileIntervalMs = v; }
     public String getTokenUrl() { return tokenUrl; }

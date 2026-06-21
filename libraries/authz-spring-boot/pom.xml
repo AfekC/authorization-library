@@ -36,14 +36,13 @@
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
     </dependency>
-    <!-- In-house observability starter (idf.hatraa:o11y-lib): JSON logging,
-         OTLP/gRPC tracing, Prometheus metrics, @Span AOP. Optional: only
-         consumers that opt in pull it transitively. Installed into the local
-         Maven repo via tests/scripts/install-o11y.ps1 (not published). -->
+    <!-- Optional Micrometer mirroring: the library binds its in-process Metrics
+         to a service-provided MeterRegistry when one is present (@ConditionalOnClass).
+         The service owns the registry/observability config; this only compiles the
+         binding seam. Was previously pulled transitively via o11y-lib. -->
     <dependency>
-      <groupId>idf.hatraa</groupId>
-      <artifactId>o11y-lib</artifactId>
-      <version>1.0.1</version>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>
@@ -75,11 +74,32 @@
       <artifactId>spring-kafka</artifactId>
       <optional>true</optional>
     </dependency>
+    <!-- Avro GenericRecord: used by RoleEventKafkaListener to receive Confluent-Avro
+         deserialized messages. The Confluent KafkaAvroDeserializer is a host runtime dep
+         (configured via spring.kafka.consumer.value-deserializer); the library only needs
+         the Avro API for the GenericRecord parameter type. -->
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>1.11.4</version>
+      <optional>true</optional>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
+    </dependency>
+    <!-- Google Tink: required by Nimbus JOSE for EdDSA. Nimbus 9.x hard-wires
+         com.google.crypto.tink.subtle.Ed25519Verify in Ed25519Verifier (and Ed25519Sign
+         in Ed25519Signer) at construction; without tink on the classpath the verifier
+         fails to load at runtime. Runtime scope: the library verifies EdDSA user tokens
+         in production (T1), not just in tests. -->
+    <dependency>
+      <groupId>com.google.crypto.tink</groupId>
+      <artifactId>tink</artifactId>
+      <version>1.10.0</version>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
 

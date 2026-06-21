@@ -11,12 +11,8 @@ import {
 } from "../inbound-auth/context.js";
 import { HttpRoleServiceClient } from "../role-service-client/client.js";
 import { DiskCache } from "../cache-sync/disk.js";
-import { KafkaCacheEventHandler } from "../cache-sync/kafka.js";
 import { CacheBootstrap, CacheMode } from "../cache-sync/bootstrap.js";
 import { Metrics, METRIC, buildHealth } from "../observability/metrics.js";
-import { ObservabilityConfig, initObservability, createAuthzTracer, AuthzTracer, AuthzSpan } from "../observability/otel.js";
-import { bridgeMetricsToOtel } from "../observability/otel-bridge.js";
-import { OtelAuditSink } from "../observability/otel-audit-sink.js";
 import { LoggingAuditSink } from "../audit/audit.js";
 import { AuditSink, ServiceIdentityProvider, TokenValidator, RoleResolver, PolicyEngine, AttributeProvider } from "../spi/index.js";
 import { ClientCredentialsProvider } from "../service-token/provider.js";
@@ -51,17 +47,6 @@ export interface CreateAuthzOptions {
 
   /** Permission distribution (required only when user auth is enabled). */
   roleServiceUrl?: string;
-  kafkaBrokers?: string[];
-  /** Kafka topic carrying UPSERT events (default `role-updates`). */
-  roleUpdatesTopic?: string;
-  /** Kafka topic carrying DELETE events (default `role-delete`). */
-  roleDeleteTopic?: string;
-  /** Kafka topic that triggers a forced full re-fetch (default `publish-roles`). */
-  publishRolesTopic?: string;
-  /** Kafka consumer group prefix (default "authz-cache-sync"). A UUID is appended per instance. */
-  kafkaGroupId?: string;
-  /** Kafka consumer client ID (default "authz-cache-sync"). */
-  kafkaClientId?: string;
   diskCachePath?: string;
   /** Claim that marks a service token (default "token_use"). */
   serviceTokenUseClaim?: string;
@@ -82,14 +67,27 @@ export interface CreateAuthzOptions {
   };
 
   /**
-   * Opt-in observability via `@hatraa/otel-ts` (OTLP traces, Prometheus metrics,
-   * JSON logs). Off by default. When `enabled`, the in-process metrics are
-   * mirrored to an OTel meter, the decision path is wrapped in a span, and the
-   * default audit sink emits through `otelLogger`. For full request
-   * auto-instrumentation, call {@link initObservability} at the very top of your
-   * entrypoint before importing NestJS/HTTP.
+   * T19 — Trusted downstream hosts for outbound credential propagation.
+   *
+   * Sensitive credential headers (Authorization: Bearer <userJwt> and
+   * X-Service-Token) are ONLY attached when the outbound request's effective
+   * target host (resolved as `baseURL` + `url` the way axios does) matches an
+   * entry in this list.
+   *
+   * Each entry may be:
+   *  - a bare hostname:            `"api.internal"`
+   *  - a hostname with port:       `"api.internal:8080"`
+   *  - a full base-URL:            `"https://api.internal/v1"` (path ignored; only host+port matched)
+   *
+   * **Default: `[]` (attach credentials to nothing).**  This is a deliberate
+   * safe default — if the allowlist is absent/empty, NO outbound request will
+   * receive the user JWT or service token.  Operators MUST populate this list
+   * (via `AUTHZ_OUTBOUND_ALLOWED_HOSTS` or directly) to enable propagation.
+   *
+   * Trace headers (`X-Correlation-Id`, `X-Request-Id`) are always propagated
+   * regardless of this setting — they are not credentials.
    */
-  observability?: ObservabilityConfig;
+  outboundAllowedHosts?: string[];
 
   /** Overrides for advanced use. */
   validator?: TokenValidator;
@@ -208,20 +206,7 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
   const cache = new PermissionCache();
   const metrics = new Metrics();
 
-  // Opt-in observability (@hatraa/otel-ts): mirror the in-process metrics to an
-  // OTel meter (→ Prometheus), trace the decision path, and emit audit via
-  // otelLogger. Everything is lazy — nothing from the OTel/pprof stack is loaded
-  // unless `observability.enabled` is set, so the default path is unchanged.
-  let tracer: AuthzTracer | undefined;
-  if (opts.observability?.enabled) {
-    initObservability(opts.observability); // idempotent; safe if the app already called it
-    bridgeMetricsToOtel(metrics);
-    tracer = createAuthzTracer("authz");
-  }
-
-  const audit =
-    opts.auditSink ??
-    (opts.observability?.enabled ? new OtelAuditSink() : new LoggingAuditSink());
+  const audit = opts.auditSink ?? new LoggingAuditSink();
 
   const validator: TokenValidator =
     opts.validator ??
@@ -235,21 +220,6 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
       audience: opts.audience,
       clockSkewSeconds: opts.clockSkewSeconds ?? 5,
     });
-
-  // Kafka role events are part of the role-permission machinery — FULL mode only.
-  const events =
-    userAuthEnabled && opts.kafkaBrokers?.length
-      ? new KafkaCacheEventHandler({
-          brokers: opts.kafkaBrokers,
-          updatesTopic: opts.roleUpdatesTopic,
-          deleteTopic: opts.roleDeleteTopic,
-          publishTopic: opts.publishRolesTopic,
-          groupId: opts.kafkaGroupId,
-          clientId: opts.kafkaClientId,
-          logger: { warn: (m) => console.warn(m) },
-          onSkippedEvent: () => metrics.inc(METRIC.roleEventSkipped),
-        })
-      : undefined;
 
   const serviceIdentity = opts.serviceToken
     ? new ClientCredentialsProvider({
@@ -266,8 +236,10 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
     await serviceIdentity.checkTokenEndpoint();
   }
 
-  // Role-permission machinery (Role Service snapshot, disk seed, Kafka,
-  // reconciler) — FULL mode only (§0.5). Absent in SERVICE-ONLY mode.
+  // Role-permission machinery (Role Service snapshot, disk seed, reconciler)
+  // — FULL mode only (§0.5). Absent in SERVICE-ONLY mode.
+  // Kafka role events are now delivered via the library's @EventPattern controller
+  // wired by the host through authzKafkaOptions() + connectMicroservice().
   let boot: CacheBootstrap | undefined;
   let mode: CacheMode = "normal";
   if (userAuthEnabled) {
@@ -279,7 +251,6 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
         readTimeoutMs: opts.roleServiceReadTimeout ?? 5000,
       }),
       new DiskCache(opts.diskCachePath ?? "authorization-cache.json"),
-      events,
       { metrics, logger: { warn: (m) => console.warn(m) } },
     );
     ({ mode } = await boot.start());
@@ -287,19 +258,12 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
     boot.startReconciler(opts.reconcileIntervalMs ?? 300000);
   }
 
-  const runAuthz = async (req: any, res: any, next: () => void, span?: AuthzSpan) => {
+  const runAuthz = async (req: any, res: any, next: () => void) => {
     const out = await decideRequest(
       { method: req.method, rawPath: req.path ?? req.url ?? "", headers: req.headers ?? {} },
       { engine, cache, validator, audit, metrics,
         policyEngine: opts.policyEngine, roleResolver: opts.roleResolver, userAuthEnabled },
     );
-    if (span && out.kind === "allow") {
-      span.setAttribute("authz.path", (req.path ?? req.url ?? "").split("?")[0]);
-      span.setAttribute("authz.method", req.method);
-      span.setAttribute("authz.authType", out.ctx.authenticationType);
-      if (out.ctx.roleId) span.setAttribute("authz.role", out.ctx.roleId);
-      if (out.ctx.serviceName) span.setAttribute("authz.service", out.ctx.serviceName);
-    }
     if (out.kind === "deny") {
       res.status(out.status).json({ error: out.error });
       return;
@@ -309,33 +273,7 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
     runWithOutboundContext(out.ctx, out.bearer, next);
   };
 
-  // When tracing is on, wrap each decision in an "authz.decision" span; otherwise
-  // the middleware is exactly the bare decision path (no behavioral change).
-  const middleware = tracer
-    ? (req: any, res: any, next: () => void): Promise<void> =>
-        tracer!.startActiveSpan("authz.request", async (requestSpan: AuthzSpan) => {
-          const stopTimer = metrics.startTimer(METRIC.authzRequestDuration);
-          try {
-            return tracer!.startActiveSpan("authz.decision", async (span: AuthzSpan) => {
-              try {
-                await runAuthz(req, res, next, span);
-              } catch (err) {
-                span.recordException(err);
-                throw err;
-              } finally {
-                span.end();
-              }
-            });
-          } finally {
-            try {
-              stopTimer();
-            } catch (e) {
-              /* ignore timer errors */
-            }
-            requestSpan.end();
-          }
-        })
-    : runAuthz;
+  const middleware = runAuthz;
 
   return {
     engine,
@@ -351,11 +289,19 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
       // A5: robust and ergonomic — works even without a serviceToken configured.
       // When serviceIdentity is absent, buildOutboundHeaders omits X-Service-Token
       // (F4/G5) and still propagates user JWT + trace headers (G4 fail-open).
-      attachOutboundPropagation(axiosInstance, { serviceIdentity });
+      // T19: credential headers are gated by the trusted-host allowlist.
+      attachOutboundPropagation(axiosInstance, {
+        serviceIdentity,
+        allowedHosts: opts.outboundAllowedHosts ?? [],
+      });
     },
     createClient: (config?: Record<string, unknown>) => {
       const instance = axios.create(config ?? {}) as AxiosLike;
-      attachOutboundPropagation(instance, { serviceIdentity });
+      // T19: credential headers are gated by the trusted-host allowlist.
+      attachOutboundPropagation(instance, {
+        serviceIdentity,
+        allowedHosts: opts.outboundAllowedHosts ?? [],
+      });
       return instance;
     },
     health: () =>
@@ -364,7 +310,7 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
       boot
         ? buildHealth(cache, boot.mode_(), {
             roleServiceLastSync: boot.roleServiceLastSync(),
-            kafkaConsumerConnected: boot.isKafkaConnected(),
+            kafkaConsumerConnected: false,
           })
         : buildHealth(cache, "normal", {
             roleServiceLastSync: null,
@@ -372,7 +318,6 @@ export async function createAuthzFromOptions(opts: CreateAuthzOptions): Promise<
           }),
     stop: async () => {
       boot?.stop();
-      if (events) await events.stop();
       // Cancel the outbound provider's proactive-refresh timer so the process
       // can exit cleanly (graceful shutdown — clear timers/intervals).
       if (serviceIdentity && typeof (serviceIdentity as { close?: () => void }).close === "function") {

@@ -1,8 +1,9 @@
-﻿import { PermissionCache } from "../permission-cache/cache.js";
-import { CacheEventHandler, RoleServiceClient } from "../spi/index.js";
+import { PermissionCache } from "../permission-cache/cache.js";
+import { RoleServiceClient, RoleUpsertEvent, RoleDeleteEvent } from "../spi/index.js";
 import { Metrics, METRIC, GAUGE } from "../observability/metrics.js";
 import { DiskCache } from "./disk.js";
-import { applyRoleEvent } from "./events.js";
+import { applyUpsert, applyDelete, VersionStore } from "./events.js";
+import type { NormalisedSnapshot } from "../role-service-client/client.js";
 
 /** Seed-retry backoff sequence: 2s → 4s → 8s → 8s… */
 const SEED_RETRY_DELAYS_MS = [2000, 4000, 8000, 8000];
@@ -39,11 +40,14 @@ export interface CacheBootstrapDeps {
 
 /**
  * Startup state machine for the permission cache (architecture §8):
- *  - try Role Service -> atomic replace + write disk + (subscribe Kafka) -> normal
+ *  - try Role Service -> atomic replace + write disk -> normal
  *  - on failure -> seed from disk -> READY in seed mode
  * Two background loops handle post-startup sync (§8.3):
  *  - startSeedRetry: retries the Role Service until seed->normal promotion, then stops.
  *  - startReconciler: periodic unconditional re-fetch; safety net for missed Kafka events.
+ *
+ * Role events arrive via the library's @EventPattern controller which calls
+ * applyUpsert(), applyDelete(), and forceRefresh() directly (seam inversion).
  */
 export class CacheBootstrap {
   private mode: CacheMode = "seed";
@@ -51,7 +55,6 @@ export class CacheBootstrap {
   private seedRetryTimer: ReturnType<typeof setTimeout> | null = null;
   private reconcilerTimer: ReturnType<typeof setTimeout> | null = null;
   private lastSyncAt: Date | null = null;
-  private kafkaConnected = false;
   /**
    * N6/L2: Single promise chain that serializes every apply (role-event upsert/delete)
    * and every forcedRefresh so they never interleave. An upsert enqueued after a
@@ -59,12 +62,17 @@ export class CacheBootstrap {
    * chain's `.catch()` swallows any rejection that escapes forcedRefresh's own guard.
    */
   private applyChain: Promise<void> = Promise.resolve();
+  /**
+   * T24: Monotonic version store — tracks the highest applied version per roleId
+   * across both Kafka events and full-snapshot seedings. Prevents out-of-order
+   * Kafka events from regressing the cache.
+   */
+  private readonly versionStore = new VersionStore();
 
   constructor(
     private readonly cache: PermissionCache,
     private readonly roleService: RoleServiceClient,
     private readonly disk: DiskCache,
-    private readonly events?: CacheEventHandler,
     private readonly deps: CacheBootstrapDeps = {},
   ) {}
 
@@ -74,10 +82,6 @@ export class CacheBootstrap {
 
   roleServiceLastSync(): Date | null {
     return this.lastSyncAt;
-  }
-
-  isKafkaConnected(): boolean {
-    return this.kafkaConnected;
   }
 
   /** Run startup sync; returns the cache + the mode it settled into. */
@@ -102,14 +106,41 @@ export class CacheBootstrap {
       this.mode = "seed";
     }
     this.updateGauges();
-    await this.subscribe();
     return { cache: this.cache, mode: this.mode };
   }
 
   /** Fetch the authoritative snapshot (bare role map), swap + persist. */
   private async fullSync(): Promise<void> {
-    const roles = await this.roleService.fetchSnapshot();
+    // T24: prefer fetchNormalisedSnapshot() when the role service client supports it,
+    // so per-role version numbers from the snapshot can seed the version store.
+    // Fall back to fetchSnapshot() for clients that implement only the base SPI.
+    let roles: Record<string, string[]>;
+    let snapshotVersions: Map<string, number> | undefined;
+
+    const client = this.roleService as unknown as { fetchNormalisedSnapshot?: () => Promise<NormalisedSnapshot> };
+    if (typeof client.fetchNormalisedSnapshot === "function") {
+      const normalised = await client.fetchNormalisedSnapshot();
+      roles = normalised.roles;
+      snapshotVersions = normalised.versions;
+    } else {
+      roles = await this.roleService.fetchSnapshot();
+    }
+
     await this.cache.replaceAll(roles);
+
+    // T24: seed the version store from the snapshot. A full sync is authoritative —
+    // update stored versions for all roles that carried a version in this snapshot.
+    if (snapshotVersions && snapshotVersions.size > 0) {
+      for (const [roleId, version] of snapshotVersions) {
+        this.versionStore.record(roleId, version);
+      }
+    } else if (!snapshotVersions) {
+      // Non-versioned client — warn once per process lifetime.
+      this.deps.logger?.warn(
+        "authz: Role Service snapshot does not include version numbers; version guard disabled for snapshot entries (legacy Role Service)",
+      );
+    }
+
     const writeErr = this.disk.write(this.cache);
     if (writeErr) handleDiskWriteError(writeErr, this.deps);
     this.lastSyncAt = new Date();
@@ -117,56 +148,77 @@ export class CacheBootstrap {
     this.deps.metrics?.inc(METRIC.roleRefreshSuccess);
   }
 
-  private async subscribe(): Promise<void> {
-    if (!this.events) return;
-    // Fail-open at startup: a broker that is unreachable now must not abort
-    // startup — the cache is already serving from the snapshot/seed, and the
-    // reconciler heals any events missed while Kafka is down (§8.4). Mirrors
-    // the Spring container, whose start() is non-blocking.
-    try {
-      await this.events.start(
-        (event) => {
-          // N6: Enqueue through the serial chain so apply and forcedRefresh
-          // never interleave. An upsert that arrives while a refresh is in
-          // flight will wait for the refresh to complete before being applied.
-          this.applyChain = this.applyChain.then(async () => {
-            // time processing of the individual role event
-            const stop = this.deps.metrics?.startTimer(METRIC.roleEventProcessingDuration);
-            const result = await applyRoleEvent(this.cache, event);
-            if (stop) stop();
-            if (result.applied) {
-              const writeErr = this.disk.write(this.cache);
-              if (writeErr) handleDiskWriteError(writeErr, this.deps);
-              this.updateGauges();
-              this.deps.metrics?.inc(METRIC.roleEventsProcessed);
-            } else {
-              this.deps.metrics?.inc(METRIC.roleEventSkipped);
-              this.deps.logger?.warn(`role event skipped: ${result.reason}`);
-            }
-          }).catch((e) => {
-            this.deps.logger?.warn(
-              `role event apply failed: ${e instanceof Error ? e.message : String(e)}`,
-            );
-          });
-        },
-        () => {
-          // N6/L2: Enqueue forcedRefresh through the same chain so it is
-          // serialized against apply(). The outer .catch() provides an
-          // additional safety net on top of forcedRefresh's internal guard.
-          this.applyChain = this.applyChain.then(() => this.forcedRefresh()).catch((e) => {
-            this.deps.logger?.warn(
-              `forced refresh chain error: ${e instanceof Error ? e.message : String(e)}`,
-            );
-          });
-        },
+  /**
+   * Public: enqueue a typed upsert event onto the serial chain (N6/L2).
+   * Called by the @EventPattern controller on `role-updates` messages.
+   */
+  applyUpsert(event: RoleUpsertEvent): void {
+    this.applyChain = this.applyChain.then(async () => {
+      const stop = this.deps.metrics?.startTimer(METRIC.roleEventProcessingDuration);
+      const result = await applyUpsert(
+        this.cache,
+        event,
+        this.versionStore,
+        () =>
+          this.deps.logger?.warn(
+            "authz: Kafka role event is missing the version field; version guard disabled for this and future unversioned events (legacy Role Service)",
+          ),
       );
-      this.kafkaConnected = true;
-    } catch (e) {
-      this.kafkaConnected = false;
+      if (stop) stop();
+      if (result.applied) {
+        const writeErr = this.disk.write(this.cache);
+        if (writeErr) handleDiskWriteError(writeErr, this.deps);
+        this.updateGauges();
+        this.deps.metrics?.inc(METRIC.roleEventsProcessed);
+      } else {
+        this.deps.metrics?.inc(METRIC.roleEventSkipped);
+        this.deps.logger?.warn(`role event skipped: ${result.reason}`);
+      }
+    }).catch((e) => {
       this.deps.logger?.warn(
-        `Kafka subscribe failed at startup; continuing without live events: ${e instanceof Error ? e.message : String(e)}`,
+        `role event apply failed: ${e instanceof Error ? e.message : String(e)}`,
       );
-    }
+    });
+  }
+
+  /**
+   * Public: enqueue a typed delete event onto the serial chain (N6/L2).
+   * Called by the @EventPattern controller on `role-delete` messages.
+   */
+  applyDelete(event: RoleDeleteEvent): void {
+    this.applyChain = this.applyChain.then(async () => {
+      const stop = this.deps.metrics?.startTimer(METRIC.roleEventProcessingDuration);
+      const result = await applyDelete(this.cache, event, this.versionStore);
+      if (stop) stop();
+      if (result.applied) {
+        const writeErr = this.disk.write(this.cache);
+        if (writeErr) handleDiskWriteError(writeErr, this.deps);
+        this.updateGauges();
+        this.deps.metrics?.inc(METRIC.roleEventsProcessed);
+      } else {
+        this.deps.metrics?.inc(METRIC.roleEventSkipped);
+        this.deps.logger?.warn(`role event skipped: ${result.reason}`);
+      }
+    }).catch((e) => {
+      this.deps.logger?.warn(
+        `role event apply failed: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    });
+  }
+
+  /**
+   * Public: enqueue a forced full re-fetch onto the serial chain (N6/L2).
+   * Called by the @EventPattern controller on `publish-roles` messages.
+   */
+  forceRefresh(): void {
+    // N6/L2: Enqueue forcedRefresh through the same chain so it is
+    // serialized against apply(). The outer .catch() provides an
+    // additional safety net on top of forcedRefresh's internal guard.
+    this.applyChain = this.applyChain.then(() => this.forcedRefresh()).catch((e) => {
+      this.deps.logger?.warn(
+        `forced refresh chain error: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    });
   }
 
   /**
@@ -192,10 +244,6 @@ export class CacheBootstrap {
    * Seed-retry loop: retries the Role Service fetch with exponential backoff (2s, 4s, 8s,
    * 8s…) until the first successful sync promotes the cache from seed to normal, then
    * terminates. A no-op if the cache is already in normal mode.
-   *
-   * Errors here are expected while the Role Service is recovering and are logged
-   * but do NOT increment `roleRefreshFailures` — that metric is reserved for
-   * unexpected failures during normal operation (see startReconciler).
    */
   startSeedRetry(): void {
     if (this.mode !== "seed") {
@@ -233,14 +281,12 @@ export class CacheBootstrap {
   /**
    * Periodic reconciler (§8.3): unconditional full re-fetch every `intervalMs` as a
    * safety net for missed or out-of-order Kafka events. Also promotes seed->normal if
-   * it succeeds while still in seed mode (belt-and-suspenders alongside startSeedRetry).
-   * On error, increments `roleRefreshFailures` and keeps the current cache (fail-open).
+   * it succeeds while still in seed mode.
    */
   startReconciler(intervalMs = 300000): void {
     const loop = async () => {
       while (!this.stopped) {
-        // B11: Track the pending timer so stop() can clear it immediately,
-        // mirroring Java's thread.interrupt() which wakes from sleep at once.
+        // B11: Track the pending timer so stop() can clear it immediately.
         await new Promise<void>((r) => {
           const t = setTimeout(r, intervalMs);
           this.reconcilerTimer = t;
@@ -270,7 +316,7 @@ export class CacheBootstrap {
     );
   }
 
-  /** Stop the reconciler loop, the seed-retry loop, and disconnect the Kafka consumer (e.g. on shutdown). */
+  /** Stop the reconciler loop and seed-retry loop (e.g. on shutdown). */
   stop(): void {
     this.stopped = true;
     // Clear the pending seed-retry timer so the loop exits immediately.
@@ -280,21 +326,9 @@ export class CacheBootstrap {
     }
     // B11: Clear the pending reconciler timer so the loop wakes immediately and exits,
     // rather than firing once more after the current interval elapses.
-    // Mirrors Java's reconciler.interrupt() semantics.
     if (this.reconcilerTimer !== null) {
       clearTimeout(this.reconcilerTimer);
       this.reconcilerTimer = null;
-    }
-    // Disconnect the Kafka consumer so it does not leak on shutdown, matching
-    // the Java CacheBootstrap.stop() which calls events.stop(). Fire-and-forget
-    // (stop() is sync); KafkaCacheEventHandler.stop() is idempotent, so a later
-    // await events.stop() by the caller is a safe no-op. Failures are logged.
-    if (this.events) {
-      void this.events.stop().catch((err) => {
-        this.deps.logger?.warn(
-          `Kafka consumer disconnect failed on stop: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      });
     }
   }
 }

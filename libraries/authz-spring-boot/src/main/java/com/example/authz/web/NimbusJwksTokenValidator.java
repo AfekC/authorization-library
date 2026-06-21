@@ -2,17 +2,35 @@ package com.example.authz.web;
 
 import com.example.authz.config.ConfigException;
 import com.example.authz.spi.Spi;
-import idf.hatraa.annotation.Span;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JOSEObjectType;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSVerifier;
+import com.nimbusds.jose.KeySourceException;
+import com.nimbusds.jose.crypto.Ed25519Verifier;
+import com.nimbusds.jose.crypto.factories.DefaultJWSVerifierFactory;
+import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.jwk.JWKMatcher;
+import com.nimbusds.jose.jwk.JWKSelector;
+import com.nimbusds.jose.jwk.OctetKeyPair;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
+import com.nimbusds.jose.proc.DefaultJOSEObjectTypeVerifier;
+import com.nimbusds.jose.proc.JWSKeySelector;
+import com.nimbusds.jose.proc.JWSVerificationKeySelector;
+import com.nimbusds.jose.proc.JWSVerifierFactory;
+import com.nimbusds.jose.proc.SecurityContext;
+import com.nimbusds.jose.util.DefaultResourceRetriever;
+import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
-import org.springframework.web.client.RestOperations;
-import org.springframework.web.client.RestTemplate;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -22,14 +40,22 @@ import java.util.Map;
 /**
  * JWKS-backed token validator using Spring Security's NimbusJwtDecoder.
  *
- * <p>User tokens: algorithm (RS256/ES256 only, alg:none rejected) + signature
+ * <p>User tokens: algorithm (EdDSA/Ed25519 only, alg:none rejected) + signature
  * (against the Auth Service's JWKS) + issuer + audience (MANDATORY — a blank
  * {@code audience} is rejected at construction time as a configuration error) +
  * expiration + not-before (§2.2).
  *
- * <p>Service tokens: algorithm + signature (against SSO JWKS) + issuer +
- * expiration + not-before + configurable {@code token_use} claim (§2.3, always
- * enforced — a blank {@code serviceTokenUseClaim} defaults to {@code "token_use"}).
+ * <p>Service tokens: algorithm (EdDSA/Ed25519 only) + signature (against SSO
+ * JWKS) + issuer + expiration + not-before + configurable {@code token_use} claim
+ * (§2.3, always enforced — a blank {@code serviceTokenUseClaim} defaults to
+ * {@code "token_use"}) + optional audience check (off by default; enabled by
+ * supplying a non-blank {@code serviceTokenAudience} via
+ * {@code authz.service-token-audience}).
+ *
+ * <p>Algorithm pinning: the JWKS JWKSource is configured with
+ * {@link JWSAlgorithmFamilyJWSKeySelector} using {@link JWSAlgorithm.Family#ED}
+ * so only OKP/Ed25519 EdDSA keys are accepted. RS256 and ES256 are explicitly
+ * dropped — the provider re-platformed to Ed25519 (T1).
  *
  * <p>JWKS fetches (initial load and unknown-{@code kid} refresh) use an HTTP
  * client with an explicit connect+read timeout ({@code jwksTimeoutMs}, default
@@ -39,11 +65,6 @@ import java.util.Map;
  * retry on the hot path. Matches the NestJS validator's configurable timeout.
  */
 public class NimbusJwksTokenValidator implements Spi.TokenValidator {
-
-    /** Pinned allow-list matching NestJS defaults (§2.2, B2/G2). */
-    private static final SignatureAlgorithm[] ALLOWED_ALGORITHMS = {
-            SignatureAlgorithm.RS256, SignatureAlgorithm.ES256
-    };
 
     private final JwtDecoder userDecoder;
     private final JwtDecoder serviceDecoder;
@@ -70,40 +91,28 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
                 DEFAULT_JWKS_TIMEOUT_MS);
     }
 
-    /**
-     * SERVICE-ONLY mode factory (§0.5): builds a validator that verifies service
-     * tokens only. There is no user-JWT decoder and audience is not required;
-     * {@link #validateUserToken(String)} is never called because the filter
-     * ignores the {@code Authorization} header in service-only mode.
-     */
-    public static NimbusJwksTokenValidator serviceOnly(
-            String serviceIssuer, String serviceJwksUri,
-            String serviceTokenUseClaim, String serviceTokenUseValue,
-            long clockSkewSeconds, long jwksTimeoutMs) {
-        return new NimbusJwksTokenValidator(serviceIssuer, serviceJwksUri,
-                serviceTokenUseClaim, serviceTokenUseValue, clockSkewSeconds, jwksTimeoutMs);
-    }
-
-    /** Service-only constructor: no user decoder, no audience requirement. */
-    private NimbusJwksTokenValidator(String serviceIssuer, String serviceJwksUri,
-                                     String serviceTokenUseClaim, String serviceTokenUseValue,
-                                     long clockSkewSeconds, long jwksTimeoutMs) {
-        String effectiveClaim = (serviceTokenUseClaim == null || serviceTokenUseClaim.isBlank())
-                ? "token_use"
-                : serviceTokenUseClaim;
-        Duration skew = Duration.ofSeconds(clockSkewSeconds);
-        RestOperations jwksHttp = jwksRestOperations(jwksTimeoutMs);
-        this.userDecoder = null;
-        this.serviceDecoder = serviceDecoder(serviceJwksUri, serviceIssuer, skew, jwksHttp);
-        this.serviceTokenUseClaim = effectiveClaim;
-        this.serviceTokenUseValue = serviceTokenUseValue;
-    }
-
     public NimbusJwksTokenValidator(String userIssuer, String userJwksUri,
                                     String serviceIssuer, String serviceJwksUri,
                                     String audience, String serviceTokenUseClaim,
                                     String serviceTokenUseValue, long clockSkewSeconds,
                                     long jwksTimeoutMs) {
+        this(userIssuer, userJwksUri, serviceIssuer, serviceJwksUri,
+                audience, serviceTokenUseClaim, serviceTokenUseValue, clockSkewSeconds,
+                jwksTimeoutMs, null);
+    }
+
+    /**
+     * Full constructor with optional service-token audience (T5).
+     *
+     * @param serviceTokenAudience when non-blank, the service-token decoder additionally
+     *                             enforces that the {@code aud} claim contains this value;
+     *                             {@code null} or blank disables the check (default / off).
+     */
+    public NimbusJwksTokenValidator(String userIssuer, String userJwksUri,
+                                    String serviceIssuer, String serviceJwksUri,
+                                    String audience, String serviceTokenUseClaim,
+                                    String serviceTokenUseValue, long clockSkewSeconds,
+                                    long jwksTimeoutMs, String serviceTokenAudience) {
         // A4/G1: audience is required — fail fast at construction time
         if (audience == null || audience.isBlank()) {
             throw new ConfigException(
@@ -116,42 +125,82 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
                 : serviceTokenUseClaim;
 
         Duration skew = Duration.ofSeconds(clockSkewSeconds);
-        RestOperations jwksHttp = jwksRestOperations(jwksTimeoutMs);
-        this.userDecoder = userDecoder(userJwksUri, userIssuer, audience, skew, jwksHttp);
-        this.serviceDecoder = serviceDecoder(serviceJwksUri, serviceIssuer, skew, jwksHttp);
+        this.userDecoder = userDecoder(userJwksUri, userIssuer, audience, skew, jwksTimeoutMs);
+        // T5: build service decoder with optional audience enforcement
+        boolean hasServiceAud = serviceTokenAudience != null && !serviceTokenAudience.isBlank();
+        this.serviceDecoder = hasServiceAud
+                ? serviceDecoder(serviceJwksUri, serviceIssuer, serviceTokenAudience, skew, jwksTimeoutMs)
+                : serviceDecoder(serviceJwksUri, serviceIssuer, skew, jwksTimeoutMs);
         this.serviceTokenUseClaim = effectiveClaim;
         this.serviceTokenUseValue = serviceTokenUseValue;
     }
 
     /**
-     * HTTP client used to fetch JWKS, with an explicit connect+read timeout so a
-     * slow/hung JWKS endpoint cannot hang token validation on the request path.
+     * SERVICE-ONLY mode factory (§0.5): builds a validator that verifies service
+     * tokens only. There is no user-JWT decoder and audience is not required;
+     * {@link #validateUserToken(String)} is never called because the filter
+     * ignores the {@code Authorization} header in service-only mode.
      */
-    private static RestOperations jwksRestOperations(long timeoutMs) {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        int t = (int) Math.max(1, timeoutMs);
-        factory.setConnectTimeout(t);
-        factory.setReadTimeout(t);
-        return new RestTemplate(factory);
+    public static NimbusJwksTokenValidator serviceOnly(
+            String serviceIssuer, String serviceJwksUri,
+            String serviceTokenUseClaim, String serviceTokenUseValue,
+            long clockSkewSeconds, long jwksTimeoutMs) {
+        return serviceOnly(serviceIssuer, serviceJwksUri,
+                serviceTokenUseClaim, serviceTokenUseValue,
+                clockSkewSeconds, jwksTimeoutMs, null);
     }
 
     /**
-     * Build a decoder pinned to RS256/ES256, with issuer + audience + exp + nbf validators.
+     * SERVICE-ONLY mode factory with optional service-token audience (T5).
+     */
+    public static NimbusJwksTokenValidator serviceOnly(
+            String serviceIssuer, String serviceJwksUri,
+            String serviceTokenUseClaim, String serviceTokenUseValue,
+            long clockSkewSeconds, long jwksTimeoutMs, String serviceTokenAudience) {
+        return new NimbusJwksTokenValidator(serviceIssuer, serviceJwksUri,
+                serviceTokenUseClaim, serviceTokenUseValue,
+                clockSkewSeconds, jwksTimeoutMs, serviceTokenAudience);
+    }
+
+    /** Service-only constructor: no user decoder, no user-audience requirement. */
+    private NimbusJwksTokenValidator(String serviceIssuer, String serviceJwksUri,
+                                     String serviceTokenUseClaim, String serviceTokenUseValue,
+                                     long clockSkewSeconds, long jwksTimeoutMs,
+                                     String serviceTokenAudience) {
+        String effectiveClaim = (serviceTokenUseClaim == null || serviceTokenUseClaim.isBlank())
+                ? "token_use"
+                : serviceTokenUseClaim;
+        Duration skew = Duration.ofSeconds(clockSkewSeconds);
+        this.userDecoder = null;
+        boolean hasServiceAud = serviceTokenAudience != null && !serviceTokenAudience.isBlank();
+        this.serviceDecoder = hasServiceAud
+                ? serviceDecoder(serviceJwksUri, serviceIssuer, serviceTokenAudience, skew, jwksTimeoutMs)
+                : serviceDecoder(serviceJwksUri, serviceIssuer, skew, jwksTimeoutMs);
+        this.serviceTokenUseClaim = effectiveClaim;
+        this.serviceTokenUseValue = serviceTokenUseValue;
+    }
+
+    // -------------------------------------------------------------------------
+    // Decoder builders — use Nimbus DefaultJWTProcessor directly so EdDSA (OKP)
+    // keys can be selected, bypassing Spring Security's SignatureAlgorithm enum
+    // which covers RSA/EC families only.
+    // -------------------------------------------------------------------------
+
+    /**
+     * Build a user-token decoder with issuer + audience + exp + nbf validators.
+     * Verification is generic (see {@link #decoder}): the provider signs user
+     * tokens EdDSA today, but the algorithm is driven by the JWKS key, not pinned.
      */
     private static NimbusJwtDecoder userDecoder(String jwksUri, String issuer,
                                                 String audience, Duration skew,
-                                                RestOperations jwksHttp) {
-        // B2/G2: pin to the safe allow-list; NimbusJwtDecoder rejects any other alg header
-        NimbusJwtDecoder d = NimbusJwtDecoder.withJwkSetUri(jwksUri)
-                .jwsAlgorithm(ALLOWED_ALGORITHMS[0])
-                .jwsAlgorithm(ALLOWED_ALGORITHMS[1])
-                .restOperations(jwksHttp)
-                .build();
+                                                long jwksTimeoutMs) {
+        NimbusJwtDecoder d = decoder(jwksUri, jwksTimeoutMs);
 
+        // issuer + audience + exp + nbf validators
         OAuth2TokenValidator<Jwt> timestamps = new JwtTimestampValidator(skew);
         OAuth2TokenValidator<Jwt> nbf = new NbfValidator(skew);
         OAuth2TokenValidator<Jwt> iss = new JwtIssuerValidator(issuer);
-        // A4/G1: audience validator is always added (audience guaranteed non-blank by constructor)
+        // A4/G1: audience validator always added (audience guaranteed non-blank by constructor)
         OAuth2TokenValidator<Jwt> aud = new JwtClaimValidator<List<String>>(
                 "aud", a -> a != null && a.contains(audience));
 
@@ -160,23 +209,79 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
     }
 
     /**
-     * Build a decoder pinned to RS256/ES256, with issuer + exp + nbf validators.
-     * No audience check for service tokens (§2.3).
+     * Build an RS256 service-token decoder with issuer + exp + nbf validators.
+     * No audience check (default service-token path, §2.3).
      */
     private static NimbusJwtDecoder serviceDecoder(String jwksUri, String issuer, Duration skew,
-                                                   RestOperations jwksHttp) {
-        NimbusJwtDecoder d = NimbusJwtDecoder.withJwkSetUri(jwksUri)
-                .jwsAlgorithm(ALLOWED_ALGORITHMS[0])
-                .jwsAlgorithm(ALLOWED_ALGORITHMS[1])
-                .restOperations(jwksHttp)
-                .build();
+                                                   long jwksTimeoutMs) {
+        NimbusJwtDecoder d = decoder(jwksUri, jwksTimeoutMs);
         d.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
-                new JwtTimestampValidator(skew), new NbfValidator(skew), new JwtIssuerValidator(issuer)));
+                new JwtTimestampValidator(skew), new NbfValidator(skew),
+                new JwtIssuerValidator(issuer)));
         return d;
     }
 
+    /**
+     * Build an RS256 service-token decoder with issuer + audience + exp + nbf validators.
+     * Used when optional service-token audience check is enabled (T5,
+     * {@code authz.service-token-audience}).
+     */
+    private static NimbusJwtDecoder serviceDecoder(String jwksUri, String issuer, String audience,
+                                                   Duration skew, long jwksTimeoutMs) {
+        NimbusJwtDecoder d = decoder(jwksUri, jwksTimeoutMs);
+        OAuth2TokenValidator<Jwt> aud = new JwtClaimValidator<List<String>>(
+                "aud", a -> a != null && a.contains(audience));
+        d.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                new JwtTimestampValidator(skew), new NbfValidator(skew),
+                new JwtIssuerValidator(issuer), aud));
+        return d;
+    }
+
+    /**
+     * Core factory: build a generic {@link NimbusJwtDecoder} backed by a remote
+     * JWKS URI. Verification is algorithm-agnostic — the signature algorithm is
+     * driven by the JWKS key that matches the token's {@code kid} (RS256/ES* for
+     * SSO service tokens, EdDSA for provider user tokens), not pinned per token
+     * type. {@code alg:none} is always rejected (DefaultJWTProcessor requires a
+     * key + verifier).
+     *
+     * <p>Nimbus does the actual decoding/verification via its own verifiers
+     * (RSASSAVerifier / ECDSAVerifier / Ed25519Verifier). The only glue is
+     * {@link GenericJwsKeySelector}, which fetches OKP keys straight from the JWK
+     * source because Nimbus's stock {@code KeyConverter.toJavaKeys()} drops
+     * OctetKeyPair; RSA/EC keys go through the stock selector unchanged.
+     *
+     * <p>The JWKS source is built with a connect+read timeout so a slow JWKS
+     * endpoint cannot block validation indefinitely.
+     */
+    private static NimbusJwtDecoder decoder(String jwksUri, long jwksTimeoutMs) {
+        URL url;
+        try {
+            url = new URL(jwksUri);
+        } catch (MalformedURLException e) {
+            throw new ConfigException("Invalid JWKS URI: " + jwksUri);
+        }
+
+        // Build remote JWK source with explicit HTTP connect+read timeout via
+        // DefaultResourceRetriever so a slow JWKS endpoint cannot hang validation.
+        int timeoutMs = (int) Math.max(1, jwksTimeoutMs);
+        var retriever = new DefaultResourceRetriever(timeoutMs, timeoutMs);
+        var jwkSource = JWKSourceBuilder
+                .<SecurityContext>create(url, retriever)
+                .retrying(false)
+                .build();
+
+        DefaultJWTProcessor<SecurityContext> processor = new DefaultJWTProcessor<>();
+        // Accept "JWT" type (standard) and null type (omitted typ header)
+        processor.setJWSTypeVerifier(new DefaultJOSEObjectTypeVerifier<>(
+                JOSEObjectType.JWT, null));
+        processor.setJWSKeySelector(new GenericJwsKeySelector<>(jwkSource));
+        processor.setJWSVerifierFactory(new EdDsaAwareJWSVerifierFactory());
+
+        return new NimbusJwtDecoder(processor);
+    }
+
     @Override
-    @Span(name = "authz.validate_user_token")
     public Map<String, Object> validateUserToken(String jwt) {
         if (userDecoder == null) {
             throw new IllegalStateException("user auth is disabled (service-only mode)");
@@ -190,7 +295,6 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
     }
 
     @Override
-    @Span(name = "authz.validate_service_token")
     public Map<String, Object> validateServiceToken(String jwt) {
         try {
             Map<String, Object> claims = serviceDecoder.decode(jwt).getClaims();
@@ -204,6 +308,124 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
         } catch (JwtException e) {
             // G12: preserve the original exception as the cause with a descriptive message
             throw new RuntimeException("invalid service token: " + e.getMessage(), e);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // EdDSA-aware JWSVerifierFactory
+    // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // Generic key selection (RSA / EC / EdDSA), driven by the JWKS key
+    //
+    // RSA and EC keys flow through Nimbus's stock JWSVerificationKeySelector. OKP
+    // (Ed25519) keys need a small detour: Nimbus's KeyConverter.toJavaKeys() drops
+    // OctetKeyPair (its toKeyPair() throws "Export not supported"), so the stock
+    // selector returns no key for EdDSA. GenericJwsKeySelector fetches OKP keys
+    // directly from the JWK source and wraps each in an OkpKeyHolder; the paired
+    // EdDsaAwareJWSVerifierFactory unwraps it to an OctetKeyPair for Nimbus's own
+    // Ed25519Verifier. Nimbus performs all signature verification — this is wiring,
+    // not a hand-rolled verifier, and the algorithm is never pinned per token type.
+    // -------------------------------------------------------------------------
+
+    /**
+     * Carrier that wraps an {@link OctetKeyPair} as a {@link java.security.Key} so it
+     * can be returned from {@link JWSKeySelector#selectJWSKeys} (which returns
+     * {@code List<? extends java.security.Key>}) without going through
+     * {@link com.nimbusds.jose.jwk.KeyConverter#toJavaKeys} (which would drop it).
+     */
+    static final class OkpKeyHolder implements java.security.Key {
+        private final OctetKeyPair okp;
+        OkpKeyHolder(OctetKeyPair okp) { this.okp = okp; }
+        OctetKeyPair getOctetKeyPair() { return okp; }
+        @Override public String getAlgorithm() { return "EdDSA"; }
+        @Override public String getFormat() { return "OKP"; }
+        @Override public byte[] getEncoded() { return null; } // not used
+    }
+
+    /**
+     * Generic JWS key selector. EdDSA tokens are matched to OKP keys fetched
+     * directly from the JWK source (wrapped in {@link OkpKeyHolder}); RSA and EC
+     * tokens are delegated to Nimbus's stock {@link JWSVerificationKeySelector}.
+     * The accepted algorithm is whatever the token header declares and the JWKS
+     * provides — nothing is pinned to a single algorithm or token type.
+     */
+    static final class GenericJwsKeySelector<C extends SecurityContext> implements JWSKeySelector<C> {
+
+        private final JWKSource<C> jwkSource;
+        private final JWSVerificationKeySelector<C> standard;
+
+        GenericJwsKeySelector(JWKSource<C> jwkSource) {
+            this.jwkSource = jwkSource;
+            java.util.Set<JWSAlgorithm> rsaEc = new java.util.LinkedHashSet<>();
+            rsaEc.addAll(JWSAlgorithm.Family.RSA);
+            rsaEc.addAll(JWSAlgorithm.Family.EC);
+            this.standard = new JWSVerificationKeySelector<>(rsaEc, jwkSource);
+        }
+
+        @Override
+        public List<? extends java.security.Key> selectJWSKeys(JWSHeader header, C context)
+                throws KeySourceException {
+            // EdDSA/OKP: fetch directly and wrap — Nimbus's stock KeyConverter drops OKP.
+            if (JWSAlgorithm.Family.ED.contains(header.getAlgorithm())) {
+                JWKMatcher matcher = new JWKMatcher.Builder()
+                        .keyType(com.nimbusds.jose.jwk.KeyType.OKP)
+                        .keyID(header.getKeyID())
+                        .keyUses(com.nimbusds.jose.jwk.KeyUse.SIGNATURE, null)
+                        .publicOnly(true)
+                        .build();
+                List<JWK> jwks;
+                try {
+                    jwks = jwkSource.get(new JWKSelector(matcher), context);
+                } catch (KeySourceException e) {
+                    throw e; // already typed correctly
+                } catch (Exception e) {
+                    throw new KeySourceException("Failed to retrieve JWKS: " + e.getMessage(), e);
+                }
+                if (jwks == null || jwks.isEmpty()) {
+                    return java.util.Collections.emptyList();
+                }
+                List<java.security.Key> keys = new java.util.ArrayList<>(jwks.size());
+                for (JWK jwk : jwks) {
+                    if (jwk instanceof OctetKeyPair okp) {
+                        keys.add(new OkpKeyHolder(okp));
+                    }
+                }
+                return keys;
+            }
+            // RSA/EC (and rejection of alg:none / unknown algs): stock selector.
+            return standard.selectJWSKeys(header, context);
+        }
+    }
+
+    /**
+     * JWS verifier factory that routes {@link OkpKeyHolder} carriers (from
+     * {@link GenericJwsKeySelector}) to Nimbus's {@link Ed25519Verifier}; all
+     * other key types are forwarded to Nimbus's {@link DefaultJWSVerifierFactory}.
+     */
+    private static final class EdDsaAwareJWSVerifierFactory implements JWSVerifierFactory {
+
+        private final DefaultJWSVerifierFactory delegate = new DefaultJWSVerifierFactory();
+
+        @Override
+        public java.util.Set<JWSAlgorithm> supportedJWSAlgorithms() {
+            java.util.Set<JWSAlgorithm> algs = new java.util.HashSet<>(delegate.supportedJWSAlgorithms());
+            algs.add(JWSAlgorithm.EdDSA);
+            return algs;
+        }
+
+        @Override
+        public com.nimbusds.jose.jca.JCAContext getJCAContext() {
+            return delegate.getJCAContext();
+        }
+
+        @Override
+        public JWSVerifier createJWSVerifier(JWSHeader header, java.security.Key key)
+                throws JOSEException {
+            if (key instanceof OkpKeyHolder holder) {
+                return new Ed25519Verifier(holder.getOctetKeyPair());
+            }
+            return delegate.createJWSVerifier(header, key);
         }
     }
 
