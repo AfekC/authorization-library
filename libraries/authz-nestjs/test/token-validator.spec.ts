@@ -96,7 +96,7 @@ let validator: JwksTokenValidator;
 let cfg: JwksValidatorConfig;
 
 beforeAll(async () => {
-  // T1: All keys are Ed25519 (EdDSA) — the provider re-platformed from RS256.
+  // T1: All keys are Ed25519 (EdDSA) — the only algorithm in the token path.
   [userKeys, serviceKeys, wrongKeys] = await Promise.all([
     makeKeySet("Ed25519", "user-key-1"),
     makeKeySet("Ed25519", "svc-key-1"),

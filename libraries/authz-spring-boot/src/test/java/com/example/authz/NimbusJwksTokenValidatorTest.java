@@ -316,9 +316,8 @@ class NimbusJwksTokenValidatorTest {
     }
 
     // ============================================================
-    // T1 — Generic verification: the algorithm is driven by the JWKS key matched
-    // by the token's kid (EdDSA for provider user tokens, RS256 for SSO service
-    // tokens). alg:none and tokens with no matching key are rejected.
+    // T1 — Ed25519-only: EdDSA tokens verify; RS256/ES*/alg:none are rejected
+    // because only OKP keys are selected for verification.
     // ============================================================
 
     @Test
@@ -336,10 +335,9 @@ class NimbusJwksTokenValidatorTest {
     }
 
     @Test
-    void validateUserToken_acceptsRS256_whenJwksServesMatchingKey() throws Exception {
-        // Generic verification: when the user JWKS serves the RSA key that signed the
-        // token, an RS256 user token verifies. (Algorithm is not pinned; in production
-        // the provider JWKS serves only EdDSA, so RS256 user tokens have no key to match.)
+    void validateUserToken_rejectsRS256_evenWhenJwksServesMatchingKey() throws Exception {
+        // Ed25519-only: even when the user JWKS serves the RSA key that signed the
+        // token, an RS256 user token is rejected — only EdDSA/OKP keys are selected.
         RSAKey rsaKey = new RSAKeyGenerator(2048).keyID("rsa-reject-kid").generate();
 
         // Serve this RSA key from a fresh JWKS server (not the Ed25519 server)
@@ -366,16 +364,16 @@ class NimbusJwksTokenValidatorTest {
             SignedJWT jwt = new SignedJWT(header, claims);
             jwt.sign(new RSASSASigner(rsaKey));
 
-            assertDoesNotThrow(() -> v.validateUserToken(jwt.serialize()),
-                    "Generic verification: RS256 accepted when the JWKS serves the matching RSA key");
+            assertThrows(RuntimeException.class, () -> v.validateUserToken(jwt.serialize()),
+                    "Ed25519-only: RS256 user token must be rejected even when the JWKS serves the matching RSA key");
         } finally {
             rsaServer.stop(0);
         }
     }
 
     @Test
-    void validateServiceToken_acceptsRS256() throws Exception {
-        // Service tokens are issued by SSO/Keycloak and signed RS256 — they must verify.
+    void validateServiceToken_rejectsRS256() throws Exception {
+        // Ed25519-only: an RS256 service token has no matching OKP key and must be rejected.
         RSAKey rsaKey = new RSAKeyGenerator(2048).keyID("svc-rsa-reject").generate();
 
         HttpServer rsaSvcServer = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -402,8 +400,8 @@ class NimbusJwksTokenValidatorTest {
             SignedJWT jwt = new SignedJWT(header, claims);
             jwt.sign(new RSASSASigner(rsaKey));
 
-            assertDoesNotThrow(() -> v.validateServiceToken(jwt.serialize()),
-                    "Service tokens are RS256 (SSO) — must be accepted");
+            assertThrows(RuntimeException.class, () -> v.validateServiceToken(jwt.serialize()),
+                    "Ed25519-only: RS256 service token must be rejected");
         } finally {
             rsaSvcServer.stop(0);
         }

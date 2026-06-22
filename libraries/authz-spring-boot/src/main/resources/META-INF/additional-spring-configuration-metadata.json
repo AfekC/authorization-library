@@ -45,10 +45,28 @@
       "description": "Expected value of the service-token-use claim."
     },
     {
+      "name": "authz.service-token-audience",
+      "type": "java.lang.String",
+      "defaultValue": "",
+      "description": "When set, service tokens must carry this value in their aud claim (T5). Blank disables the service-token audience check."
+    },
+    {
+      "name": "authz.service-only",
+      "type": "java.lang.Boolean",
+      "defaultValue": false,
+      "description": "Explicit service-only mode (§0.5): ignore user JWTs and disable the role-permission machinery. Startup error if combined with any user-auth property or authz.external-permission-source."
+    },
+    {
       "name": "authz.clock-skew-seconds",
       "type": "java.lang.Long",
       "defaultValue": 5,
       "description": "Clock skew tolerance (seconds) for JWT exp/nbf checks."
+    },
+    {
+      "name": "authz.external-permission-source",
+      "type": "java.lang.Boolean",
+      "defaultValue": false,
+      "description": "External permission source (§0.5b): disable the built-in role distribution (Role Service snapshot, reconciler, seed-retry, disk cache, Kafka role events) and supply a Spi.RoleResolver bean instead. User-JWT validation stays on; authz.role-service-url is not required."
     },
     {
       "name": "authz.role-service-url",
@@ -74,40 +92,22 @@
       "description": "Fallback/seed cache file path."
     },
     {
-      "name": "authz.kafka-brokers",
-      "type": "java.util.List<java.lang.String>",
-      "defaultValue": [],
-      "description": "Kafka brokers for incremental role events (empty list disables Kafka)."
-    },
-    {
-      "name": "authz.role-updates-topic",
+      "name": "authz.kafka.role-updates-topic",
       "type": "java.lang.String",
       "defaultValue": "role-updates",
       "description": "Kafka topic for role UPSERT events."
     },
     {
-      "name": "authz.role-delete-topic",
+      "name": "authz.kafka.role-delete-topic",
       "type": "java.lang.String",
       "defaultValue": "role-delete",
       "description": "Kafka topic for role DELETE events."
     },
     {
-      "name": "authz.publish-roles-topic",
+      "name": "authz.kafka.publish-roles-topic",
       "type": "java.lang.String",
       "defaultValue": "publish-roles",
       "description": "Kafka topic that triggers a forced full re-fetch."
-    },
-    {
-      "name": "authz.kafka-group-id",
-      "type": "java.lang.String",
-      "defaultValue": "authz-cache-sync",
-      "description": "Kafka consumer group prefix. A UUID is appended per instance."
-    },
-    {
-      "name": "authz.kafka-client-id",
-      "type": "java.lang.String",
-      "defaultValue": "authz-cache-sync",
-      "description": "Kafka consumer client ID."
     },
     {
       "name": "authz.reconcile-interval-ms",

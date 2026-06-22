@@ -2,6 +2,11 @@
 
 Spring Boot auto-configuration library for config-driven authorization.
 
+> **Integrating into a service?** The [Integration cookbook](INTEGRATION.md) has full,
+> copy-pasteable wiring for every case — all three modes, Kafka, outbound propagation,
+> context reading, custom AuditSink, and SPI override beans. This README is the config
+> reference.
+
 ## Add dependency
 
 ```xml
@@ -54,6 +59,9 @@ Spring Boot auto-configuration library for config-driven authorization.
 
 6. **Start the app.** Every request is now enforced globally — no per-route opt-in.
 
+> Full runnable wiring (dependency + `application.properties` + a context-reading
+> controller): [§1 full mode](INTEGRATION.md#1-full-mode) in the Integration cookbook.
+
 ## Observability
 
 The library owns **no** observability SDK configuration — that is a service
@@ -69,7 +77,8 @@ concern. It exposes two framework-agnostic seams:
   registry.
 
 Configure tracing/metrics/log export (OTLP, Prometheus, etc.) in your **service**
-using Spring Boot Actuator / your chosen observability starter.
+using Spring Boot Actuator / your chosen observability starter. Bean example:
+[§8 custom AuditSink & Micrometer](INTEGRATION.md#8-custom-auditsink--micrometer).
 
 ## Operating modes
 
@@ -95,6 +104,10 @@ Service auth is always on. What varies is **whether user JWTs are checked** and
   role distribution — see [External permission source](#external-permission-source).
   `authz.role-service-url` is not required.
 
+> Runnable examples: [§2 service-only](INTEGRATION.md#2-service-only-mode),
+> [§3 external permission source](INTEGRATION.md#3-external-permission-source) in the
+> Integration cookbook.
+
 ## Configuration
 
 All properties go in `application.yaml` under the `authz.*` namespace. They are
@@ -111,6 +124,7 @@ also bindable as `AUTHZ_*` environment variables (Spring relaxed binding).
 | `authz.jwks-timeout-ms` | no | `5000` | HTTP timeout (ms) for JWKS fetches during token validation |
 | `authz.service-token-use-claim` | no | `token_use` | JWT claim inspected to identify a service token |
 | `authz.service-token-use-value` | no | `service` | Expected value of the service-token-use claim |
+| `authz.service-token-audience` | no | *(empty)* | When set, service tokens must carry this value in their `aud` claim (T5). Blank = no audience check. |
 | `authz.service-only` | no | `false` | `true` selects [service-only mode](#operating-modes) explicitly; rejects any user-auth property at startup |
 | `authz.untrusted-header-prefixes` | no | *(empty)* | Extra inbound header-name prefixes to strip |
 | `authz.untrusted-header-exact` | no | *(empty)* | Extra exact inbound header names to strip |
@@ -132,12 +146,11 @@ User auth is **all-or-nothing**. Setting any field below means **all** of them m
 | `authz.role-service-read-timeout` | no | `5000` | Role Service HTTP read timeout (ms) |
 | `authz.reconcile-interval-ms` | no | `300000` | Periodic reconciler interval (ms). Seed-retry uses a separate 2s/4s/8s backoff. |
 | `authz.disk-cache-path` | no | `authorization-cache.json` | On-disk role-cache file used as seed fallback at startup |
-| `authz.kafka-brokers` | no | *(empty)* | Kafka brokers for incremental role events; empty disables Kafka |
-| `authz.role-updates-topic` | no | `role-updates` | Kafka topic carrying role UPSERT events |
-| `authz.role-delete-topic` | no | `role-delete` | Kafka topic carrying role DELETE events |
-| `authz.publish-roles-topic` | no | `publish-roles` | Kafka topic that triggers a forced full re-fetch |
-| `authz.kafka-group-id` | no | `authz-cache-sync` | Kafka consumer group prefix (UUID appended per instance) |
-| `authz.kafka-client-id` | no | `authz-cache-sync` | Kafka consumer client ID prefix |
+| `authz.kafka.role-updates-topic` | no | `role-updates` | Kafka topic carrying role UPSERT events |
+| `authz.kafka.role-delete-topic` | no | `role-delete` | Kafka topic carrying role DELETE events |
+| `authz.kafka.publish-roles-topic` | no | `publish-roles` | Kafka topic that triggers a forced full re-fetch |
+
+> Kafka **connection** config (brokers, consumer group, deserializer, schema registry) is owned by the host service via `spring.kafka.consumer.*`. The library only owns the topic names above; consumer groups are generated per-instance (UUID suffix) for broadcast fan-out. Full `application.properties` block: [§6 Kafka role events](INTEGRATION.md#6-kafka-role-events).
 
 ### Outbound identity (optional)
 
@@ -148,6 +161,9 @@ User auth is **all-or-nothing**. Setting any field below means **all** of them m
 | `authz.client-secret` | when outbound identity | — | This service's OAuth2 client secret (inject from secret store) |
 | `authz.token-endpoint-timeout-ms` | no | `5000` | HTTP timeout (ms) for token-endpoint calls |
 | `authz.token-refresh-check-interval-ms` | no | `30000` | Interval (ms) for checking cached token lifetime |
+
+> Propagation wiring (`RestTemplateBuilder`/`RestClient` auto-interceptor, trusted hosts):
+> [§7 outbound propagation & identity](INTEGRATION.md#7-outbound-propagation--identity).
 
 ## Key beans
 
@@ -160,6 +176,10 @@ The auto-configuration registers:
 - **`RoleServiceClient`** — HTTP client for the Role Service
 - **`DiskCache`** — local file fallback for the role cache
 - **`AuditSink`** — logging audit event handler
+
+Override any of these (and the other SPI seams) with your own `@Bean` —
+[§9 SPI override beans](INTEGRATION.md#9-spi-override-beans). Custom audit + Micrometer:
+[§8 custom AuditSink & Micrometer](INTEGRATION.md#8-custom-auditsink--micrometer).
 
 ### External permission source
 
@@ -178,7 +198,8 @@ User-JWT validation stays enabled; the `CacheBootstrap` (Role Service fetch,
 reconciler, seed-retry, disk cache) and the Kafka role-event listener are not
 created, and `authz.role-service-url` is not required. Keep the resolver backed
 by an **in-memory** snapshot you refresh yourself — the request path must not
-make a remote call.
+make a remote call. Full example:
+[§3 external permission source](INTEGRATION.md#3-external-permission-source).
 
 ## Testing
 

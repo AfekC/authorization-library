@@ -2,6 +2,10 @@
 
 Config-driven authorization middleware library for Express and NestJS.
 
+> **Integrating into a service?** The [Integration cookbook](INTEGRATION.md) has full,
+> copy-pasteable wiring for every case — Nest module, Express, all three modes, Kafka,
+> outbound propagation, context reading, and custom SPI. This README is the config reference.
+
 ## Install
 
 ```bash
@@ -27,11 +31,33 @@ app.use(authz.middleware); // global enforcement, no per-route opt-in
 
 ## Quick start (NestJS)
 
+Idiomatic NestJS adoption is a single module import — `AuthzModule.forRoot(...)`
+wires the global guard, outbound interceptor, and startup state machine for you:
+
 ```ts
-// main.ts
-const authz = await createAuthz();
-app.use(authz.middleware);
+// app.module.ts
+import { AuthzModule } from "authz-nestjs";
+
+@Module({
+  imports: [
+    AuthzModule.forRoot({
+      serviceIssuer, serviceJwksUri,
+      userIssuer, userJwksUri, audience,
+      roleServiceUrl,
+      authorizationYamlPath: "./authorization.yaml",
+    }),
+  ],
+})
+export class AppModule {}
 ```
+
+For a plain Express host, the env-only `createAuthz()` + `app.use(authz.middleware)`
+form (shown under [Quick start (Express)](#quick-start-express)) is the fallback.
+
+> Full runnable wiring — module, async config, and Express — is in the Integration cookbook:
+> [§1 full mode](INTEGRATION.md#1-nestjs-app--full-mode),
+> [§2 async config](INTEGRATION.md#2-nestjs-app--async-config),
+> [§3 Express host](INTEGRATION.md#3-express-host-non-nest).
 
 ## Getting Started
 
@@ -86,6 +112,10 @@ Service auth is always on. What varies is **whether user JWTs are checked** and
   role distribution — see [External permission source](#external-permission-source).
   `roleServiceUrl` is not required.
 
+> Runnable examples: [§4 service-only](INTEGRATION.md#4-service-only-mode),
+> [§5 external permission source](INTEGRATION.md#5-external-permission-source) in the
+> Integration cookbook.
+
 ## Configuration
 
 `createAuthz()` reads `AUTHZ_*` environment variables from `process.env`.
@@ -121,12 +151,8 @@ User auth is **all-or-nothing**. Setting any field below means **all** of them m
 | `AUTHZ_ROLE_SERVICE_CONNECT_TIMEOUT` | no | `5000` | Role Service HTTP connect timeout (ms) |
 | `AUTHZ_ROLE_SERVICE_READ_TIMEOUT` | no | `5000` | Role Service HTTP read timeout (ms) |
 | `AUTHZ_DISK_CACHE_PATH` | no | `"authorization-cache.json"` | Path to on-disk role cache file used as seed fallback when Role Service is unreachable at startup |
-| `AUTHZ_KAFKA_BROKERS` | no | `""` | Comma-separated Kafka brokers; empty disables Kafka (snapshot + reconciler only) |
-| `AUTHZ_ROLE_UPDATES_TOPIC` | no | `"role-updates"` | Kafka topic carrying role UPSERT events |
-| `AUTHZ_ROLE_DELETE_TOPIC` | no | `"role-delete"` | Kafka topic carrying role DELETE events |
-| `AUTHZ_PUBLISH_ROLES_TOPIC` | no | `"publish-roles"` | Kafka topic that triggers a forced full re-fetch |
-| `AUTHZ_KAFKA_GROUP_ID` | no | `"authz-cache-sync"` | Kafka consumer group prefix (UUID appended per instance) |
-| `AUTHZ_KAFKA_CLIENT_ID` | no | `"authz-cache-sync"` | Kafka consumer client ID |
+
+> **Kafka is host-wired, not env-driven.** `createAuthz()` reads no Kafka env vars. The host service builds the role-event consumer with `authzKafkaOptions({ brokers, schemaRegistryUrl })` (the example reads `KAFKA_BROKERS` / `SCHEMA_REGISTRY_URL` itself), and the consumer group is generated per-instance. There is no `AUTHZ_KAFKA_*` / `AUTHZ_*_TOPIC` knob. See [§8 Kafka role events](INTEGRATION.md#8-kafka-role-events) for the `main.ts` wiring.
 
 ### Outbound identity (optional)
 
@@ -135,9 +161,13 @@ User auth is **all-or-nothing**. Setting any field below means **all** of them m
 | `AUTHZ_TOKEN_URL` | when outbound identity | — | SSO/OIDC token endpoint issuing service tokens via `client_credentials` |
 | `AUTHZ_CLIENT_ID` | presence enables | — | This service's OAuth2 client identifier |
 | `AUTHZ_CLIENT_SECRET` | when outbound identity | — | This service's OAuth2 client secret (inject from your secret store) |
+| `AUTHZ_OUTBOUND_ALLOWED_HOSTS` | no | *(empty)* | Comma-separated downstream hosts that outbound credentials (user JWT + service token) may be attached to. Empty → attach to nothing (the safe default). |
 
 Absent variables are omitted so library defaults apply. Required-field validation
 is performed by `createAuthz` (fail-fast at startup).
+
+> Propagation wiring (trusted-host allowlist, `attachOutboundPropagation`, `createClient`):
+> [§9 outbound propagation](INTEGRATION.md#9-outbound-propagation).
 
 ## Observability
 
@@ -154,8 +184,14 @@ observability SDK (e.g. OpenTelemetry) in your **service** entrypoint and, if yo
 want decision events in it, pass an `auditSink` that forwards to it:
 
 ```ts
-const authz = await createAuthz({ auditSink: myOtelAuditSink });
+AuthzModule.forRoot({
+  // ...trust roots...
+  auditSink: myOtelAuditSink,
+});
 ```
+
+See [§10 health endpoint](INTEGRATION.md#10-health-endpoint) and
+[§11 custom auditSink & SPI overrides](INTEGRATION.md#11-custom-auditsink--spi-overrides).
 
 ## SPI extension points
 
@@ -166,6 +202,8 @@ const authz = await createAuthz({ auditSink: myOtelAuditSink });
 - `AuditSink` — custom audit event handler
 - `AttributeProvider` — supply ABAC attributes
 
+Wiring them through `forRoot`: [§11 custom auditSink & SPI overrides](INTEGRATION.md#11-custom-auditsink--spi-overrides).
+
 ### External permission source
 
 To source permissions from your own store (Redis/Infinispan/Postgres) instead of
@@ -173,8 +211,9 @@ the built-in Role Service + Kafka + disk pipeline, set
 `externalPermissionSource: true` and provide a `roleResolver` (or `policyEngine`):
 
 ```ts
-await createAuthz({
-  // ...user/service trust roots (no roleServiceUrl needed)...
+AuthzModule.forRoot({
+  serviceIssuer, serviceJwksUri,
+  userIssuer, userJwksUri, audience, // user check stays on; no roleServiceUrl needed
   externalPermissionSource: true,
   roleResolver: { permissionsForRole: (role) => mySnapshot.get(role) ?? new Set() },
 });
@@ -183,7 +222,8 @@ await createAuthz({
 User-JWT validation stays enabled; the Role Service fetch, reconciler,
 seed-retry, disk cache, and Kafka role events are all disabled. Keep the
 resolver backed by an **in-memory** snapshot you refresh yourself — the request
-path must not make a remote call.
+path must not make a remote call. Full example:
+[§5 external permission source](INTEGRATION.md#5-external-permission-source).
 
 ## Testing
 

@@ -36,12 +36,10 @@ export interface JwksValidatorConfig {
   serviceJwksUri: string;
   clockSkewSeconds?: number;
   /**
-   * Optional algorithm allow-list. Left undefined by default so verification is
-   * generic — jose validates each token against the algorithm of the JWKS key
-   * that matches its `kid`/`kty` (the Auth Service signs user tokens EdDSA; SSO
-   * signs service tokens RS256; both are verified by the same generic path).
-   * `alg:none` is always rejected by jose regardless. Set this only to harden a
-   * deployment to a fixed set of algorithms.
+   * Algorithm allow-list. Defaults to `["EdDSA"]` (Ed25519): both the Auth
+   * Service (user tokens) and SSO (service tokens) sign EdDSA, the only
+   * algorithm in the token path. `alg:none` is always rejected by jose. Override
+   * only to harden/loosen to a different fixed set.
    */
   algorithms?: string[];
   /** Claim that marks a service token. */
@@ -66,8 +64,8 @@ export class JwksTokenValidator implements TokenValidator {
   /** Undefined in SERVICE-ONLY mode (no user-JWT validation). */
   private readonly userJwks?: JWTVerifyGetKey;
   private readonly serviceJwks: JWTVerifyGetKey;
-  /** Undefined → generic: jose verifies against the matched JWKS key's algorithm. */
-  private readonly algorithms?: string[];
+  /** Pinned to EdDSA by default; jose rejects any other algorithm. */
+  private readonly algorithms: string[];
 
   constructor(private readonly cfg: JwksValidatorConfig) {
     const timeoutDuration = cfg.jwksTimeoutMs ?? DEFAULT_JWKS_TIMEOUT_MS;
@@ -76,10 +74,9 @@ export class JwksTokenValidator implements TokenValidator {
       ? createRemoteJWKSet(new URL(cfg.userJwksUri), { timeoutDuration })
       : undefined;
     this.serviceJwks = createRemoteJWKSet(new URL(cfg.serviceJwksUri), { timeoutDuration });
-    // Generic verification: don't pin an algorithm. The provider signs user tokens
-    // EdDSA and SSO signs service tokens RS256; jose selects the algorithm from the
-    // JWKS key matched by `kid`. Only honour an explicit operator override.
-    this.algorithms = cfg.algorithms;
+    // Ed25519-only: pin EdDSA so any non-EdDSA token is rejected outright. Honour
+    // an explicit operator override if one is supplied.
+    this.algorithms = cfg.algorithms ?? ["EdDSA"];
   }
 
   async validateUserToken(jwt: string): Promise<TokenClaims> {
@@ -90,8 +87,7 @@ export class JwksTokenValidator implements TokenValidator {
       const { payload } = await jwtVerify(jwt, this.userJwks, {
         issuer: this.cfg.userIssuer,
         audience: this.cfg.audience,
-        // Generic by default: omit `algorithms` so jose uses the matched key's alg.
-        ...(this.algorithms ? { algorithms: this.algorithms } : {}),
+        algorithms: this.algorithms,
         clockTolerance: this.cfg.clockSkewSeconds ?? 5,
       });
       return payload as TokenClaims;
@@ -113,8 +109,7 @@ export class JwksTokenValidator implements TokenValidator {
         ...(this.cfg.serviceAudience !== undefined
           ? { audience: this.cfg.serviceAudience }
           : {}),
-        // Generic by default: omit `algorithms` so jose uses the matched key's alg.
-        ...(this.algorithms ? { algorithms: this.algorithms } : {}),
+        algorithms: this.algorithms,
         clockTolerance: this.cfg.clockSkewSeconds ?? 5,
       }));
     } catch (cause) {

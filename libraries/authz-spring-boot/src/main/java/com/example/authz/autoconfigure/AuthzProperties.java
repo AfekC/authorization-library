@@ -57,8 +57,8 @@ public class AuthzProperties {
      * Optional expected audience for service tokens (T5). When blank (default),
      * no audience check is performed on service tokens — preserving existing
      * behavior. When set, the service-token decoder enforces that the {@code aud}
-     * claim contains this value. Mirrors the NestJS {@code serviceTokenAudience}
-     * config option. Config key: {@code authz.service-token-audience}.
+     * claim contains this value. Config key: {@code authz.service-token-audience}.
+     * (Spring-only; the NestJS library has no equivalent service-token audience check.)
      */
     private String serviceTokenAudience = "";
     /** Clock-skew tolerance (seconds) for JWT exp/nbf checks (§2.2). */
@@ -85,16 +85,10 @@ public class AuthzProperties {
     private int roleServiceReadTimeout = 5000;
     /** Fallback/seed cache file. */
     private String diskCachePath = "authorization-cache.json";
-    /**
-     * Topics carrying role UPSERT and DELETE events, plus the forced-refresh trigger topic.
-     * These are read by the library's {@code @KafkaListener} beans via SpEL:
-     * {@code ${authz.kafka.role-updates-topic:role-updates}} etc.
-     * Kafka connection config (brokers, deserializer, schema-registry) is owned by the
-     * host service via {@code spring.kafka.consumer.*} properties.
-     */
-    private String roleUpdatesTopic = "role-updates";
-    private String roleDeleteTopic = "role-delete";
-    private String publishRolesTopic = "publish-roles";
+    // Role-event topic names are NOT bound here: the @KafkaListener beans read
+    // authz.kafka.{role-updates,role-delete,publish-roles}-topic directly via SpEL
+    // (with library defaults as fallbacks). Kafka connection config (brokers,
+    // deserializer, schema-registry) is owned by the host via spring.kafka.consumer.*.
     /** Periodic reconciler interval in ms (§8.3). Default 5 minutes. */
     private long reconcileIntervalMs = 300000;
     /** Outbound service-token (client-credentials); empty clientId -> disabled. */
@@ -168,12 +162,6 @@ public class AuthzProperties {
     public void setRoleServiceReadTimeout(int v) { this.roleServiceReadTimeout = v; }
     public String getDiskCachePath() { return diskCachePath; }
     public void setDiskCachePath(String v) { this.diskCachePath = v; }
-    public String getRoleUpdatesTopic() { return roleUpdatesTopic; }
-    public void setRoleUpdatesTopic(String v) { this.roleUpdatesTopic = v; }
-    public String getRoleDeleteTopic() { return roleDeleteTopic; }
-    public void setRoleDeleteTopic(String v) { this.roleDeleteTopic = v; }
-    public String getPublishRolesTopic() { return publishRolesTopic; }
-    public void setPublishRolesTopic(String v) { this.publishRolesTopic = v; }
     public long getReconcileIntervalMs() { return reconcileIntervalMs; }
     public void setReconcileIntervalMs(long v) { this.reconcileIntervalMs = v; }
     public String getTokenUrl() { return tokenUrl; }

@@ -38,7 +38,11 @@ Fetched at library startup and periodically during reconciliation. The authorita
 
 Exposed by the library, not an external dependency.
 
-Fields marked with `†` are **only present when user auth is enabled** (§0.5 of the architecture doc). In service-only mode the health indicator reports only basic service reachability; cache-related fields are absent.
+Fields marked with `†` are **only present when the built-in role distribution is running** —
+i.e. **full** mode (§0.5). They are absent in service-only mode (§0.5, user JWTs ignored) and
+in external-permission-source mode (§0.5b) — in the latter user auth stays on, but the service
+owns role→permission lookups so there is no library-managed cache, Role Service sync, or Kafka
+consumer to report. In those modes the health indicator reports only basic service reachability.
 
 | Field | Type | Description |
 |-------|------|-------------|

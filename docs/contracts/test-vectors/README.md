@@ -32,7 +32,7 @@ A file is an array of vectors.
 
 ## Ed25519 fixed test keypair (T1 — RFC 8037 §A.2)
 
-`jwt_provider` re-platformed from RS256 to Ed25519 (T1). Consumer implementations that
+`jwt_provider` signs user tokens with Ed25519 (T1). Consumer implementations that
 need to sign test tokens must use the following fixed deterministic Ed25519 key pair
 (the RFC 8037 §A.2 well-known test vector):
 
@@ -56,4 +56,4 @@ Vault publicKeyRaw (base64-std, 32 raw bytes):
 ```
 
 JWT header alg is `EdDSA`; `kid` is pinned to `jwt-ed25519:<vault_key_version>`.
-RS256 / RSA is no longer used anywhere in the token path.
+Ed25519 (EdDSA) is the only algorithm used anywhere in the token path.

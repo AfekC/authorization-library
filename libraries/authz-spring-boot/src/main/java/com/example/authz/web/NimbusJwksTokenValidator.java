@@ -18,7 +18,6 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.DefaultJOSEObjectTypeVerifier;
 import com.nimbusds.jose.proc.JWSKeySelector;
-import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.JWSVerifierFactory;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.util.DefaultResourceRetriever;
@@ -52,10 +51,11 @@ import java.util.Map;
  * supplying a non-blank {@code serviceTokenAudience} via
  * {@code authz.service-token-audience}).
  *
- * <p>Algorithm pinning: the JWKS JWKSource is configured with
- * {@link JWSAlgorithmFamilyJWSKeySelector} using {@link JWSAlgorithm.Family#ED}
- * so only OKP/Ed25519 EdDSA keys are accepted. RS256 and ES256 are explicitly
- * dropped — the provider re-platformed to Ed25519 (T1).
+ * <p>Algorithm pinning: only OKP/Ed25519 EdDSA keys are selected for
+ * verification (see {@link GenericJwsKeySelector}); RS256, ES256 and every other
+ * algorithm have no matching key and are rejected. {@code alg:none} is rejected
+ * because the processor requires a signing key. The provider re-platformed to
+ * Ed25519 (T1).
  *
  * <p>JWKS fetches (initial load and unknown-{@code kid} refresh) use an HTTP
  * client with an explicit connect+read timeout ({@code jwksTimeoutMs}, default
@@ -182,14 +182,14 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
 
     // -------------------------------------------------------------------------
     // Decoder builders — use Nimbus DefaultJWTProcessor directly so EdDSA (OKP)
-    // keys can be selected, bypassing Spring Security's SignatureAlgorithm enum
-    // which covers RSA/EC families only.
+    // keys can be selected: Spring Security's SignatureAlgorithm enum covers only
+    // RSA/EC, so it cannot drive EdDSA verification on its own.
     // -------------------------------------------------------------------------
 
     /**
      * Build a user-token decoder with issuer + audience + exp + nbf validators.
-     * Verification is generic (see {@link #decoder}): the provider signs user
-     * tokens EdDSA today, but the algorithm is driven by the JWKS key, not pinned.
+     * Verification is pinned to EdDSA/Ed25519 (see {@link #decoder}): the provider
+     * signs user tokens EdDSA, and no other algorithm has a matching key.
      */
     private static NimbusJwtDecoder userDecoder(String jwksUri, String issuer,
                                                 String audience, Duration skew,
@@ -209,7 +209,7 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
     }
 
     /**
-     * Build an RS256 service-token decoder with issuer + exp + nbf validators.
+     * Build a service-token decoder (EdDSA) with issuer + exp + nbf validators.
      * No audience check (default service-token path, §2.3).
      */
     private static NimbusJwtDecoder serviceDecoder(String jwksUri, String issuer, Duration skew,
@@ -222,7 +222,7 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
     }
 
     /**
-     * Build an RS256 service-token decoder with issuer + audience + exp + nbf validators.
+     * Build a service-token decoder (EdDSA) with issuer + audience + exp + nbf validators.
      * Used when optional service-token audience check is enabled (T5,
      * {@code authz.service-token-audience}).
      */
@@ -238,18 +238,16 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
     }
 
     /**
-     * Core factory: build a generic {@link NimbusJwtDecoder} backed by a remote
-     * JWKS URI. Verification is algorithm-agnostic — the signature algorithm is
-     * driven by the JWKS key that matches the token's {@code kid} (RS256/ES* for
-     * SSO service tokens, EdDSA for provider user tokens), not pinned per token
-     * type. {@code alg:none} is always rejected (DefaultJWTProcessor requires a
-     * key + verifier).
+     * Core factory: build a {@link NimbusJwtDecoder} backed by a remote JWKS URI.
+     * Verification is pinned to EdDSA/Ed25519 — only OKP keys are selected (see
+     * {@link GenericJwsKeySelector}), so RS256, ES* and any other algorithm have
+     * no matching key and are rejected. {@code alg:none} is always rejected
+     * (DefaultJWTProcessor requires a key + verifier).
      *
-     * <p>Nimbus does the actual decoding/verification via its own verifiers
-     * (RSASSAVerifier / ECDSAVerifier / Ed25519Verifier). The only glue is
-     * {@link GenericJwsKeySelector}, which fetches OKP keys straight from the JWK
-     * source because Nimbus's stock {@code KeyConverter.toJavaKeys()} drops
-     * OctetKeyPair; RSA/EC keys go through the stock selector unchanged.
+     * <p>Nimbus does the actual verification via its {@link Ed25519Verifier}. The
+     * glue is {@link GenericJwsKeySelector}, which fetches OKP keys straight from
+     * the JWK source because Nimbus's stock {@code KeyConverter.toJavaKeys()}
+     * drops OctetKeyPair.
      *
      * <p>The JWKS source is built with a connect+read timeout so a slow JWKS
      * endpoint cannot block validation indefinitely.
@@ -312,20 +310,15 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
     }
 
     // -------------------------------------------------------------------------
-    // EdDSA-aware JWSVerifierFactory
-    // -------------------------------------------------------------------------
-
-    // -------------------------------------------------------------------------
-    // Generic key selection (RSA / EC / EdDSA), driven by the JWKS key
+    // EdDSA-only key selection, driven by the JWKS key
     //
-    // RSA and EC keys flow through Nimbus's stock JWSVerificationKeySelector. OKP
-    // (Ed25519) keys need a small detour: Nimbus's KeyConverter.toJavaKeys() drops
-    // OctetKeyPair (its toKeyPair() throws "Export not supported"), so the stock
-    // selector returns no key for EdDSA. GenericJwsKeySelector fetches OKP keys
-    // directly from the JWK source and wraps each in an OkpKeyHolder; the paired
-    // EdDsaAwareJWSVerifierFactory unwraps it to an OctetKeyPair for Nimbus's own
-    // Ed25519Verifier. Nimbus performs all signature verification — this is wiring,
-    // not a hand-rolled verifier, and the algorithm is never pinned per token type.
+    // Only OKP (Ed25519) keys are selected. Nimbus's KeyConverter.toJavaKeys()
+    // drops OctetKeyPair (its toKeyPair() throws "Export not supported"), so the
+    // stock selector returns no key for EdDSA. GenericJwsKeySelector fetches OKP
+    // keys directly from the JWK source and wraps each in an OkpKeyHolder; the
+    // paired EdDsaAwareJWSVerifierFactory unwraps it to an OctetKeyPair for
+    // Nimbus's own Ed25519Verifier. Any non-EdDSA token (RS256, ES*, alg:none)
+    // has no matching key and is rejected.
     // -------------------------------------------------------------------------
 
     /**
@@ -344,57 +337,50 @@ public class NimbusJwksTokenValidator implements Spi.TokenValidator {
     }
 
     /**
-     * Generic JWS key selector. EdDSA tokens are matched to OKP keys fetched
-     * directly from the JWK source (wrapped in {@link OkpKeyHolder}); RSA and EC
-     * tokens are delegated to Nimbus's stock {@link JWSVerificationKeySelector}.
-     * The accepted algorithm is whatever the token header declares and the JWKS
-     * provides — nothing is pinned to a single algorithm or token type.
+     * EdDSA-only JWS key selector. EdDSA tokens are matched to OKP keys fetched
+     * directly from the JWK source (wrapped in {@link OkpKeyHolder}). Any other
+     * algorithm (RS256, ES*, alg:none) has no matching key and is rejected.
      */
     static final class GenericJwsKeySelector<C extends SecurityContext> implements JWSKeySelector<C> {
 
         private final JWKSource<C> jwkSource;
-        private final JWSVerificationKeySelector<C> standard;
 
         GenericJwsKeySelector(JWKSource<C> jwkSource) {
             this.jwkSource = jwkSource;
-            java.util.Set<JWSAlgorithm> rsaEc = new java.util.LinkedHashSet<>();
-            rsaEc.addAll(JWSAlgorithm.Family.RSA);
-            rsaEc.addAll(JWSAlgorithm.Family.EC);
-            this.standard = new JWSVerificationKeySelector<>(rsaEc, jwkSource);
         }
 
         @Override
         public List<? extends java.security.Key> selectJWSKeys(JWSHeader header, C context)
                 throws KeySourceException {
-            // EdDSA/OKP: fetch directly and wrap — Nimbus's stock KeyConverter drops OKP.
-            if (JWSAlgorithm.Family.ED.contains(header.getAlgorithm())) {
-                JWKMatcher matcher = new JWKMatcher.Builder()
-                        .keyType(com.nimbusds.jose.jwk.KeyType.OKP)
-                        .keyID(header.getKeyID())
-                        .keyUses(com.nimbusds.jose.jwk.KeyUse.SIGNATURE, null)
-                        .publicOnly(true)
-                        .build();
-                List<JWK> jwks;
-                try {
-                    jwks = jwkSource.get(new JWKSelector(matcher), context);
-                } catch (KeySourceException e) {
-                    throw e; // already typed correctly
-                } catch (Exception e) {
-                    throw new KeySourceException("Failed to retrieve JWKS: " + e.getMessage(), e);
-                }
-                if (jwks == null || jwks.isEmpty()) {
-                    return java.util.Collections.emptyList();
-                }
-                List<java.security.Key> keys = new java.util.ArrayList<>(jwks.size());
-                for (JWK jwk : jwks) {
-                    if (jwk instanceof OctetKeyPair okp) {
-                        keys.add(new OkpKeyHolder(okp));
-                    }
-                }
-                return keys;
+            // Ed25519-only: any non-EdDSA algorithm (RS256, ES*, alg:none) has no key and is rejected.
+            if (!JWSAlgorithm.Family.ED.contains(header.getAlgorithm())) {
+                return java.util.Collections.emptyList();
             }
-            // RSA/EC (and rejection of alg:none / unknown algs): stock selector.
-            return standard.selectJWSKeys(header, context);
+            // EdDSA/OKP: fetch directly and wrap — Nimbus's stock KeyConverter drops OKP.
+            JWKMatcher matcher = new JWKMatcher.Builder()
+                    .keyType(com.nimbusds.jose.jwk.KeyType.OKP)
+                    .keyID(header.getKeyID())
+                    .keyUses(com.nimbusds.jose.jwk.KeyUse.SIGNATURE, null)
+                    .publicOnly(true)
+                    .build();
+            List<JWK> jwks;
+            try {
+                jwks = jwkSource.get(new JWKSelector(matcher), context);
+            } catch (KeySourceException e) {
+                throw e; // already typed correctly
+            } catch (Exception e) {
+                throw new KeySourceException("Failed to retrieve JWKS: " + e.getMessage(), e);
+            }
+            if (jwks == null || jwks.isEmpty()) {
+                return java.util.Collections.emptyList();
+            }
+            List<java.security.Key> keys = new java.util.ArrayList<>(jwks.size());
+            for (JWK jwk : jwks) {
+                if (jwk instanceof OctetKeyPair okp) {
+                    keys.add(new OkpKeyHolder(okp));
+                }
+            }
+            return keys;
         }
     }
 

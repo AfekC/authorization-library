@@ -8,6 +8,10 @@ Each service owns one `authorization.yaml` loaded at startup. Compilation fails 
 
 ```yaml
 rules:
+  - path: /health               # no-validation route — always ALLOW
+    methods: [GET]
+    public: true                # mutually exclusive with permissions/decision/allowedServices
+
   - path: /orders/**            # ** = deep wildcard (any depth)
     methods: [GET]
     permissions: [READ_ORDER]
@@ -42,6 +46,7 @@ rules:
 | `permissions` | no | string[] | Required permissions. **Only evaluated when user auth is enabled.** In service-only mode the field is silently ignored — the rule behaves as if `permissions` were absent. |
 | `decision` | no | `"ANY"` or `"ALL"` | Default `"ANY"`. `ANY` = at least one permission required; `ALL` = every permission required. **Only effective when user auth is enabled.** |
 | `allowedServices` | no | string[] | Services permitted to call; `"*"` means any authenticated service |
+| `public` | no | boolean | `true` makes the route a **no-validation, always-ALLOW** rule — no credentials are required and no user/service checks run. Mutually exclusive with `permissions`, `decision`, and `allowedServices` (combining them is rejected at startup). `methods` is still required. |
 
 ### Wildcard semantics
 
@@ -71,6 +76,8 @@ Valid wildcard patterns:
 
 - Unknown field present → reject
 - Invalid `decision` value → reject
+- Non-boolean `public` value → reject
+- `public: true` combined with `permissions`, `decision`, or `allowedServices` → reject
 - Two rules are genuinely ambiguous (identical specificity for overlapping path+method) → reject
 
 ### Most-specific rule selection
@@ -81,7 +88,11 @@ Patterns scored segment-by-segment: literal = 2, `*` = 1, `**` = 0. Compare segm
 
 ## authorization-cache.json
 
-*This file is only created and loaded when user auth is enabled (§0.5 of the architecture doc). In service-only mode the file is never written.*
+*This file is only created and loaded in **full** mode (§0.5). It is never written in
+service-only mode (§0.5, user JWTs ignored) or external-permission-source mode (§0.5b,
+where the service owns role→permission lookups and the built-in distribution is off) — in
+both of those the disk cache, Role Service fetch, reconciler, and Kafka role events are all
+disabled.*
 
 Written to disk every time the in-memory cache changes (after full Role Service sync or after each Kafka event). Loaded at startup **only if the Role Service is unreachable** (seed mode). The path defaults to `authorization-cache.json` (current working directory) in both libraries and is configurable.
 
@@ -102,7 +113,7 @@ Written to disk every time the in-memory cache changes (after full Role Service 
 
 ### Behaviour
 
-- Only exists when user auth is enabled
+- Only exists in full mode (absent in service-only and external-permission-source modes)
 - Written on every cache change (sync or Kafka event)
 - Loaded at startup **only** as a fallback when Role Service is unreachable
 - Seeds the in-memory cache so the service can become READY in degraded mode

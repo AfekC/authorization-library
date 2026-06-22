@@ -23,8 +23,8 @@
  * ─────────────────────────────────────────────────────────────────────────────
  *   POST /admin/rotate-keys
  *     Body: { issuer: "auth"|"sso" }
- *     Generates a new RSA keypair for the given issuer, publishes old+new in the
- *     JWKS (overlap window for in-flight token validation), and starts signing
+ *     Generates a new Ed25519 keypair for the given issuer, publishes old+new in
+ *     the JWKS (overlap window for in-flight token validation), and starts signing
  *     new tokens with the new kid.
  *     Default state: keys are NOT rotated (single static keypair per issuer).
  *     Returns: { issuer, newKid, previousKid, jwksKeyCount }
@@ -210,10 +210,10 @@ async function _applyFault(faultState, res) {
 }
 
 async function main() {
-  // Auth Service issues user JWTs with Ed25519 (the provider was re-platformed
-  // from RS256 to EdDSA). SSO issues service tokens with RS256 (Keycloak-style).
+  // Auth Service issues user JWTs and SSO issues service tokens, both signed
+  // Ed25519 (EdDSA) — the only algorithm in the token path.
   const auth = await createIssuer(AUTH_ISSUER, "auth-key-1", "EdDSA");
-  const sso = await createIssuer(SSO_ISSUER, "sso-key-1");
+  const sso = await createIssuer(SSO_ISSUER, "sso-key-1", "EdDSA");
 
   // Helper: resolve "auth"|"sso" string to the issuer object.
   function _issuerFor(name) {
@@ -407,7 +407,7 @@ async function main() {
   /**
    * POST /admin/rotate-keys
    * Body: { issuer: "auth"|"sso" }
-   * Generates a new RSA keypair, adds it to the JWKS (overlap window), and
+   * Generates a new Ed25519 keypair, adds it to the JWKS (overlap window), and
    * switches the signing kid to the new key. The old key remains in the JWKS
    * so tokens signed before rotation continue to validate during the window.
    * Call /admin/retire-old-keys after the window to drop the old key.

@@ -2,8 +2,9 @@
 import crypto from "node:crypto";
 
 /**
- * One RSA keypair for the Auth Service (user JWTs) and one for the SSO provider
- * (service tokens). Each exposes a JWKS; both libraries verify against them.
+ * One Ed25519 (EdDSA) keypair for the Auth Service (user JWTs) and one for the
+ * SSO provider (service tokens). Each exposes a JWKS; both libraries verify
+ * against them. EdDSA is the only algorithm in the token path.
  *
  * Key rotation (G13):
  *   issuer.rotate()          â€” Generate a new keypair, publish old+new in JWKS,
@@ -24,7 +25,7 @@ import crypto from "node:crypto";
  *     "missingClaims"    â€” omits iss/aud/exp; bare header+payload, bogus signature.
  *     "malformed"        â€” returns the literal string "not.a.jwt".
  */
-async function createIssuer(issuer, initialKid, alg = "RS256") {
+async function createIssuer(issuer, initialKid, alg = "EdDSA") {
   // All active keypairs: kid -> { privateKey, publicJwk }
   const keyring = new Map();
 
@@ -32,8 +33,8 @@ async function createIssuer(issuer, initialKid, alg = "RS256") {
     // jose v6 returns non-extractable WebCrypto CryptoKeys by default; request
     // extractable keys so the private key bridges cleanly to a Node KeyObject in
     // _signRaw (the raw "expired" signing path) and the public key exports to JWK.
-    // alg is "RS256" (SSO/service tokens, like Keycloak) or "EdDSA" (Auth Service
-    // user tokens — the provider was re-platformed to Ed25519/OKP).
+    // alg is "EdDSA" (Ed25519/OKP) for both the Auth Service user tokens and the
+    // SSO service tokens — the only algorithm in the token path.
     const { publicKey, privateKey } = await generateKeyPair(alg, { extractable: true });
     const jwk = await exportJWK(publicKey);
     jwk.kid = kid;
@@ -50,21 +51,14 @@ async function createIssuer(issuer, initialKid, alg = "RS256") {
     return { keys: Array.from(keyring.values()).map((e) => e.publicJwk) };
   }
 
-  // Sign `data` (ASCII string "header.payload") with RSA-PKCS1 using Node crypto.
+  // Sign `data` (ASCII string "header.payload") with Ed25519 using Node crypto.
   // Returns base64url-encoded signature. Used only for the "expired" path where
   // jose's SignJWT enforces a future exp and would reject a backdated one.
   function _signRaw(privateKey, data) {
     // jose v6 gives a WebCrypto CryptoKey; Node's crypto.sign needs a KeyObject.
     const keyObject = crypto.KeyObject.from(privateKey);
     // Ed25519 signs with no pre-hash and no padding (algorithm omitted/null).
-    if (alg === "EdDSA") {
-      const sig = crypto.sign(null, Buffer.from(data), keyObject);
-      return sig.toString("base64url");
-    }
-    const sig = crypto.sign("sha256", Buffer.from(data), {
-      key: keyObject,
-      padding: crypto.constants.RSA_PKCS1_PADDING,
-    });
+    const sig = crypto.sign(null, Buffer.from(data), keyObject);
     return sig.toString("base64url");
   }
 
